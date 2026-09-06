@@ -7,8 +7,8 @@
 !.env.sample
 
 # dependencies
-node_modules/
-vendor/
+/node_modules
+/vendor/
 /.pnp
 .pnp.*
 .yarn/*
@@ -20,11 +20,13 @@ vendor/
 # testing
 /coverage
 
-# Build and Next.js output
-dist/
+# next.js
 /.next/
 /out/
+
+# production
 /build
+/dist/
 
 # misc
 .DS_Store
@@ -37,9 +39,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
-
-# env files (can opt-in for committing if needed)
-.env*
 
 # vercel
 .vercel
