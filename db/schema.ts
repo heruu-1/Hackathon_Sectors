@@ -13,3 +13,5 @@ export const anomalies = pgTable('anomalies', {
   reason: text('reason').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
+
+export type Anomaly = typeof anomalies.$inferSelect

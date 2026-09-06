@@ -16,13 +16,14 @@ import {
   TrendingUp,
 } from 'lucide-react'
 
+import type { Anomaly } from '@/db/schema'
 import { cn } from '@/lib/utils'
 
 import { analyzeTicker, getRecentAnomalies } from './actions'
 
 export default function Home() {
-  const [anomalies, setAnomalies] = useState<any[]>([])
-  const [selectedAnomaly, setSelectedAnomaly] = useState<any | null>(null)
+  const [anomalies, setAnomalies] = useState<Anomaly[]>([])
+  const [selectedAnomaly, setSelectedAnomaly] = useState<Anomaly | null>(null)
   const [isScanning, setIsScanning] = useState(true)
   const [searchInput, setSearchInput] = useState('')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
@@ -58,7 +59,7 @@ export default function Home() {
         setSelectedAnomaly(result.data)
         setSearchInput('')
       }
-    } catch (err) {
+    } catch {
       setErrorMsg('Failed to analyze. Please try again.')
     } finally {
       setIsAnalyzing(false)
@@ -219,7 +220,15 @@ export default function Home() {
                           />
                           Risk Score: <span className="font-bold text-white">{anomaly.risk}%</span>
                         </div>
-                        <span className="text-xs text-slate-500">{anomaly.time || 'Just now'}</span>
+                        <time
+                          dateTime={anomaly.createdAt.toISOString()}
+                          className="text-xs text-slate-500"
+                        >
+                          {anomaly.createdAt.toLocaleTimeString('en-US', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </time>
                       </div>
                     </motion.div>
                   ))}

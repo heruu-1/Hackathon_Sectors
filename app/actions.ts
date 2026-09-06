@@ -5,6 +5,20 @@ import { desc } from 'drizzle-orm'
 import { db } from '@/db'
 import { anomalies } from '@/db/schema'
 
+function getErrorMessage(error: unknown, fallback: string) {
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof error.message === 'string' &&
+    error.message
+  ) {
+    return error.message
+  }
+
+  return fallback
+}
+
 export async function getRecentAnomalies() {
   try {
     const recentAnomalies = await db
@@ -13,8 +27,8 @@ export async function getRecentAnomalies() {
       .orderBy(desc(anomalies.createdAt))
       .limit(20)
     return { success: true, data: recentAnomalies }
-  } catch (error: any) {
-    return { error: error.message || 'Failed to fetch recent anomalies.' }
+  } catch (error: unknown) {
+    return { error: getErrorMessage(error, 'Failed to fetch recent anomalies.') }
   }
 }
 
@@ -45,7 +59,7 @@ export async function analyzeTicker(ticker: string) {
 
     // Simple mock "Anomaly Detection" logic based on fundamentals
     let riskScore = 40 // Base risk
-    let reasons = []
+    const reasons: string[] = []
     let status = 'NORMAL'
 
     const peRatio = valuation.pe_ttm || 0
@@ -100,7 +114,7 @@ export async function analyzeTicker(ticker: string) {
       success: true,
       data: insertedAnomaly,
     }
-  } catch (error: any) {
-    return { error: error.message || 'An error occurred during analysis.' }
+  } catch (error: unknown) {
+    return { error: getErrorMessage(error, 'An error occurred during analysis.') }
   }
 }
