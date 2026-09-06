@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { integer, pgTable, serial, text, timestamp, varchar } from 'drizzle-orm/pg-core'
 
 export const anomalies = pgTable('anomalies', {
   id: serial('id').primaryKey(),
@@ -12,4 +12,4 @@ export const anomalies = pgTable('anomalies', {
   status: varchar('status', { length: 20 }).notNull(), // CRITICAL, HIGH, WARNING, NORMAL
   reason: text('reason').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-});
+})

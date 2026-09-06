@@ -9,7 +9,7 @@
     "lint": "eslint",
     "format:check": "prettier --check --ignore-unknown .",
     "format": "prettier --write --ignore-unknown .",
-     "db:push": "drizzle-kit push",
+    "db:push": "drizzle-kit push",
     "db:seed": "tsx --env-file=.env lib/scripts/seeder.ts",
     "db:studio": "drizzle-kit studio"
   },
