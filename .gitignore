@@ -8,6 +8,11 @@
 
 # dependencies
 /node_modules
+/.pnpm-store/
+
+# Local database and runtime files
+/.local/
+
 /vendor/
 /.pnp
 .pnp.*

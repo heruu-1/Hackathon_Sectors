@@ -10,7 +10,7 @@ Built with **Next.js 16**, **Drizzle ORM**, **PostgreSQL**, and **Tailwind CSS**
 
 ### Prerequisites
 
-- **Node.js** ≥ 18
+- **Node.js** ≥ 22.6 (termasuk untuk menjalankan tes TypeScript)
 - **pnpm** ≥ 10 (recommended) or npm
 - **PostgreSQL** database
 - **Sectors API Key** — daftar di [sectors.app/api](https://sectors.app/api)
@@ -72,12 +72,48 @@ Buka [http://localhost:3000](http://localhost:3000) di browser.
 
 ---
 
+## 🧠 Fitur Unggulan (Intelligence Pillars)
+
+RASI dirancang sebagai **Financial Intelligence Terminal** untuk mendeteksi pergerakan tidak wajar dan peluang tersembunyi di pasar saham Indonesia (IDX):
+
+1. **Bandarmology & Big Money Flow Radar**:
+   - Menghitung konsentrasi broker Top 3 (CR3) dan Top 5 (CR5) dari data _broker summary_ harian.
+   - Mengidentifikasi status: `BIG_ACCUMULATION`, `NORMAL_ACCUMULATION`, `NEUTRAL`, `BIG_DISTRIBUTION`.
+   - Mengukur arus dana asing (_Foreign Flow Net Inflow/Outflow_) menggunakan registry 88 broker IDX.
+   - Menghitung estimasi harga modal rata-rata bandar (_Bandar Avg Cost_) vs harga pasar saat ini.
+   - Tabel Top 5 Pembeli vs Top 5 Penjual dengan badge Institusi, Retail (YP, XC, PD, dsb.), dan Asing.
+
+2. **Radar Katalis Berita & AI Divergence ("Sleeping Giant Detector")**:
+   - Menganalisis berita emiten secara real-time dengan Google Gemini AI terstruktur.
+   - Mengukur skor dampak pasar (-100 hingga +100) dan klasifikasi katalis (Akuisisi, Laba, Dividen, Kontrak, dsb.).
+   - Mendeteksi anomali **"Sleeping Giant"**: saham dengan katalis positif besar namun harganya belum bergerak naik (_unpriced catalyst_).
+   - Mendeteksi **"Delayed Sell-off Hazard"**: saham dengan berita negatif berat namun harganya belum merespons koreksi.
+
+3. **Deteksi Transaksi Insider yang Aneh**:
+   - Memantau pelaporan kepemilikan orang dalam (_corporate filings_) dari BEI/KSEI.
+   - Mendeteksi anomali:
+     - 🚨 _Steep Discount Dump_: penjualan saham dengan diskon ekstrem di bawah harga pasar.
+     - 💎 _Aggressive Insider Buy_: pembelian masif oleh direksi/pemegang saham pengendali.
+     - ⚠️ _Massive Divestment_: pelepasan saham bernilai jumbo (> Rp 10 Miliar atau > 1%).
+
+4. **Kesehatan Fundamental & Lonjakan Volume (_Volume Spike_)**:
+   - Menghitung rasio lonjakan volume harian terhadap rata-rata volume 20 hari bursa (SMA-20).
+   - Evaluasi kelayakan P/E dan P/B tahun terbaru.
+   - Skor Risiko Komposit Terpadu 0–100.
+
+5. **Arsitektur Hemat Kuota (Quota Shield)**:
+   - Caching pintar bertingkat (In-Memory + PostgreSQL `api_cache`) untuk mengoptimalkan kuota Sectors API (500–1.000 kredit).
+   - Memindai seluruh pasar melalui batch feed berita dan filings tanpa membebani kuota API.
+
+---
+
 ## 📦 Environment Variables
 
-| Variable          | Deskripsi                                                                                                                       | Contoh                                           |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| `DATABASE_URL`    | URL koneksi PostgreSQL. Digunakan oleh Drizzle ORM untuk menyimpan riwayat analisis anomali saham.                              | `postgresql://postgres:pass@localhost:5432/rasi` |
-| `SECTORS_API_KEY` | API Key dari Sectors Financial API. Digunakan untuk mengambil data fundamental perusahaan IDX (valuasi, laporan keuangan, dll). | `cde1971d...`                                    |
+| Variable          | Deskripsi                                                                                                               | Contoh                                           |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| `DATABASE_URL`    | URL koneksi PostgreSQL. Digunakan oleh Drizzle ORM untuk menyimpan riwayat analisis dan cache API.                      | `postgresql://postgres:pass@localhost:5432/rasi` |
+| `SECTORS_API_KEY` | API Key dari Sectors Financial API. Digunakan untuk data broker summary, transaksi harian, berita, dan insider filings. | `cde1971d...`                                    |
+| `GEMINI_API_KEY`  | _(Opsional)_ API Key Google Gemini untuk analisis sentimen & dampak berita terstruktur. Gratis di Google AI Studio.     | `AIzaSy...`                                      |
 
 Lihat file [`env.example`](env.example) untuk template lengkap beserta penjelasan setiap variabel.
 
@@ -85,12 +121,13 @@ Lihat file [`env.example`](env.example) untuk template lengkap beserta penjelasa
 
 ## 🛠️ Tech Stack
 
-- **Framework:** Next.js 16 (App Router, Server Actions)
+- **Framework:** Next.js 16 (Turbopack, App Router, Server Actions)
 - **Database:** PostgreSQL + Drizzle ORM
 - **Styling:** Tailwind CSS v4
 - **Animation:** Framer Motion
 - **Icons:** Lucide React
 - **API:** Sectors Financial API v2
+- **AI Engine:** Google Gemini API (dengan rule-based NLP fallback)
 
 ---
 
@@ -99,17 +136,37 @@ Lihat file [`env.example`](env.example) untuk template lengkap beserta penjelasa
 ```
 hackathon/
 ├── app/
-│   ├── actions.ts       # Server actions (fetch API & insert DB)
-│   ├── layout.tsx        # Root layout + SEO metadata
-│   └── page.tsx          # Halaman utama dashboard
+│   ├── actions.ts       # Server actions (fetch multi-endpoint & pipeline intelejen)
+│   ├── layout.tsx       # Root layout + SEO metadata
+│   └── page.tsx         # Dashboard Fintech Intelligence Terminal (3 Tabs)
 ├── db/
-│   ├── index.ts          # Koneksi database (Drizzle + postgres)
-│   └── schema.ts         # Schema tabel anomalies
+│   ├── index.ts         # Koneksi database (Drizzle + postgres)
+│   └── schema.ts        # Schema tabel anomalies & api_cache
 ├── lib/
-│   └── utils.ts          # Helper utilities (cn)
-├── drizzle.config.ts     # Konfigurasi Drizzle Kit
-├── env.example           # Template environment variables
-└── .env.local            # Environment variables (tidak di-commit)
+│   ├── bandarmology.ts  # Engine Bandarmology (CR3/CR5, Foreign Flow, Volume Spike)
+│   ├── divergence.ts    # Engine Sleeping Giant & Catalyst Divergence
+│   ├── gemini.ts        # Integrasi Gemini AI terstruktur & Rule-based fallback
+│   ├── insider.ts       # Deteksi transaksi orang dalam tidak wajar
+│   ├── sectors.ts       # Sectors API client v2 & memory/DB caching layer
+│   └── utils.ts         # Helper utilities (cn)
+├── tests/
+│   ├── intelligence.test.mjs # Unit tests kalkulasi Bandarmology, Divergensi & Insider
+│   └── sectors.test.mjs      # Unit tests Sectors API & scoring
+├── drizzle.config.ts    # Konfigurasi Drizzle Kit
+├── env.example          # Template environment variables
+└── .env.local           # Environment variables lokal
+```
+
+---
+
+## 🧪 Pengujian & Verifikasi
+
+Proyek dilengkapi dengan pengujian unit otomatis komprehensif (20 tests):
+
+```powershell
+corepack pnpm test
+corepack pnpm lint
+corepack pnpm build
 ```
 
 ---

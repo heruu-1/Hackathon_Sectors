@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "node --experimental-strip-types --test tests/*.test.mjs",
     "format:check": "prettier --check --ignore-unknown .",
     "format": "prettier --write --ignore-unknown .",
     "db:push": "drizzle-kit push",
