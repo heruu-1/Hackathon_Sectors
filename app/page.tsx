@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+
 import { motion } from 'framer-motion'
 import {
   Activity,
@@ -138,7 +139,9 @@ export default function Home() {
       if (result.error) {
         setErrorMsg(result.error)
       } else if (result.data) {
-        setAnomalies((prev) => [result.data, ...prev.filter((a) => a.id !== result.data.id)].slice(0, 25))
+        setAnomalies((prev) =>
+          [result.data, ...prev.filter((a) => a.id !== result.data.id)].slice(0, 25),
+        )
         setSelectedAnomaly(result.data)
         setSearchInput('')
         setActiveTab('terminal')
@@ -220,10 +223,7 @@ export default function Home() {
         status: 'SLEEPING_GIANT',
       })
       if (res.success && res.data) {
-        setWatchlistItems((prev) => [
-          res.data!,
-          ...prev.filter((item) => item.id !== res.data?.id),
-        ])
+        setWatchlistItems((prev) => [res.data!, ...prev.filter((item) => item.id !== res.data?.id)])
         showToast(`⭐️ ${ticker} ditambahkan ke Watchlist!`)
       }
     } catch {
@@ -251,7 +251,7 @@ export default function Home() {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
-          className="fixed top-5 left-1/2 z-50 -translate-x-1/2 flex items-center gap-2 rounded-full border border-emerald-500/40 bg-emerald-950/90 px-4 py-2 text-xs font-semibold text-emerald-300 shadow-2xl backdrop-blur-md"
+          className="fixed top-5 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full border border-emerald-500/40 bg-emerald-950/90 px-4 py-2 text-xs font-semibold text-emerald-300 shadow-2xl backdrop-blur-md"
         >
           <Check className="h-4 w-4 text-emerald-400" />
           <span>{toastMsg}</span>
@@ -270,7 +270,7 @@ export default function Home() {
                 <h1 className="bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-xl font-extrabold tracking-tight text-transparent">
                   RASI
                 </h1>
-                <span className="rounded border border-rose-500/30 bg-rose-500/10 px-1.5 py-0.5 text-[10px] font-bold text-rose-400 uppercase tracking-wider">
+                <span className="rounded border border-rose-500/30 bg-rose-500/10 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-rose-400 uppercase">
                   Terminal v2.0
                 </span>
               </div>
@@ -282,7 +282,7 @@ export default function Home() {
 
           <div className="flex items-center gap-4">
             {/* System Quota Protection Status */}
-            <div className="hidden lg:flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-300">
+            <div className="hidden items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-300 lg:flex">
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
@@ -305,7 +305,7 @@ export default function Home() {
                 onChange={(e) => setSearchInput(e.target.value)}
                 aria-label="Kode saham IDX"
                 disabled={isAnalyzing}
-                className="h-10 w-48 sm:w-64 rounded-xl border border-white/15 bg-white/[0.06] pr-24 pl-4 text-sm font-medium text-white transition-all placeholder:text-slate-500 focus:border-rose-500/60 focus:bg-white/[0.09] focus:ring-2 focus:ring-rose-500/20 focus:outline-none font-mono"
+                className="h-10 w-48 rounded-xl border border-white/15 bg-white/[0.06] pr-24 pl-4 font-mono text-sm font-medium text-white transition-all placeholder:text-slate-500 focus:border-rose-500/60 focus:bg-white/[0.09] focus:ring-2 focus:ring-rose-500/20 focus:outline-none sm:w-64"
               />
               <button
                 type="submit"
@@ -325,9 +325,9 @@ export default function Home() {
 
         {/* Preset Tickers Bar & Main Tabs */}
         <div className="border-t border-white/5 bg-black/40 px-4 py-2.5 sm:px-6">
-          <div className="mx-auto flex max-w-7xl flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-2 overflow-x-auto text-xs text-slate-400 w-full sm:w-auto">
-              <span className="flex items-center gap-1 text-[11px] font-semibold text-slate-500 uppercase shrink-0">
+          <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 sm:flex-row">
+            <div className="flex w-full items-center gap-2 overflow-x-auto text-xs text-slate-400 sm:w-auto">
+              <span className="flex shrink-0 items-center gap-1 text-[11px] font-semibold text-slate-500 uppercase">
                 <Flame className="h-3.5 w-3.5 text-amber-500" /> Hot Radar:
               </span>
               {PRESET_TICKERS.map((symbol) => (
@@ -335,7 +335,7 @@ export default function Home() {
                   key={symbol}
                   onClick={() => void handleAnalyze(symbol)}
                   disabled={isAnalyzing}
-                  className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-xs font-mono font-semibold text-slate-300 transition-all hover:border-rose-500/50 hover:bg-rose-500/15 hover:text-white"
+                  className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-0.5 font-mono text-xs font-semibold text-slate-300 transition-all hover:border-rose-500/50 hover:bg-rose-500/15 hover:text-white"
                 >
                   {symbol}
                 </button>
@@ -349,8 +349,8 @@ export default function Home() {
                 className={cn(
                   'flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all',
                   activeTab === 'terminal'
-                    ? 'bg-gradient-to-r from-rose-500/30 to-orange-500/30 text-white border border-rose-500/40 shadow-lg'
-                    : 'text-slate-400 hover:bg-white/5 hover:text-slate-200 border border-transparent',
+                    ? 'border border-rose-500/40 bg-gradient-to-r from-rose-500/30 to-orange-500/30 text-white shadow-lg'
+                    : 'border border-transparent text-slate-400 hover:bg-white/5 hover:text-slate-200',
                 )}
               >
                 <Cpu className="h-3.5 w-3.5 text-rose-400" />
@@ -361,8 +361,8 @@ export default function Home() {
                 className={cn(
                   'flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all',
                   activeTab === 'radar'
-                    ? 'bg-gradient-to-r from-amber-500/30 to-yellow-500/30 text-white border border-amber-500/40 shadow-lg'
-                    : 'text-slate-400 hover:bg-white/5 hover:text-slate-200 border border-transparent',
+                    ? 'border border-amber-500/40 bg-gradient-to-r from-amber-500/30 to-yellow-500/30 text-white shadow-lg'
+                    : 'border border-transparent text-slate-400 hover:bg-white/5 hover:text-slate-200',
                 )}
               >
                 <Zap className="h-3.5 w-3.5 text-amber-400" />
@@ -378,8 +378,8 @@ export default function Home() {
                 className={cn(
                   'flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all',
                   activeTab === 'watchlist'
-                    ? 'bg-gradient-to-r from-emerald-500/30 to-teal-500/30 text-white border border-emerald-500/40 shadow-lg'
-                    : 'text-slate-400 hover:bg-white/5 hover:text-slate-200 border border-transparent',
+                    ? 'border border-emerald-500/40 bg-gradient-to-r from-emerald-500/30 to-teal-500/30 text-white shadow-lg'
+                    : 'border border-transparent text-slate-400 hover:bg-white/5 hover:text-slate-200',
                 )}
               >
                 <Bookmark className="h-3.5 w-3.5 text-emerald-400" />
@@ -390,8 +390,8 @@ export default function Home() {
                 className={cn(
                   'flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all',
                   activeTab === 'history'
-                    ? 'bg-gradient-to-r from-indigo-500/30 to-purple-500/30 text-white border border-indigo-500/40 shadow-lg'
-                    : 'text-slate-400 hover:bg-white/5 hover:text-slate-200 border border-transparent',
+                    ? 'border border-indigo-500/40 bg-gradient-to-r from-indigo-500/30 to-purple-500/30 text-white shadow-lg'
+                    : 'border border-transparent text-slate-400 hover:bg-white/5 hover:text-slate-200',
                 )}
               >
                 <Layers className="h-3.5 w-3.5 text-indigo-400" />
@@ -411,12 +411,12 @@ export default function Home() {
             className="mb-6 flex items-center justify-between rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-300 backdrop-blur-md"
           >
             <div className="flex items-center gap-2.5">
-              <AlertTriangle className="h-5 w-5 text-rose-400 shrink-0" />
+              <AlertTriangle className="h-5 w-5 shrink-0 text-rose-400" />
               <span>{errorMsg}</span>
             </div>
             <button
               onClick={() => setErrorMsg('')}
-              className="text-xs text-rose-400/80 hover:text-rose-200 ml-4 font-semibold"
+              className="ml-4 text-xs font-semibold text-rose-400/80 hover:text-rose-200"
             >
               Tutup
             </button>
@@ -433,7 +433,8 @@ export default function Home() {
                 </div>
                 <h3 className="text-xl font-bold text-white">Pilih atau Cari Saham</h3>
                 <p className="mt-1 max-w-md text-sm text-slate-400">
-                  Ketik kode saham IDX (contoh: <span className="font-mono text-rose-400">BBCA</span>,{' '}
+                  Ketik kode saham IDX (contoh:{' '}
+                  <span className="font-mono text-rose-400">BBCA</span>,{' '}
                   <span className="font-mono text-rose-400">BREN</span>, atau{' '}
                   <span className="font-mono text-rose-400">MAYA</span>) untuk memulai radar
                   Bandarmology, Katalis Berita AI, dan Transaksi Insider.
@@ -454,11 +455,11 @@ export default function Home() {
             ) : (
               <div>
                 {/* Hero Header Card */}
-                <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A0D14]/90 p-6 sm:p-8 backdrop-blur-xl shadow-2xl">
+                <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A0D14]/90 p-6 shadow-2xl backdrop-blur-xl sm:p-8">
                   {/* Decorative Glow */}
                   <div
                     className={cn(
-                      'pointer-events-none absolute top-0 right-0 h-80 w-80 rounded-full blur-[120px] opacity-25',
+                      'pointer-events-none absolute top-0 right-0 h-80 w-80 rounded-full opacity-25 blur-[120px]',
                       composite > 75
                         ? 'bg-rose-500'
                         : composite > 50
@@ -472,7 +473,7 @@ export default function Home() {
                   <div className="relative z-10 flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
                     <div>
                       <div className="flex flex-wrap items-center gap-2.5">
-                        <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-white font-mono">
+                        <h2 className="font-mono text-3xl font-black tracking-tight text-white sm:text-4xl">
                           {selectedAnomaly.ticker}
                         </h2>
                         <span
@@ -502,7 +503,7 @@ export default function Home() {
                           </span>
                         )}
                         {insider?.status === 'STEEP_DISCOUNT_DUMP' && (
-                          <span className="flex items-center gap-1 rounded-full border border-rose-500/50 bg-rose-500/30 px-3 py-0.5 text-xs font-bold text-rose-300 animate-pulse">
+                          <span className="flex animate-pulse items-center gap-1 rounded-full border border-rose-500/50 bg-rose-500/30 px-3 py-0.5 text-xs font-bold text-rose-300">
                             <AlertTriangle className="h-3.5 w-3.5" /> INSIDER DUMP
                           </span>
                         )}
@@ -518,15 +519,18 @@ export default function Home() {
                               targetPrice: '',
                               notes: `Analisis status: ${selectedAnomaly.status}. Bandar: ${bandar?.status || 'N/A'}.`,
                               priority: 'HIGH',
-                              status: catalyst?.status === 'SLEEPING_GIANT' ? 'SLEEPING_GIANT' : 'WATCHING',
+                              status:
+                                catalyst?.status === 'SLEEPING_GIANT'
+                                  ? 'SLEEPING_GIANT'
+                                  : 'WATCHING',
                             })
                             setIsWatchlistModalOpen(true)
                           }}
                           className={cn(
-                            'flex items-center gap-1.5 rounded-full px-3 py-0.5 text-xs font-bold transition-all shadow-sm',
+                            'flex items-center gap-1.5 rounded-full px-3 py-0.5 text-xs font-bold shadow-sm transition-all',
                             isSelectedInWatchlist
-                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30'
-                              : 'bg-white/10 text-slate-300 border border-white/20 hover:bg-white/20 hover:text-white',
+                              ? 'border border-emerald-500/40 bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30'
+                              : 'border border-white/20 bg-white/10 text-slate-300 hover:bg-white/20 hover:text-white',
                           )}
                         >
                           {isSelectedInWatchlist ? (
@@ -536,13 +540,12 @@ export default function Home() {
                             </>
                           ) : (
                             <>
-                              <Star className="h-3.5 w-3.5 text-amber-400" />
-                              + Watchlist
+                              <Star className="h-3.5 w-3.5 text-amber-400" />+ Watchlist
                             </>
                           )}
                         </button>
                       </div>
-                      <p className="mt-1 text-base text-slate-300 font-medium">
+                      <p className="mt-1 text-base font-medium text-slate-300">
                         {selectedAnomaly.name}
                       </p>
 
@@ -550,13 +553,13 @@ export default function Home() {
                         <span className="flex items-center gap-1">
                           <Activity className="h-3.5 w-3.5 text-rose-400" />
                           Harga:{' '}
-                          <span className="font-mono font-bold text-white text-sm">
+                          <span className="font-mono text-sm font-bold text-white">
                             {selectedAnomaly.price}
                           </span>
                         </span>
                         <span
                           className={cn(
-                            'flex items-center gap-0.5 font-semibold text-sm',
+                            'flex items-center gap-0.5 text-sm font-semibold',
                             selectedAnomaly.change.startsWith('+')
                               ? 'text-emerald-400'
                               : selectedAnomaly.change.startsWith('-')
@@ -626,9 +629,7 @@ export default function Home() {
                       <div className="space-y-1 text-xs">
                         <div className="text-slate-400">
                           Fundamental Risk:{' '}
-                          <span className="font-bold text-white">
-                            {selectedAnomaly.risk}/100
-                          </span>
+                          <span className="font-bold text-white">{selectedAnomaly.risk}/100</span>
                         </div>
                         <div className="text-slate-400">
                           Bandar Health:{' '}
@@ -670,20 +671,18 @@ export default function Home() {
                       <div className="mb-4 flex items-center justify-between border-b border-white/10 pb-4">
                         <div className="flex items-center gap-2">
                           <Coins className="h-5 w-5 text-purple-400" />
-                          <h3 className="font-bold text-white text-lg">
-                            Bandarmology & Flow
-                          </h3>
+                          <h3 className="text-lg font-bold text-white">Bandarmology & Flow</h3>
                         </div>
                         <span
                           className={cn(
-                            'rounded-lg px-2.5 py-1 text-xs font-extrabold uppercase tracking-wide',
+                            'rounded-lg px-2.5 py-1 text-xs font-extrabold tracking-wide uppercase',
                             bandar?.status === 'BIG_ACCUMULATION'
-                              ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40'
+                              ? 'border border-purple-500/40 bg-purple-500/20 text-purple-300'
                               : bandar?.status === 'NORMAL_ACCUMULATION'
-                                ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40'
+                                ? 'border border-indigo-500/40 bg-indigo-500/20 text-indigo-300'
                                 : bandar?.status === 'BIG_DISTRIBUTION'
-                                  ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
-                                  : 'bg-white/10 text-slate-300 border border-white/10',
+                                  ? 'border border-rose-500/40 bg-rose-500/20 text-rose-300'
+                                  : 'border border-white/10 bg-white/10 text-slate-300',
                           )}
                         >
                           {bandar?.status?.replace(/_/g, ' ') ?? 'NEUTRAL'}
@@ -694,13 +693,13 @@ export default function Home() {
                       <div className="grid grid-cols-3 gap-3">
                         <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3 text-center">
                           <div className="text-[11px] text-slate-400">CR3 Pembeli</div>
-                          <div className="mt-1 text-xl font-bold text-white font-mono">
+                          <div className="mt-1 font-mono text-xl font-bold text-white">
                             {bandar?.cr3Buy ?? 0}%
                           </div>
                         </div>
                         <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3 text-center">
                           <div className="text-[11px] text-slate-400">CR3 Penjual</div>
-                          <div className="mt-1 text-xl font-bold text-white font-mono">
+                          <div className="mt-1 font-mono text-xl font-bold text-white">
                             {bandar?.cr3Sell ?? 0}%
                           </div>
                         </div>
@@ -708,7 +707,7 @@ export default function Home() {
                           <div className="text-[11px] text-slate-400">Net Foreign</div>
                           <div
                             className={cn(
-                              'mt-1 text-sm font-bold font-mono',
+                              'mt-1 font-mono text-sm font-bold',
                               (bandar?.netForeignVal ?? 0) > 0
                                 ? 'text-emerald-400'
                                 : (bandar?.netForeignVal ?? 0) < 0
@@ -716,7 +715,7 @@ export default function Home() {
                                   : 'text-slate-300',
                             )}
                           >
-                            Rp {(((bandar?.netForeignVal ?? 0) / 1_000_000_000)).toFixed(1)}M
+                            Rp {((bandar?.netForeignVal ?? 0) / 1_000_000_000).toFixed(1)}M
                           </div>
                         </div>
                       </div>
@@ -724,17 +723,15 @@ export default function Home() {
                       {/* Bandar Avg Cost */}
                       {bandar?.bandarAvgPrice && (
                         <div className="mt-4 flex items-center justify-between rounded-xl border border-purple-500/20 bg-purple-500/5 px-4 py-2.5 text-xs">
-                          <span className="text-slate-300">
-                            Estimasi Modal Rata-Rata Bandar:
-                          </span>
+                          <span className="text-slate-300">Estimasi Modal Rata-Rata Bandar:</span>
                           <div className="flex items-center gap-2">
-                            <span className="font-mono font-bold text-purple-300 text-sm">
+                            <span className="font-mono text-sm font-bold text-purple-300">
                               Rp {bandar.bandarAvgPrice.toLocaleString('id-ID')}
                             </span>
                             {bandar.bandarMarginPct !== null && (
                               <span
                                 className={cn(
-                                  'font-mono font-semibold text-[11px]',
+                                  'font-mono text-[11px] font-semibold',
                                   bandar.bandarMarginPct >= 0
                                     ? 'text-emerald-400'
                                     : 'text-rose-400',
@@ -752,7 +749,7 @@ export default function Home() {
                       <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
                         {/* Top Buyers */}
                         <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3">
-                          <div className="mb-2 font-bold text-emerald-400 flex items-center gap-1">
+                          <div className="mb-2 flex items-center gap-1 font-bold text-emerald-400">
                             <ArrowUpRight className="h-3.5 w-3.5" /> Top 3 Pembeli
                           </div>
                           <div className="space-y-2">
@@ -760,26 +757,26 @@ export default function Home() {
                               <div
                                 key={b.code}
                                 onClick={() => setSelectedBroker(b)}
-                                className="flex items-center justify-between p-1 rounded-lg hover:bg-white/5 cursor-pointer transition-colors"
+                                className="flex cursor-pointer items-center justify-between rounded-lg p-1 transition-colors hover:bg-white/5"
                               >
                                 <div className="flex items-center gap-1.5">
                                   <span
                                     className={cn(
-                                      'rounded px-1.5 py-0.5 font-mono font-bold text-[10px]',
+                                      'rounded px-1.5 py-0.5 font-mono text-[10px] font-bold',
                                       b.isForeign
-                                        ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                                        ? 'border border-cyan-500/30 bg-cyan-500/20 text-cyan-300'
                                         : b.cohort === 'retail'
-                                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                                          : 'bg-purple-500/20 text-purple-300 border border-purple-500/30',
+                                          ? 'border border-amber-500/30 bg-amber-500/20 text-amber-300'
+                                          : 'border border-purple-500/30 bg-purple-500/20 text-purple-300',
                                     )}
                                   >
                                     {b.code}
                                   </span>
-                                  <span className="truncate w-16 text-slate-400 text-[10px]">
+                                  <span className="w-16 truncate text-[10px] text-slate-400">
                                     {b.name}
                                   </span>
                                 </div>
-                                <span className="font-mono text-slate-300 font-medium text-[11px]">
+                                <span className="font-mono text-[11px] font-medium text-slate-300">
                                   Rp {(b.value / 1_000_000_000).toFixed(1)}M
                                 </span>
                               </div>
@@ -789,7 +786,7 @@ export default function Home() {
 
                         {/* Top Sellers */}
                         <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3">
-                          <div className="mb-2 font-bold text-rose-400 flex items-center gap-1">
+                          <div className="mb-2 flex items-center gap-1 font-bold text-rose-400">
                             <ArrowDownRight className="h-3.5 w-3.5" /> Top 3 Penjual
                           </div>
                           <div className="space-y-2">
@@ -797,26 +794,26 @@ export default function Home() {
                               <div
                                 key={b.code}
                                 onClick={() => setSelectedBroker(b)}
-                                className="flex items-center justify-between p-1 rounded-lg hover:bg-white/5 cursor-pointer transition-colors"
+                                className="flex cursor-pointer items-center justify-between rounded-lg p-1 transition-colors hover:bg-white/5"
                               >
                                 <div className="flex items-center gap-1.5">
                                   <span
                                     className={cn(
-                                      'rounded px-1.5 py-0.5 font-mono font-bold text-[10px]',
+                                      'rounded px-1.5 py-0.5 font-mono text-[10px] font-bold',
                                       b.isForeign
-                                        ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                                        ? 'border border-cyan-500/30 bg-cyan-500/20 text-cyan-300'
                                         : b.cohort === 'retail'
-                                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                                          : 'bg-purple-500/20 text-purple-300 border border-purple-500/30',
+                                          ? 'border border-amber-500/30 bg-amber-500/20 text-amber-300'
+                                          : 'border border-purple-500/30 bg-purple-500/20 text-purple-300',
                                     )}
                                   >
                                     {b.code}
                                   </span>
-                                  <span className="truncate w-16 text-slate-400 text-[10px]">
+                                  <span className="w-16 truncate text-[10px] text-slate-400">
                                     {b.name}
                                   </span>
                                 </div>
-                                <span className="font-mono text-slate-300 font-medium text-[11px]">
+                                <span className="font-mono text-[11px] font-medium text-slate-300">
                                   Rp {(b.value / 1_000_000_000).toFixed(1)}M
                                 </span>
                               </div>
@@ -826,7 +823,7 @@ export default function Home() {
                       </div>
                     </div>
 
-                    <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[11px] text-slate-400">
+                    <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-3 text-[11px] text-slate-400">
                       <span>Sumber: Sectors v2 Broker Summary</span>
                       <span>Tanggal: {bandar?.date ?? 'EOD'}</span>
                     </div>
@@ -838,7 +835,7 @@ export default function Home() {
                       <div className="mb-4 flex items-center justify-between border-b border-white/10 pb-4">
                         <div className="flex items-center gap-2">
                           <Newspaper className="h-5 w-5 text-amber-400" />
-                          <h3 className="font-bold text-white text-lg">
+                          <h3 className="text-lg font-bold text-white">
                             Katalis Berita & AI Divergence
                           </h3>
                         </div>
@@ -863,7 +860,7 @@ export default function Home() {
                           <div>
                             <span
                               className={cn(
-                                'rounded px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider',
+                                'rounded px-2 py-0.5 text-[10px] font-extrabold tracking-wider uppercase',
                                 catalyst?.sentiment === 'BULLISH'
                                   ? 'bg-emerald-500/20 text-emerald-300'
                                   : catalyst?.sentiment === 'BEARISH'
@@ -873,7 +870,7 @@ export default function Home() {
                             >
                               Sentimen: {catalyst?.sentiment ?? 'NEUTRAL'}
                             </span>
-                            <h4 className="mt-2 text-sm font-bold text-white leading-snug">
+                            <h4 className="mt-2 text-sm leading-snug font-bold text-white">
                               {catalyst?.headline ?? 'Belum ada berita signifikan'}
                             </h4>
                           </div>
@@ -881,7 +878,7 @@ export default function Home() {
                             <div className="text-[10px] text-slate-400 uppercase">Impact Score</div>
                             <div
                               className={cn(
-                                'text-xl font-black font-mono',
+                                'font-mono text-xl font-black',
                                 (catalyst?.impactScore ?? 0) > 0
                                   ? 'text-emerald-400'
                                   : (catalyst?.impactScore ?? 0) < 0
@@ -895,7 +892,7 @@ export default function Home() {
                           </div>
                         </div>
 
-                        <p className="mt-3 text-xs text-slate-300 leading-relaxed">
+                        <p className="mt-3 text-xs leading-relaxed text-slate-300">
                           {catalyst?.verdict}
                         </p>
 
@@ -908,7 +905,7 @@ export default function Home() {
                       </div>
                     </div>
 
-                    <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[11px] text-slate-400">
+                    <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-3 text-[11px] text-slate-400">
                       <span>Sumber: Sectors v2 News Feed</span>
                       <span>Update: {catalyst?.newsTimestamp?.split('T')[0] ?? 'Terkini'}</span>
                     </div>
@@ -920,13 +917,13 @@ export default function Home() {
                       <div className="mb-4 flex items-center justify-between border-b border-white/10 pb-4">
                         <div className="flex items-center gap-2">
                           <UserCheck className="h-5 w-5 text-rose-400" />
-                          <h3 className="font-bold text-white text-lg">
+                          <h3 className="text-lg font-bold text-white">
                             Transaksi Insider & Pemegang Saham
                           </h3>
                         </div>
                         <span
                           className={cn(
-                            'rounded-lg px-2.5 py-1 text-xs font-bold uppercase tracking-wider',
+                            'rounded-lg px-2.5 py-1 text-xs font-bold tracking-wider uppercase',
                             insider?.status === 'STEEP_DISCOUNT_DUMP'
                               ? 'border border-rose-500/50 bg-rose-500/20 text-rose-300'
                               : insider?.status === 'AGGRESSIVE_BUY'
@@ -939,9 +936,9 @@ export default function Home() {
                       </div>
 
                       {insider?.latestFiling ? (
-                        <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-4 text-xs space-y-2.5">
+                        <div className="space-y-2.5 rounded-2xl border border-white/5 bg-white/[0.02] p-4 text-xs">
                           <div className="flex items-center justify-between">
-                            <span className="font-bold text-white text-sm">
+                            <span className="text-sm font-bold text-white">
                               {insider.latestFiling.holderName}
                             </span>
                             <span
@@ -956,16 +953,16 @@ export default function Home() {
                             </span>
                           </div>
 
-                          <div className="grid grid-cols-2 gap-2 text-slate-400 pt-1">
+                          <div className="grid grid-cols-2 gap-2 pt-1 text-slate-400">
                             <div>
                               Volume Lembar:{' '}
-                              <span className="font-mono text-white font-semibold">
+                              <span className="font-mono font-semibold text-white">
                                 {insider.latestFiling.amountShares.toLocaleString('id-ID')}
                               </span>
                             </div>
                             <div>
                               Harga Eksekusi:{' '}
-                              <span className="font-mono text-white font-semibold">
+                              <span className="font-mono font-semibold text-white">
                                 {insider.latestFiling.transactionPrice !== null
                                   ? `Rp ${insider.latestFiling.transactionPrice.toLocaleString('id-ID')}`
                                   : 'N/A'}
@@ -973,19 +970,20 @@ export default function Home() {
                             </div>
                             <div>
                               Estimasi Nilai:{' '}
-                              <span className="font-mono text-white font-semibold">
-                                Rp {(insider.latestFiling.totalValueIdr / 1_000_000_000).toFixed(2)}M
+                              <span className="font-mono font-semibold text-white">
+                                Rp {(insider.latestFiling.totalValueIdr / 1_000_000_000).toFixed(2)}
+                                M
                               </span>
                             </div>
                             <div>
                               Porsi Saham:{' '}
-                              <span className="font-mono text-white font-semibold">
+                              <span className="font-mono font-semibold text-white">
                                 {(insider.latestFiling.pctChanged * 100).toFixed(2)}%
                               </span>
                             </div>
                           </div>
 
-                          <p className="mt-2 text-slate-300 text-[11px] leading-relaxed border-t border-white/5 pt-2">
+                          <p className="mt-2 border-t border-white/5 pt-2 text-[11px] leading-relaxed text-slate-300">
                             {insider.summary}
                           </p>
 
@@ -1003,13 +1001,13 @@ export default function Home() {
                           )}
                         </div>
                       ) : (
-                        <div className="py-8 text-center text-slate-500 text-xs">
+                        <div className="py-8 text-center text-xs text-slate-500">
                           Tidak ditemukan aktivitas transaksi insider terbaru untuk emiten ini.
                         </div>
                       )}
                     </div>
 
-                    <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[11px] text-slate-400">
+                    <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-3 text-[11px] text-slate-400">
                       <span>Sumber: Sectors v2 Filings</span>
                       <span>Tanggal: {insider?.latestFiling?.date ?? 'Terkini'}</span>
                     </div>
@@ -1021,7 +1019,7 @@ export default function Home() {
                       <div className="mb-4 flex items-center justify-between border-b border-white/10 pb-4">
                         <div className="flex items-center gap-2">
                           <Activity className="h-5 w-5 text-emerald-400" />
-                          <h3 className="font-bold text-white text-lg">
+                          <h3 className="text-lg font-bold text-white">
                             Pondasi Fundamental & Valuasi
                           </h3>
                         </div>
@@ -1030,7 +1028,7 @@ export default function Home() {
                         </span>
                       </div>
 
-                      <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-4 text-xs space-y-3">
+                      <div className="space-y-3 rounded-2xl border border-white/5 bg-white/[0.02] p-4 text-xs">
                         <div className="flex items-center justify-between">
                           <span className="text-slate-400">Risk Assessment:</span>
                           <span
@@ -1047,7 +1045,7 @@ export default function Home() {
                           </span>
                         </div>
 
-                        <div className="text-slate-300 text-xs leading-relaxed border-t border-white/5 pt-2">
+                        <div className="border-t border-white/5 pt-2 text-xs leading-relaxed text-slate-300">
                           {selectedAnomaly.reason}
                         </div>
 
@@ -1060,7 +1058,7 @@ export default function Home() {
                       </div>
                     </div>
 
-                    <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[11px] text-slate-400">
+                    <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-3 text-[11px] text-slate-400">
                       <span>Sumber: Sectors v2 Company Report</span>
                       <span>Sistem Evaluasi: P/E & P/B Sanity Test</span>
                     </div>
@@ -1076,13 +1074,13 @@ export default function Home() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                  <Radar className="h-6 w-6 text-rose-500 animate-pulse" />
+                <h2 className="flex items-center gap-2 text-2xl font-bold text-white">
+                  <Radar className="h-6 w-6 animate-pulse text-rose-500" />
                   Live Market Radar & Catalyst Divergence
                 </h2>
-                <p className="text-xs text-slate-400 mt-1">
-                  Memindai berita emiten dan pelaporan insider terkini di BEI untuk mendeteksi emiten
-                  &ldquo;Sleeping Giant&rdquo; yang belum merespons berita.
+                <p className="mt-1 text-xs text-slate-400">
+                  Memindai berita emiten dan pelaporan insider terkini di BEI untuk mendeteksi
+                  emiten &ldquo;Sleeping Giant&rdquo; yang belum merespons berita.
                 </p>
               </div>
               <button
@@ -1100,43 +1098,49 @@ export default function Home() {
 
             {/* Sleeping Giants Alerts Stream */}
             <div className="space-y-4">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
-                <Sparkles className="h-4 w-4" /> Saham &ldquo;Sleeping Giant&rdquo; Terdeteksi (Katalis Belum Ter-price In)
+              <h3 className="flex items-center gap-1.5 text-sm font-bold tracking-wider text-emerald-400 uppercase">
+                <Sparkles className="h-4 w-4" /> Saham &ldquo;Sleeping Giant&rdquo; Terdeteksi
+                (Katalis Belum Ter-price In)
               </h3>
 
               {isLoadingRadar ? (
-                <div className="py-12 text-center text-slate-500 text-sm">
-                  <Loader2 className="mx-auto h-6 w-6 animate-spin text-rose-400 mb-2" />
+                <div className="py-12 text-center text-sm text-slate-500">
+                  <Loader2 className="mx-auto mb-2 h-6 w-6 animate-spin text-rose-400" />
                   Memindai data berita dan transaksi IDX...
                 </div>
               ) : radarData?.sleepingGiants && radarData.sleepingGiants.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   {radarData.sleepingGiants.map((item, idx) => (
                     <motion.div
                       key={`${item.ticker}-${idx}`}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-5 backdrop-blur-xl hover:border-emerald-500/60 transition-all"
+                      className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-5 backdrop-blur-xl transition-all hover:border-emerald-500/60"
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-2">
                           <span
                             onClick={() => void handleAnalyze(item.ticker)}
-                            className="font-mono text-xl font-bold text-white hover:text-rose-400 cursor-pointer underline decoration-dotted"
+                            className="cursor-pointer font-mono text-xl font-bold text-white underline decoration-dotted hover:text-rose-400"
                           >
                             {item.ticker}
                           </span>
-                          <span className="rounded-full bg-emerald-500/20 border border-emerald-500/40 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
+                          <span className="rounded-full border border-emerald-500/40 bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
                             Impact: +{item.impactScore}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => void handleQuickAddWatchlist(item.ticker, item.ticker, `Sleeping Giant: ${item.headline}`)}
+                            onClick={() =>
+                              void handleQuickAddWatchlist(
+                                item.ticker,
+                                item.ticker,
+                                `Sleeping Giant: ${item.headline}`,
+                              )
+                            }
                             className="flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/20 px-2 py-1 text-[11px] font-semibold text-emerald-300 hover:bg-emerald-500/30"
                           >
-                            <Star className="h-3 w-3 text-amber-400" />
-                            + Watchlist
+                            <Star className="h-3 w-3 text-amber-400" />+ Watchlist
                           </button>
                           <button
                             onClick={() => void handleAnalyze(item.ticker)}
@@ -1147,14 +1151,12 @@ export default function Home() {
                         </div>
                       </div>
 
-                      <p className="mt-2 text-sm font-semibold text-white leading-snug">
+                      <p className="mt-2 text-sm leading-snug font-semibold text-white">
                         {item.headline}
                       </p>
-                      <p className="mt-2 text-xs text-slate-300 leading-relaxed">
-                        {item.verdict}
-                      </p>
+                      <p className="mt-2 text-xs leading-relaxed text-slate-300">{item.verdict}</p>
 
-                      <div className="mt-4 pt-3 border-t border-emerald-500/10 flex items-center justify-between text-[11px] text-slate-400">
+                      <div className="mt-4 flex items-center justify-between border-t border-emerald-500/10 pt-3 text-[11px] text-slate-400">
                         <span>Status: Katalis Terbit</span>
                         <span>{item.timestamp?.split('T')[0] ?? 'Hari ini'}</span>
                       </div>
@@ -1171,36 +1173,41 @@ export default function Home() {
 
             {/* Insider Unusual Movements Stream */}
             <div className="space-y-4 pt-4">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-rose-400 flex items-center gap-1.5">
+              <h3 className="flex items-center gap-1.5 text-sm font-bold tracking-wider text-rose-400 uppercase">
                 <AlertTriangle className="h-4 w-4" /> Radar Pergerakan Insider Aneh Terkini
               </h3>
 
               {radarData?.insiderAlerts && radarData.insiderAlerts.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   {radarData.insiderAlerts.map((item, idx) => (
                     <div
                       key={`${item.ticker}-${idx}`}
-                      className="rounded-2xl border border-rose-500/30 bg-rose-500/5 p-5 backdrop-blur-xl hover:border-rose-500/60 transition-all"
+                      className="rounded-2xl border border-rose-500/30 bg-rose-500/5 p-5 backdrop-blur-xl transition-all hover:border-rose-500/60"
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-2">
                           <span
                             onClick={() => void handleAnalyze(item.ticker)}
-                            className="font-mono text-xl font-bold text-white hover:text-rose-400 cursor-pointer underline decoration-dotted"
+                            className="cursor-pointer font-mono text-xl font-bold text-white underline decoration-dotted hover:text-rose-400"
                           >
                             {item.ticker}
                           </span>
-                          <span className="rounded-full bg-rose-500/20 border border-rose-500/40 px-2 py-0.5 text-[10px] font-bold text-rose-300">
+                          <span className="rounded-full border border-rose-500/40 bg-rose-500/20 px-2 py-0.5 text-[10px] font-bold text-rose-300">
                             {item.status.replace(/_/g, ' ')}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => void handleQuickAddWatchlist(item.ticker, item.ticker, `Insider Move: ${item.holderName} (${item.action})`)}
+                            onClick={() =>
+                              void handleQuickAddWatchlist(
+                                item.ticker,
+                                item.ticker,
+                                `Insider Move: ${item.holderName} (${item.action})`,
+                              )
+                            }
                             className="flex items-center gap-1 rounded-lg border border-rose-500/30 bg-rose-500/20 px-2 py-1 text-[11px] font-semibold text-rose-300 hover:bg-rose-500/30"
                           >
-                            <Star className="h-3 w-3 text-amber-400" />
-                            + Watchlist
+                            <Star className="h-3 w-3 text-amber-400" />+ Watchlist
                           </button>
                           <button
                             onClick={() => void handleAnalyze(item.ticker)}
@@ -1211,14 +1218,13 @@ export default function Home() {
                         </div>
                       </div>
 
-                      <div className="mt-2 text-xs text-white font-semibold">
-                        {item.holderName} ({item.action}) • Nilai: Rp {(item.valueIdr / 1_000_000_000).toFixed(1)}M
+                      <div className="mt-2 text-xs font-semibold text-white">
+                        {item.holderName} ({item.action}) • Nilai: Rp{' '}
+                        {(item.valueIdr / 1_000_000_000).toFixed(1)}M
                       </div>
-                      <p className="mt-1 text-xs text-slate-300 leading-relaxed">
-                        {item.summary}
-                      </p>
+                      <p className="mt-1 text-xs leading-relaxed text-slate-300">{item.summary}</p>
 
-                      <div className="mt-4 pt-3 border-t border-rose-500/10 flex items-center justify-between text-[11px] text-slate-400">
+                      <div className="mt-4 flex items-center justify-between border-t border-rose-500/10 pt-3 text-[11px] text-slate-400">
                         <span>Sumber: Pelaporan Resmi BEI</span>
                         <span>{item.timestamp?.split('T')[0] ?? 'Hari ini'}</span>
                       </div>
@@ -1237,14 +1243,15 @@ export default function Home() {
         {/* TAB 3: WATCHLIST (FULL CRUD INTERFACE) */}
         {activeTab === 'watchlist' && (
           <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
               <div>
-                <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                <h2 className="flex items-center gap-2 text-2xl font-bold text-white">
                   <Bookmark className="h-6 w-6 text-emerald-400" />
                   Watchlist Portofolio & Radar
                 </h2>
-                <p className="text-xs text-slate-400 mt-1">
-                  Kelola saham pantauan Anda, tentukan target harga, prioritas trading, dan simpan catatan riset secara lokal.
+                <p className="mt-1 text-xs text-slate-400">
+                  Kelola saham pantauan Anda, tentukan target harga, prioritas trading, dan simpan
+                  catatan riset secara lokal.
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -1280,20 +1287,21 @@ export default function Home() {
 
             {watchlistItems.length === 0 ? (
               <div className="rounded-3xl border border-white/10 bg-[#0A0D14]/80 p-12 text-center backdrop-blur-md">
-                <Bookmark className="mx-auto h-12 w-12 text-slate-600 mb-3" />
+                <Bookmark className="mx-auto mb-3 h-12 w-12 text-slate-600" />
                 <h3 className="text-lg font-bold text-white">Watchlist Masih Kosong</h3>
-                <p className="mt-1 text-xs text-slate-400 max-w-sm mx-auto">
-                  Tambahkan saham dari Terminal, Market Radar, atau klik tombol Tambah Saham di atas untuk mulai mencatat target harga.
+                <p className="mx-auto mt-1 max-w-sm text-xs text-slate-400">
+                  Tambahkan saham dari Terminal, Market Radar, atau klik tombol Tambah Saham di atas
+                  untuk mulai mencatat target harga.
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {watchlistItems.map((item) => (
                   <motion.div
                     key={item.id}
                     initial={{ opacity: 0, scale: 0.98 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="rounded-2xl border border-white/10 bg-[#0A0D14]/90 p-5 backdrop-blur-xl shadow-lg hover:border-emerald-500/40 transition-all flex flex-col justify-between"
+                    className="flex flex-col justify-between rounded-2xl border border-white/10 bg-[#0A0D14]/90 p-5 shadow-lg backdrop-blur-xl transition-all hover:border-emerald-500/40"
                   >
                     <div>
                       <div className="flex items-start justify-between">
@@ -1301,7 +1309,7 @@ export default function Home() {
                           <div className="flex items-center gap-2">
                             <span
                               onClick={() => void handleAnalyze(item.ticker)}
-                              className="font-mono text-xl font-bold text-white hover:text-rose-400 cursor-pointer underline decoration-dotted"
+                              className="cursor-pointer font-mono text-xl font-bold text-white underline decoration-dotted hover:text-rose-400"
                             >
                               {item.ticker}
                             </span>
@@ -1309,16 +1317,16 @@ export default function Home() {
                               className={cn(
                                 'rounded px-2 py-0.5 text-[9px] font-extrabold uppercase',
                                 item.priority === 'HIGH'
-                                  ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                                  ? 'border border-rose-500/30 bg-rose-500/20 text-rose-300'
                                   : item.priority === 'MEDIUM'
-                                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                                    : 'bg-blue-500/20 text-blue-300 border border-blue-500/30',
+                                    ? 'border border-amber-500/30 bg-amber-500/20 text-amber-300'
+                                    : 'border border-blue-500/30 bg-blue-500/20 text-blue-300',
                               )}
                             >
                               {item.priority}
                             </span>
                           </div>
-                          <p className="text-xs text-slate-400 truncate w-44 mt-0.5">{item.name}</p>
+                          <p className="mt-0.5 w-44 truncate text-xs text-slate-400">{item.name}</p>
                         </div>
 
                         {item.targetPrice && (
@@ -1332,16 +1340,16 @@ export default function Home() {
                       </div>
 
                       {item.notes && (
-                        <p className="mt-3 text-xs text-slate-300 bg-white/[0.02] p-2.5 rounded-xl border border-white/5 leading-relaxed">
+                        <p className="mt-3 rounded-xl border border-white/5 bg-white/[0.02] p-2.5 text-xs leading-relaxed text-slate-300">
                           {item.notes}
                         </p>
                       )}
                     </div>
 
-                    <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between">
+                    <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-3">
                       <button
                         onClick={() => void handleAnalyze(item.ticker)}
-                        className="text-xs font-bold text-rose-400 hover:text-rose-300 flex items-center gap-1"
+                        className="flex items-center gap-1 text-xs font-bold text-rose-400 hover:text-rose-300"
                       >
                         Buka Terminal →
                       </button>
@@ -1352,14 +1360,14 @@ export default function Home() {
                             setEditingWatchlist(item)
                             setIsWatchlistModalOpen(true)
                           }}
-                          className="p-1.5 rounded-lg text-slate-400 hover:bg-white/10 hover:text-white"
+                          className="rounded-lg p-1.5 text-slate-400 hover:bg-white/10 hover:text-white"
                           title="Edit Catatan & Target"
                         >
                           <Edit3 className="h-3.5 w-3.5" />
                         </button>
                         <button
                           onClick={() => void handleDeleteWatchlist(item.id, item.ticker)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:bg-rose-500/20 hover:text-rose-400"
+                          className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-500/20 hover:text-rose-400"
                           title="Hapus dari Watchlist"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -1378,11 +1386,11 @@ export default function Home() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                <h2 className="flex items-center gap-2 text-2xl font-bold text-white">
                   <Layers className="h-6 w-6 text-indigo-400" />
                   Riwayat Analisis Tersimpan di Database
                 </h2>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="mt-1 text-xs text-slate-400">
                   Setiap analisis disimpan permanen di PostgreSQL lokal dan dapat ditinjau kembali
                   kapan saja tanpa mengurangi kuota API Sectors.
                 </p>
@@ -1401,11 +1409,11 @@ export default function Home() {
             </div>
 
             {anomalies.length === 0 ? (
-              <div className="py-16 text-center text-slate-500 text-sm">
+              <div className="py-16 text-center text-sm text-slate-500">
                 Belum ada data analisis tersimpan di database. Silakan analisis kode saham di atas.
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {anomalies.map((anomaly) => (
                   <div
                     key={anomaly.id}
@@ -1430,18 +1438,18 @@ export default function Home() {
                             className={cn(
                               'rounded-full px-2 py-0.5 text-[9px] font-extrabold uppercase',
                               anomaly.status === 'CRITICAL'
-                                ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                                ? 'border border-rose-500/40 bg-rose-500/20 text-rose-300'
                                 : anomaly.status === 'HIGH'
-                                  ? 'bg-orange-500/20 text-orange-300 border border-orange-500/40'
+                                  ? 'border border-orange-500/40 bg-orange-500/20 text-orange-300'
                                   : anomaly.status === 'WARNING'
-                                    ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/40'
-                                    : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40',
+                                    ? 'border border-yellow-500/40 bg-yellow-500/20 text-yellow-300'
+                                    : 'border border-emerald-500/40 bg-emerald-500/20 text-emerald-300',
                             )}
                           >
                             {anomaly.status}
                           </span>
                         </div>
-                        <p className="mt-1 text-xs text-slate-400 truncate w-48">{anomaly.name}</p>
+                        <p className="mt-1 w-48 truncate text-xs text-slate-400">{anomaly.name}</p>
                       </div>
                       <div className="text-right font-mono text-xs">
                         <div className="font-bold text-white">{anomaly.price}</div>
@@ -1478,14 +1486,14 @@ export default function Home() {
 
       {/* MODAL 1: Watchlist Add / Edit Dialog */}
       {isWatchlistModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className="w-full max-w-md rounded-3xl border border-white/15 bg-[#0D111A] p-6 shadow-2xl"
           >
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <h3 className="font-bold text-white text-base flex items-center gap-2">
+              <h3 className="flex items-center gap-2 text-base font-bold text-white">
                 <Bookmark className="h-4 w-4 text-emerald-400" />
                 {editingWatchlist?.id ? 'Edit Watchlist' : 'Tambah ke Watchlist'}
               </h3>
@@ -1494,7 +1502,7 @@ export default function Home() {
                   setIsWatchlistModalOpen(false)
                   setEditingWatchlist(null)
                 }}
-                className="text-slate-400 hover:text-white p-1"
+                className="p-1 text-slate-400 hover:text-white"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -1502,22 +1510,29 @@ export default function Home() {
 
             <form onSubmit={handleSaveWatchlist} className="mt-4 space-y-3.5 text-xs">
               <div>
-                <label className="block text-slate-400 mb-1 font-semibold">Kode Saham (Ticker)</label>
+                <label className="mb-1 block font-semibold text-slate-400">
+                  Kode Saham (Ticker)
+                </label>
                 <input
                   type="text"
                   required
                   disabled={Boolean(editingWatchlist?.id)}
                   value={editingWatchlist?.ticker || ''}
                   onChange={(e) =>
-                    setEditingWatchlist((prev) => ({ ...prev, ticker: e.target.value.toUpperCase() }))
+                    setEditingWatchlist((prev) => ({
+                      ...prev,
+                      ticker: e.target.value.toUpperCase(),
+                    }))
                   }
                   placeholder="e.g. BBCA"
-                  className="w-full rounded-xl border border-white/10 bg-white/5 p-2.5 text-white font-mono uppercase focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-xl border border-white/10 bg-white/5 p-2.5 font-mono text-white uppercase focus:border-emerald-500 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-400 mb-1 font-semibold">Target Price (Opsional)</label>
+                <label className="mb-1 block font-semibold text-slate-400">
+                  Target Price (Opsional)
+                </label>
                 <input
                   type="text"
                   value={editingWatchlist?.targetPrice || ''}
@@ -1531,7 +1546,7 @@ export default function Home() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-400 mb-1 font-semibold">Prioritas</label>
+                  <label className="mb-1 block font-semibold text-slate-400">Prioritas</label>
                   <select
                     value={editingWatchlist?.priority || 'MEDIUM'}
                     onChange={(e) =>
@@ -1546,7 +1561,7 @@ export default function Home() {
                 </div>
 
                 <div>
-                  <label className="block text-slate-400 mb-1 font-semibold">Status Saham</label>
+                  <label className="mb-1 block font-semibold text-slate-400">Status Saham</label>
                   <select
                     value={editingWatchlist?.status || 'WATCHING'}
                     onChange={(e) =>
@@ -1563,7 +1578,9 @@ export default function Home() {
               </div>
 
               <div>
-                <label className="block text-slate-400 mb-1 font-semibold">Catatan Riset / Trading Plan</label>
+                <label className="mb-1 block font-semibold text-slate-400">
+                  Catatan Riset / Trading Plan
+                </label>
                 <textarea
                   rows={3}
                   value={editingWatchlist?.notes || ''}
@@ -1575,7 +1592,7 @@ export default function Home() {
                 />
               </div>
 
-              <div className="pt-2 flex justify-end gap-2">
+              <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => {
@@ -1588,7 +1605,7 @@ export default function Home() {
                 </button>
                 <button
                   type="submit"
-                  className="rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-5 py-2 font-bold text-white hover:brightness-110 shadow-lg"
+                  className="rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-5 py-2 font-bold text-white shadow-lg hover:brightness-110"
                 >
                   Simpan Watchlist
                 </button>
@@ -1600,7 +1617,7 @@ export default function Home() {
 
       {/* MODAL 2: Broker Details Inspector */}
       {selectedBroker && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -1608,47 +1625,45 @@ export default function Home() {
           >
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div className="flex items-center gap-2">
-                <span className="rounded-lg bg-purple-500/20 px-2 py-1 font-mono text-base font-black text-purple-300 border border-purple-500/40">
+                <span className="rounded-lg border border-purple-500/40 bg-purple-500/20 px-2 py-1 font-mono text-base font-black text-purple-300">
                   {selectedBroker.code}
                 </span>
-                <span className="font-bold text-white text-sm">{selectedBroker.name}</span>
+                <span className="text-sm font-bold text-white">{selectedBroker.name}</span>
               </div>
               <button
                 onClick={() => setSelectedBroker(null)}
-                className="text-slate-400 hover:text-white p-1"
+                className="p-1 text-slate-400 hover:text-white"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
             <div className="mt-4 space-y-2.5 text-xs">
-              <div className="flex justify-between py-1 border-b border-white/5">
+              <div className="flex justify-between border-b border-white/5 py-1">
                 <span className="text-slate-400">Asal Broker:</span>
                 <span className="font-bold text-white">
                   {selectedBroker.isForeign ? 'Asing (Foreign)' : 'Domestik (Local)'}
                 </span>
               </div>
-              <div className="flex justify-between py-1 border-b border-white/5">
+              <div className="flex justify-between border-b border-white/5 py-1">
                 <span className="text-slate-400">Kohort / Kategori:</span>
-                <span className="font-bold uppercase text-purple-400">
-                  {selectedBroker.cohort}
-                </span>
+                <span className="font-bold text-purple-400 uppercase">{selectedBroker.cohort}</span>
               </div>
-              <div className="flex justify-between py-1 border-b border-white/5">
+              <div className="flex justify-between border-b border-white/5 py-1">
                 <span className="text-slate-400">Volume Transaksi:</span>
-                <span className="font-mono text-white font-semibold">
+                <span className="font-mono font-semibold text-white">
                   {selectedBroker.lot.toLocaleString('id-ID')} Lot
                 </span>
               </div>
-              <div className="flex justify-between py-1 border-b border-white/5">
+              <div className="flex justify-between border-b border-white/5 py-1">
                 <span className="text-slate-400">Nilai Transaksi:</span>
-                <span className="font-mono text-white font-semibold">
+                <span className="font-mono font-semibold text-white">
                   Rp {(selectedBroker.value / 1_000_000_000).toFixed(2)} Miliar
                 </span>
               </div>
               <div className="flex justify-between py-1">
                 <span className="text-slate-400">Harga Rata-Rata:</span>
-                <span className="font-mono text-emerald-400 font-bold">
+                <span className="font-mono font-bold text-emerald-400">
                   Rp {selectedBroker.avgPrice.toLocaleString('id-ID')}
                 </span>
               </div>
@@ -1657,7 +1672,7 @@ export default function Home() {
             <div className="mt-6 text-center">
               <button
                 onClick={() => setSelectedBroker(null)}
-                className="w-full rounded-xl bg-white/10 py-2 font-semibold text-white hover:bg-white/20 text-xs"
+                className="w-full rounded-xl bg-white/10 py-2 text-xs font-semibold text-white hover:bg-white/20"
               >
                 Tutup
               </button>

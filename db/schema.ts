@@ -48,4 +48,3 @@ export const watchlist = pgTable('watchlist', {
 
 export type WatchlistItem = typeof watchlist.$inferSelect
 export type NewWatchlistItem = typeof watchlist.$inferInsert
-

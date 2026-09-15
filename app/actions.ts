@@ -3,7 +3,7 @@
 import { desc, eq } from 'drizzle-orm'
 
 import { db } from '@/db'
-import { anomalies, watchlist, type WatchlistItem } from '@/db/schema'
+import { type WatchlistItem, anomalies, watchlist } from '@/db/schema'
 import { detectCatalystDivergence } from '@/lib/divergence'
 import { analyzeNewsImpact } from '@/lib/gemini'
 import { analyzeInsiderMovement } from '@/lib/insider'
