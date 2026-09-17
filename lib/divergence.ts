@@ -6,6 +6,7 @@ export interface CatalystDivergence {
     | 'PRICED_IN_RALLY'
     | 'DELAYED_SELL_OFF_RISK'
     | 'NORMAL_REACTION'
+    | 'NO_PRICE_RESPONSE'
     | 'NO_CATALYST'
   divergenceScore: number // 0 to 100 (100 = huge unpriced opportunity or extreme anomaly)
   priceChangePct: number
@@ -34,6 +35,23 @@ export function detectCatalystDivergence(
       catalystType: 'GENERAL',
       verdict: 'Tidak ditemukan katalis berita baru untuk emiten ini.',
       recommendation: 'Pantau arus transaksi dan teknikal secara berkala.',
+      newsTimestamp,
+    }
+  }
+
+  // A missing price comparison is different from a measured 0% move. Do not
+  // infer a divergence when the market response has not been observed yet.
+  if (priceChangeFraction === null) {
+    return {
+      status: 'NO_PRICE_RESPONSE',
+      divergenceScore: 0,
+      priceChangePct: 0,
+      headline: newsImpact.headlineId,
+      impactScore: newsImpact.impactScore,
+      sentiment: newsImpact.sentiment,
+      catalystType: newsImpact.catalystType,
+      verdict: 'Respons harga belum dapat dinilai karena penutupan pembanding belum tersedia.',
+      recommendation: 'Tunggu sesi perdagangan berikutnya dan periksa sumber berita.',
       newsTimestamp,
     }
   }

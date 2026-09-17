@@ -1,9 +1,12 @@
 'use server'
 
-import { desc, eq } from 'drizzle-orm'
+import { headers } from 'next/headers'
+
+import { and, desc, eq } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { type WatchlistItem, anomalies, watchlist } from '@/db/schema'
+import { auth } from '@/lib/auth'
 import { detectCatalystDivergence } from '@/lib/divergence'
 import { analyzeNewsImpact } from '@/lib/gemini'
 import { analyzeInsiderMovement } from '@/lib/insider'
@@ -18,6 +21,11 @@ import {
   fetchMarketNews,
   normalizeTicker,
 } from '@/lib/sectors'
+
+async function getCurrentUserId() {
+  const session = await auth.api.getSession({ headers: await headers() })
+  return session?.user.id ?? null
+}
 
 export async function getRecentAnomalies() {
   try {
@@ -77,6 +85,9 @@ export async function analyzeTicker(ticker: string) {
         risk: intelligence.risk,
         price: intelligence.price,
         change: intelligence.change,
+        priceDate: intelligence.priceDate,
+        rawPrice: intelligence.rawPrice,
+        rawChange: intelligence.rawChange,
         volumeSpike: intelligence.volumeSpike,
         volumeSpikeRatio: intelligence.volumeSpikeRatio,
         status: intelligence.status,
@@ -85,6 +96,7 @@ export async function analyzeTicker(ticker: string) {
         bandarmology: intelligence.bandarmology,
         catalystDivergence: intelligence.catalystDivergence,
         insiderMovement: intelligence.insiderMovement,
+        newsImpact: intelligence.newsImpact,
       })
       .returning()
 
@@ -141,8 +153,14 @@ export async function getMarketRadarFeed(): Promise<{
       const cleanSymbol = rawSymbol ? rawSymbol.replace(/\.JK$/i, '') : 'IDX'
       const impact = await analyzeNewsImpact(news.title, news.body, cleanSymbol)
       // Estimate or fetch quick divergence
-      const divergence = detectCatalystDivergence(impact, 0.0, news.timestamp)
-      if (divergence.status === 'SLEEPING_GIANT' || impact.impactScore >= 50) {
+      // A radar headline without a matching price series must not be treated
+      // as a measured 0% move. The divergence engine will mark this as
+      // NO_PRICE_RESPONSE and keep the result explanatory for beginners.
+      const divergence = detectCatalystDivergence(impact, null, news.timestamp)
+      if (
+        divergence.status === 'SLEEPING_GIANT' ||
+        (divergence.status !== 'NO_PRICE_RESPONSE' && impact.impactScore >= 50)
+      ) {
         sleepingGiants.push({
           ticker: cleanSymbol,
           headline: news.title,
@@ -158,7 +176,9 @@ export async function getMarketRadarFeed(): Promise<{
     const insiderAlerts: MarketRadarData['insiderAlerts'] = []
     for (const filing of filings.slice(0, 4)) {
       const ticker = (filing.symbol ?? 'IDX').replace(/\.JK$/i, '')
-      const analysis = analyzeInsiderMovement([filing], filing.price ? filing.price * 1.1 : 1000)
+      // Never manufacture a market price for an insider filing. A filing can
+      // still be shown while its discount comparison remains unavailable.
+      const analysis = analyzeInsiderMovement([filing], null)
       if (analysis.status !== 'NO_RECENT_FILINGS') {
         insiderAlerts.push({
           ticker,
@@ -195,7 +215,13 @@ export async function getWatchlist(): Promise<{
   error?: string
 }> {
   try {
-    const items = await db.select().from(watchlist).orderBy(desc(watchlist.updatedAt))
+    const userId = await getCurrentUserId()
+    if (!userId) return { success: true, data: [] }
+    const items = await db
+      .select()
+      .from(watchlist)
+      .where(eq(watchlist.userId, userId))
+      .orderBy(desc(watchlist.updatedAt))
     return { success: true, data: items }
   } catch {
     return { success: false, error: 'Gagal memuat watchlist. Pastikan database aktif.' }
@@ -218,11 +244,17 @@ export async function addToWatchlist(item: {
   error?: string
 }> {
   try {
+    const userId = await getCurrentUserId()
+    if (!userId)
+      return {
+        success: false,
+        error: 'AUTH_REQUIRED: Masuk dengan Google untuk menyimpan pantauan.',
+      }
     const cleanTicker = normalizeTicker(item.ticker)
     const existing = await db
       .select()
       .from(watchlist)
-      .where(eq(watchlist.ticker, cleanTicker))
+      .where(and(eq(watchlist.userId, userId), eq(watchlist.ticker, cleanTicker)))
       .limit(1)
 
     if (existing.length > 0) {
@@ -246,6 +278,7 @@ export async function addToWatchlist(item: {
     const [inserted] = await db
       .insert(watchlist)
       .values({
+        userId,
         ticker: cleanTicker,
         name: item.name || cleanTicker,
         targetPrice: item.targetPrice || null,
@@ -268,8 +301,8 @@ export async function addToWatchlist(item: {
 export async function updateWatchlistItem(
   id: number,
   updates: {
-    targetPrice?: string
-    notes?: string
+    targetPrice?: string | null
+    notes?: string | null
     priority?: string
     status?: string
   },
@@ -279,14 +312,21 @@ export async function updateWatchlistItem(
   error?: string
 }> {
   try {
+    const userId = await getCurrentUserId()
+    if (!userId)
+      return {
+        success: false,
+        error: 'AUTH_REQUIRED: Masuk dengan Google untuk mengubah pantauan.',
+      }
     const [updated] = await db
       .update(watchlist)
       .set({
         ...updates,
         updatedAt: new Date(),
       })
-      .where(eq(watchlist.id, id))
+      .where(and(eq(watchlist.id, id), eq(watchlist.userId, userId)))
       .returning()
+    if (!updated) return { success: false, error: 'Pantauan tidak ditemukan.' }
     return { success: true, data: updated }
   } catch (error) {
     return {
@@ -302,12 +342,104 @@ export async function deleteWatchlistItem(id: number): Promise<{
   error?: string
 }> {
   try {
-    await db.delete(watchlist).where(eq(watchlist.id, id))
+    const userId = await getCurrentUserId()
+    if (!userId)
+      return {
+        success: false,
+        error: 'AUTH_REQUIRED: Masuk dengan Google untuk menghapus pantauan.',
+      }
+    const deleted = await db
+      .delete(watchlist)
+      .where(and(eq(watchlist.id, id), eq(watchlist.userId, userId)))
+      .returning({ id: watchlist.id })
+    if (!deleted.length) return { success: false, error: 'Pantauan tidak ditemukan.' }
     return { success: true, id }
   } catch (error) {
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Gagal menghapus item dari watchlist.',
+    }
+  }
+}
+
+export interface ScreenerResult {
+  symbol: string
+  company_name: string
+  sector?: string
+  sub_sector?: string
+  market_cap?: number | null
+  last_close_price?: number | null
+  daily_close_change?: number | null
+  pe_ttm?: number | null
+  pb_mrq?: number | null
+  roe_ttm?: number | null
+  dividend_yield?: number | null
+  yield_ttm?: number | null
+  yoy_quarter_earnings_growth?: number | null
+}
+
+export async function runScreener(filters: {
+  query?: string
+  sector?: string
+  maxPe?: string
+  maxPb?: string
+  minMarketCap?: string
+  minYield?: string
+  minEarningsGrowth?: string
+  offset?: number
+}): Promise<{ success: boolean; data?: ScreenerResult[]; total?: number; error?: string }> {
+  try {
+    const key = process.env.SECTORS_API_KEY?.trim()
+    if (!key || key === 'your_sectors_api_key_here') {
+      return { success: false, error: 'SECTORS_API_KEY belum diisi pada konfigurasi server.' }
+    }
+    const clauses: string[] = []
+    if (filters.sector?.trim())
+      clauses.push("sector = '" + filters.sector.trim().replaceAll("'", "''") + "'")
+    if (filters.maxPe && Number.isFinite(Number(filters.maxPe)))
+      clauses.push('pe_ttm > 0 and pe_ttm <= ' + Number(filters.maxPe))
+    if (filters.maxPb && Number.isFinite(Number(filters.maxPb)))
+      clauses.push('pb_mrq > 0 and pb_mrq <= ' + Number(filters.maxPb))
+    if (filters.minMarketCap && Number.isFinite(Number(filters.minMarketCap)))
+      clauses.push('market_cap >= ' + Number(filters.minMarketCap) * 1_000_000_000_000)
+    if (filters.minYield && Number.isFinite(Number(filters.minYield)))
+      clauses.push('yield_ttm > ' + Number(filters.minYield))
+    if (filters.minEarningsGrowth && Number.isFinite(Number(filters.minEarningsGrowth)))
+      clauses.push('yoy_quarter_earnings_growth > ' + Number(filters.minEarningsGrowth))
+    const params = new URLSearchParams({
+      limit: '25',
+      offset: String(Math.max(0, filters.offset ?? 0)),
+      order_by: '-market_cap',
+    })
+    if (filters.query?.trim()) params.set('q', filters.query.trim().slice(0, 120))
+    else if (clauses.length) params.set('where', clauses.join(' and '))
+    const raw = await fetch('https://api.sectors.app/v2/companies/?' + params.toString(), {
+      headers: { Authorization: key },
+      signal: AbortSignal.timeout(10_000),
+      cache: 'no-store',
+    })
+    if (!raw.ok)
+      return {
+        success: false,
+        error: 'Screener belum dapat memuat data (HTTP ' + raw.status + ').',
+      }
+    const payload = (await raw.json()) as {
+      results?: ScreenerResult[]
+      pagination?: { total_count?: number }
+    }
+    const rows = (payload.results ?? []).map((row) => {
+      const raw = row as ScreenerResult & { query_values?: Partial<ScreenerResult> }
+      return { ...raw.query_values, ...raw, query_values: undefined } as ScreenerResult
+    })
+    return {
+      success: true,
+      data: rows,
+      total: payload.pagination?.total_count ?? rows.length,
+    }
+  } catch {
+    return {
+      success: false,
+      error: 'Screener tidak dapat dihubungkan sekarang. Coba lagi setelah beberapa saat.',
     }
   }
 }

@@ -13,6 +13,8 @@ export interface GeminiNewsImpact {
   headlineId: string
   summaryId: string
   isAiGenerated: boolean
+  analysisSource: 'GEMINI' | 'RULE_BASED'
+  model?: string
 }
 
 const BULLISH_KEYWORDS = [
@@ -107,6 +109,8 @@ Tentukan:
                 headlineId: parsed.headlineId ?? title,
                 summaryId: parsed.summaryId ?? body.slice(0, 150),
                 isAiGenerated: true,
+                analysisSource: 'GEMINI',
+                model: modelName,
               }
             }
           }
@@ -169,5 +173,6 @@ export function fallbackAnalyzeNews(title: string, body: string): GeminiNewsImpa
     headlineId,
     summaryId,
     isAiGenerated: false,
+    analysisSource: 'RULE_BASED',
   }
 }

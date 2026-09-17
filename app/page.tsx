@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
+import Link from 'next/link'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+
 import { motion } from 'framer-motion'
 import {
   Activity,
@@ -50,12 +53,16 @@ import {
   updateWatchlistItem,
 } from './actions'
 
-type TabType = 'terminal' | 'radar' | 'watchlist' | 'history'
+export type TabType = 'terminal' | 'radar' | 'watchlist' | 'history'
 
 const PRESET_TICKERS = ['BBCA', 'BREN', 'MAYA', 'TLKM', 'ASII', 'GOTO', 'ADRO']
 
-export default function Home() {
-  const [activeTab, setActiveTab] = useState<TabType>('terminal')
+export function Home({ initialTab = 'terminal' }: { initialTab?: TabType }) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const queryTab = searchParams.get('tab') as TabType | null
+  const [activeTab, setActiveTabState] = useState<TabType>(() => queryTab ?? initialTab)
   const [anomalies, setAnomalies] = useState<Anomaly[]>([])
   const [selectedAnomaly, setSelectedAnomaly] = useState<Anomaly | null>(null)
   const [radarData, setRadarData] = useState<MarketRadarData | null>(null)
@@ -72,6 +79,12 @@ export default function Home() {
   const [selectedBroker, setSelectedBroker] = useState<TopBrokerItem | null>(null)
   const [editingWatchlist, setEditingWatchlist] = useState<Partial<WatchlistItem> | null>(null)
   const [isWatchlistModalOpen, setIsWatchlistModalOpen] = useState(false)
+
+  const setActiveTab = (tab: TabType) => {
+    setActiveTabState(tab)
+    const base = pathname === '/' ? '/' : pathname
+    router.push(tab === 'terminal' ? base : `${base}?tab=${tab}`, { scroll: false })
+  }
 
   const showToast = (msg: string) => {
     setToastMsg(msg)
@@ -160,11 +173,12 @@ export default function Home() {
     if (!editingWatchlist?.ticker?.trim()) return
 
     try {
+      let saved = false
       if (editingWatchlist.id) {
         // Update
         const res = await updateWatchlistItem(editingWatchlist.id, {
-          targetPrice: editingWatchlist.targetPrice || undefined,
-          notes: editingWatchlist.notes || undefined,
+          targetPrice: editingWatchlist.targetPrice?.trim() || null,
+          notes: editingWatchlist.notes?.trim() || null,
           priority: editingWatchlist.priority || undefined,
           status: editingWatchlist.status || undefined,
         })
@@ -173,14 +187,17 @@ export default function Home() {
             prev.map((item) => (item.id === res.data?.id ? res.data : item)),
           )
           showToast(`Watchlist ${res.data.ticker} diperbarui!`)
+          saved = true
+        } else {
+          setErrorMsg(res.error || 'Gagal memperbarui watchlist.')
         }
       } else {
         // Create
         const res = await addToWatchlist({
           ticker: editingWatchlist.ticker,
           name: editingWatchlist.name || editingWatchlist.ticker,
-          targetPrice: editingWatchlist.targetPrice || undefined,
-          notes: editingWatchlist.notes || undefined,
+          targetPrice: editingWatchlist.targetPrice?.trim() || undefined,
+          notes: editingWatchlist.notes?.trim() || undefined,
           priority: editingWatchlist.priority || 'MEDIUM',
           status: editingWatchlist.status || 'WATCHING',
           lastPrice: editingWatchlist.lastPrice || undefined,
@@ -192,10 +209,15 @@ export default function Home() {
             ...prev.filter((item) => item.id !== res.data?.id),
           ])
           showToast(`Saham ${res.data.ticker} berhasil masuk Watchlist!`)
+          saved = true
+        } else {
+          setErrorMsg(res.error || 'Gagal menyimpan watchlist.')
         }
       }
-      setIsWatchlistModalOpen(false)
-      setEditingWatchlist(null)
+      if (saved) {
+        setIsWatchlistModalOpen(false)
+        setEditingWatchlist(null)
+      }
     } catch {
       setErrorMsg('Gagal menyimpan ke watchlist.')
     }
@@ -207,6 +229,8 @@ export default function Home() {
       if (res.success) {
         setWatchlistItems((prev) => prev.filter((item) => item.id !== id))
         showToast(`Saham ${ticker} dihapus dari Watchlist.`)
+      } else {
+        setErrorMsg(res.error || 'Gagal menghapus dari watchlist.')
       }
     } catch {
       setErrorMsg('Gagal menghapus dari watchlist.')
@@ -225,6 +249,8 @@ export default function Home() {
       if (res.success && res.data) {
         setWatchlistItems((prev) => [res.data!, ...prev.filter((item) => item.id !== res.data?.id)])
         showToast(`⭐️ ${ticker} ditambahkan ke Watchlist!`)
+      } else {
+        setErrorMsg(res.error || 'Gagal menambahkan ke watchlist.')
       }
     } catch {
       setErrorMsg('Gagal menambahkan ke watchlist.')
@@ -397,6 +423,26 @@ export default function Home() {
                 <Layers className="h-3.5 w-3.5 text-indigo-400" />
                 Riwayat ({anomalies.length})
               </button>
+              <div className="hidden items-center gap-1 border-l border-white/10 pl-2 xl:flex">
+                <Link
+                  href="/screener"
+                  className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-400 transition hover:bg-white/5 hover:text-white"
+                >
+                  Penyaring
+                </Link>
+                <Link
+                  href="/bandingkan"
+                  className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-400 transition hover:bg-white/5 hover:text-white"
+                >
+                  Bandingkan
+                </Link>
+                <Link
+                  href="/asisten"
+                  className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-400 transition hover:bg-white/5 hover:text-white"
+                >
+                  Tanya AI
+                </Link>
+              </div>
             </div>
           </div>
         </div>
@@ -412,7 +458,14 @@ export default function Home() {
           >
             <div className="flex items-center gap-2.5">
               <AlertTriangle className="h-5 w-5 shrink-0 text-rose-400" />
-              <span>{errorMsg}</span>
+              <span>
+                {errorMsg}
+                {errorMsg.startsWith('AUTH_REQUIRED') && (
+                  <Link href="/masuk" className="ml-2 font-semibold underline underline-offset-2">
+                    Masuk Google
+                  </Link>
+                )}
+              </span>
             </div>
             <button
               onClick={() => setErrorMsg('')}
@@ -723,7 +776,9 @@ export default function Home() {
                       {/* Bandar Avg Cost */}
                       {bandar?.bandarAvgPrice && (
                         <div className="mt-4 flex items-center justify-between rounded-xl border border-purple-500/20 bg-purple-500/5 px-4 py-2.5 text-xs">
-                          <span className="text-slate-300">Estimasi Modal Rata-Rata Bandar:</span>
+                          <span className="text-slate-300">
+                            Rata-rata harga beli broker terpilih:
+                          </span>
                           <div className="flex items-center gap-2">
                             <span className="font-mono text-sm font-bold text-purple-300">
                               Rp {bandar.bandarAvgPrice.toLocaleString('id-ID')}
@@ -841,7 +896,12 @@ export default function Home() {
                         </div>
                         <span className="flex items-center gap-1 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-xs font-semibold text-amber-300">
                           <Cpu className="h-3.5 w-3.5" />
-                          Gemini 3 Flash Analysis
+                          {selectedAnomaly?.newsImpact &&
+                          typeof selectedAnomaly.newsImpact === 'object' &&
+                          'analysisSource' in selectedAnomaly.newsImpact &&
+                          selectedAnomaly.newsImpact.analysisSource === 'GEMINI'
+                            ? 'Analisis Gemini'
+                            : 'Analisis berbasis aturan'}
                         </span>
                       </div>
 
@@ -1683,3 +1743,5 @@ export default function Home() {
     </div>
   )
 }
+
+export default Home

@@ -73,8 +73,50 @@ export async function getCached<T>(
   if (cached && cached.expires > now) {
     return cached.data as T
   }
+
+  // The process cache is fast, but it disappears on a serverless restart.
+  // When a database is configured, reuse the shared api_cache table as the
+  // durable layer. Tests and local setup without DATABASE_URL still work
+  // entirely in memory.
+  if (process.env.DATABASE_URL) {
+    try {
+      const [{ db }, { apiCache }, { eq }] = await Promise.all([
+        import('../db/index.ts'),
+        import('../db/schema.ts'),
+        import('drizzle-orm'),
+      ])
+      const persisted = await db.select().from(apiCache).where(eq(apiCache.cacheKey, key)).limit(1)
+      const row = persisted[0]
+      if (row && row.expiresAt.getTime() > now) {
+        memoryCache.set(key, { expires: row.expiresAt.getTime(), data: row.data })
+        return row.data as T
+      }
+    } catch {
+      // A cache outage must never make public market data unavailable.
+    }
+  }
+
   const fresh = await fetcher()
   memoryCache.set(key, { expires: now + ttlMs, data: fresh })
+
+  if (process.env.DATABASE_URL) {
+    try {
+      const [{ db }, { apiCache }] = await Promise.all([
+        import('../db/index.ts'),
+        import('../db/schema.ts'),
+      ])
+      await db
+        .insert(apiCache)
+        .values({ cacheKey: key, data: fresh, expiresAt: new Date(now + ttlMs) })
+        .onConflictDoUpdate({
+          target: apiCache.cacheKey,
+          set: { data: fresh, expiresAt: new Date(now + ttlMs), createdAt: new Date() },
+        })
+    } catch {
+      // Keep the in-memory value when PostgreSQL is unavailable.
+    }
+  }
+
   return fresh
 }
 

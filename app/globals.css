@@ -3,13 +3,19 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --rasi-bg: #f6f8fb;
+  --rasi-surface: #ffffff;
+  --rasi-text: #172033;
+  --rasi-muted: #667085;
+  --rasi-muted-bg: #eef2f7;
+  --rasi-border: #dfe5ee;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: Arial, Helvetica, sans-serif;
+  --font-mono: 'Cascadia Mono', Consolas, monospace;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -23,4 +29,109 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+.rasi-app {
+  --rasi-focus: #2563eb;
+}
+
+.rasi-button-primary,
+.rasi-button-secondary {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.8125rem;
+  font-weight: 650;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.rasi-button-primary {
+  background: #2563eb;
+  color: white;
+}
+
+.rasi-button-primary:hover {
+  background: #1d4ed8;
+}
+
+.rasi-button-secondary {
+  border: 1px solid var(--rasi-border);
+  background: var(--rasi-surface);
+  color: var(--rasi-text);
+}
+
+.rasi-button-secondary:hover {
+  background: var(--rasi-muted-bg);
+}
+
+.rasi-skip-link {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 100;
+  transform: translateY(-200%);
+  border-radius: 0.5rem;
+  background: #172033;
+  padding: 0.625rem 0.875rem;
+  color: white;
+}
+
+.rasi-skip-link:focus {
+  transform: translateY(0);
+}
+
+.rasi-app :focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--rasi-focus) 55%, transparent);
+  outline-offset: 2px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --rasi-bg: #0b1220;
+    --rasi-surface: #111a2b;
+    --rasi-text: #e7edf7;
+    --rasi-muted: #9aa8bd;
+    --rasi-muted-bg: #1b2940;
+    --rasi-border: #263650;
+  }
+}
+
+:root[data-rasi-theme='light'] {
+  --background: #ffffff;
+  --foreground: #171717;
+  --rasi-bg: #f6f8fb;
+  --rasi-surface: #ffffff;
+  --rasi-text: #172033;
+  --rasi-muted: #667085;
+  --rasi-muted-bg: #eef2f7;
+  --rasi-border: #dfe5ee;
+}
+
+:root[data-rasi-theme='dark'] {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --rasi-bg: #0b1220;
+  --rasi-surface: #111a2b;
+  --rasi-text: #e7edf7;
+  --rasi-muted: #9aa8bd;
+  --rasi-muted-bg: #1b2940;
+  --rasi-border: #263650;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

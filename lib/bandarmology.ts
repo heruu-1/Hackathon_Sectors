@@ -17,7 +17,7 @@ export interface BrokerInfo {
   code: string
   name: string
   is_foreign: boolean
-  cohort: 'institutional' | 'retail' | 'mixed'
+  cohort: 'institutional' | 'retail' | 'mixed' | 'unknown'
 }
 
 export interface TopBrokerItem {
@@ -123,7 +123,7 @@ export function analyzeBandarmology(
 
     const meta = brokerRegistry[code]
     const isForeign = meta?.is_foreign ?? false
-    const cohort = meta?.cohort ?? (RETAIL_BROKERS.has(code) ? 'retail' : 'institutional')
+    const cohort = meta?.cohort ?? (RETAIL_BROKERS.has(code) ? 'retail' : 'unknown')
 
     totalBuyVal += bval
     totalSellVal += sval
@@ -270,11 +270,11 @@ export function analyzeBandarmology(
   if (bandarAvgPrice && currentClosePrice) {
     if (bandarMarginPct !== null && bandarMarginPct >= 0) {
       summaryParts.push(
-        `Harga pasar (+${bandarMarginPct}%) berada di atas estimasi modal bandar (Rp ${bandarAvgPrice.toLocaleString('id-ID')}).`,
+        `Harga pasar (+${bandarMarginPct}%) berada di atas rata-rata harga beli broker terpilih (Rp ${bandarAvgPrice.toLocaleString('id-ID')}).`,
       )
     } else if (bandarMarginPct !== null) {
       summaryParts.push(
-        `Harga pasar (${bandarMarginPct}%) berada di bawah estimasi modal bandar (Rp ${bandarAvgPrice.toLocaleString('id-ID')}).`,
+        `Harga pasar (${bandarMarginPct}%) berada di bawah rata-rata harga beli broker terpilih (Rp ${bandarAvgPrice.toLocaleString('id-ID')}).`,
       )
     }
   }

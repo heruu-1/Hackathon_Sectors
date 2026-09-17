@@ -97,6 +97,20 @@ test('Catalyst Divergence: identifies DELAYED_SELL_OFF_RISK when news is negativ
   assert.match(result.verdict, /DELAYED RISK/)
 })
 
+test('Catalyst Divergence: keeps an unavailable price response distinct from measured zero', () => {
+  const impact = {
+    sentiment: 'BULLISH',
+    impactScore: 80,
+    catalystType: 'EARNINGS',
+    headlineId: 'Laba meningkat',
+    summaryId: 'Ringkasan berita',
+    isAiGenerated: false,
+  }
+  const result = detectCatalystDivergence(impact, null, '2026-09-16T09:00:00')
+  assert.equal(result.status, 'NO_PRICE_RESPONSE')
+  assert.match(result.verdict, /belum dapat dinilai/)
+})
+
 test('Gemini Fallback: parses bullish and bearish keywords correctly', () => {
   const bullish = fallbackAnalyzeNews(
     'Emiten Laba Melonjak 200% dan Siap Bagi Dividen Jumbo',
@@ -111,6 +125,7 @@ test('Gemini Fallback: parses bullish and bearish keywords correctly', () => {
   )
   assert.equal(bearish.sentiment, 'BEARISH')
   assert.ok(bearish.impactScore < 0)
+  assert.equal(bearish.analysisSource, 'RULE_BASED')
 })
 
 test('Insider Movement: flags STEEP_DISCOUNT_DUMP when selling at extreme discount', () => {

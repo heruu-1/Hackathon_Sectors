@@ -1,6 +1,6 @@
 # RASI — Report Analisis Saham Indonesia
 
-**Sistem Deteksi Anomali Saham ("Radar Saham Gorengan")** yang menarik data fundamental dari [Sectors API](https://sectors.app) dan mendeteksi pergerakan saham yang tidak wajar di pasar IDX.
+**Ruang riset saham Indonesia** yang membantu pengguna menemukan saham, memahami data, memeriksa sumber, membandingkan, menyimpan pantauan, dan bertanya kepada Asisten Gemini.
 
 Built with **Next.js 16**, **Drizzle ORM**, **PostgreSQL**, and **Tailwind CSS**.
 
@@ -44,6 +44,13 @@ DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@localhost:5432/rasi"
 
 # API Key dari Sectors Financial API
 SECTORS_API_KEY="your_sectors_api_key_here"
+
+# Login Google dan Asisten Gemini
+BETTER_AUTH_SECRET="replace-with-a-long-random-secret"
+BETTER_AUTH_URL="http://localhost:3000"
+GOOGLE_CLIENT_ID="your-google-oauth-client-id"
+GOOGLE_CLIENT_SECRET="your-google-oauth-client-secret"
+GEMINI_API_KEY="your_gemini_api_key_here"
 ```
 
 > **Catatan:** File `.env.local` tidak akan ter-commit ke Git karena sudah ada di `.gitignore`. File `env.example` berfungsi sebagai template referensi yang aman untuk di-commit.
@@ -56,11 +63,15 @@ Pastikan PostgreSQL sudah berjalan, lalu buat database `rasi`:
 createdb rasi
 ```
 
-Jalankan migrasi schema ke database:
+Untuk pengembangan lokal, jalankan schema Drizzle:
 
 ```bash
-pnpm drizzle-kit push
+corepack pnpm db:push
 ```
+
+Untuk staging/produksi, tinjau lalu jalankan SQL aditif
+[`drizzle/0001_rasi_auth_and_watchlist.sql`](drizzle/0001_rasi_auth_and_watchlist.sql). Jangan
+menggunakan `db:push` sebagai prosedur peluncuran produksi.
 
 ### 5. Run Development Server
 
@@ -80,7 +91,7 @@ RASI dirancang sebagai **Financial Intelligence Terminal** untuk mendeteksi perg
    - Menghitung konsentrasi broker Top 3 (CR3) dan Top 5 (CR5) dari data _broker summary_ harian.
    - Mengidentifikasi status: `BIG_ACCUMULATION`, `NORMAL_ACCUMULATION`, `NEUTRAL`, `BIG_DISTRIBUTION`.
    - Mengukur arus dana asing (_Foreign Flow Net Inflow/Outflow_) menggunakan registry 88 broker IDX.
-   - Menghitung estimasi harga modal rata-rata bandar (_Bandar Avg Cost_) vs harga pasar saat ini.
+   - Menghitung rata-rata harga beli broker terpilih, dengan label dan periode yang jelas.
    - Tabel Top 5 Pembeli vs Top 5 Penjual dengan badge Institusi, Retail (YP, XC, PD, dsb.), dan Asing.
 
 2. **Radar Katalis Berita & AI Divergence ("Sleeping Giant Detector")**:
@@ -103,17 +114,22 @@ RASI dirancang sebagai **Financial Intelligence Terminal** untuk mendeteksi perg
 
 5. **Arsitektur Hemat Kuota (Quota Shield)**:
    - Caching pintar bertingkat (In-Memory + PostgreSQL `api_cache`) untuk mengoptimalkan kuota Sectors API (500–1.000 kredit).
-   - Memindai seluruh pasar melalui batch feed berita dan filings tanpa membebani kuota API.
+   - Cache PostgreSQL dipakai sebagai cache persisten ketika `DATABASE_URL` tersedia; cache proses
+     tetap menjadi lapisan cepat.
 
 ---
 
 ## 📦 Environment Variables
 
-| Variable          | Deskripsi                                                                                                               | Contoh                                           |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| `DATABASE_URL`    | URL koneksi PostgreSQL. Digunakan oleh Drizzle ORM untuk menyimpan riwayat analisis dan cache API.                      | `postgresql://postgres:pass@localhost:5432/rasi` |
-| `SECTORS_API_KEY` | API Key dari Sectors Financial API. Digunakan untuk data broker summary, transaksi harian, berita, dan insider filings. | `cde1971d...`                                    |
-| `GEMINI_API_KEY`  | _(Opsional)_ API Key Google Gemini untuk analisis sentimen & dampak berita terstruktur. Gratis di Google AI Studio.     | `AIzaSy...`                                      |
+| Variable                                    | Deskripsi                                                                                                               | Contoh                                           |
+| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| `DATABASE_URL`                              | URL koneksi PostgreSQL. Digunakan oleh Drizzle ORM untuk menyimpan riwayat analisis dan cache API.                      | `postgresql://postgres:pass@localhost:5432/rasi` |
+| `SECTORS_API_KEY`                           | API Key dari Sectors Financial API. Digunakan untuk data broker summary, transaksi harian, berita, dan insider filings. | `cde1971d...`                                    |
+| `GEMINI_API_KEY`                            | _(Opsional)_ API Key Google Gemini untuk analisis sentimen & dampak berita terstruktur. Gratis di Google AI Studio.     | `AIzaSy...`                                      |
+| `GEMINI_MODEL`                              | Nama model percakapan yang dipakai server.                                                                              | `gemini-3-flash-preview`                         |
+| `BETTER_AUTH_SECRET`                        | Secret sesi minimal 32 karakter; wajib diganti di produksi.                                                             | `random-secret...`                               |
+| `BETTER_AUTH_URL`                           | URL aplikasi yang dipakai OAuth callback.                                                                               | `https://rasi.example.com`                       |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Kredensial OAuth Google.                                                                                                | `...apps.googleusercontent.com`                  |
 
 Lihat file [`env.example`](env.example) untuk template lengkap beserta penjelasan setiap variabel.
 
@@ -161,11 +177,15 @@ hackathon/
 
 ## 🧪 Pengujian & Verifikasi
 
-Proyek dilengkapi dengan pengujian unit otomatis komprehensif (20 tests):
+Proyek memiliki 20 tes unit/kontrak. Runner glob dapat terhalang `spawn EPERM` pada sebagian
+sandbox Windows; jalankan kedua fixture langsung untuk memisahkan masalah lingkungan:
 
 ```powershell
-corepack pnpm test
+node --experimental-strip-types tests/intelligence.test.mjs
+node --experimental-strip-types tests/sectors.test.mjs
 corepack pnpm lint
+corepack pnpm exec tsc --noEmit --incremental false
+corepack pnpm format:check
 corepack pnpm build
 ```
 
@@ -184,7 +204,9 @@ pnpm start
 
 1. Push repository ke GitHub.
 2. Import project di [vercel.com](https://vercel.com).
-3. Tambahkan environment variables (`DATABASE_URL`, `SECTORS_API_KEY`) di Vercel Dashboard → Settings → Environment Variables.
+3. Tambahkan environment variables (`DATABASE_URL`, `SECTORS_API_KEY`, `BETTER_AUTH_SECRET`,
+   `BETTER_AUTH_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, dan `GEMINI_API_KEY`) di Vercel
+   Dashboard → Settings → Environment Variables.
 4. Deploy otomatis setiap push ke branch `main`.
 
 ### Deploy ke VPS / Server
