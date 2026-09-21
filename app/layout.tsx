@@ -1,5 +1,8 @@
 import type { Metadata } from 'next'
 
+import { ResearchShell } from '@/components/ResearchShell'
+import { ThemePreferenceProvider } from '@/components/ThemePreferenceProvider'
+
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -8,7 +11,7 @@ export const metadata: Metadata = {
     'Ruang riset saham Indonesia dengan data, sumber, dan penjelasan AI yang dapat diperiksa.',
 }
 
-export default function RootLayout({ children }: LayoutProps<'/'>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="id" className="h-full antialiased" suppressHydrationWarning>
       <head>
@@ -19,7 +22,11 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
           }}
         />
       </head>
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body className="min-h-full">
+        <ThemePreferenceProvider>
+          <ResearchShell>{children}</ResearchShell>
+        </ThemePreferenceProvider>
+      </body>
     </html>
   )
 }

@@ -1,361 +1,451 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
 import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
 
-import { ArrowUpRight, Filter, Loader2, RotateCcw, Search, Star } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Eye, Filter, Loader2, RotateCcw, Search, X } from 'lucide-react'
 
 import { type ScreenerResult, runScreener } from '@/app/actions'
-import { ResearchShell } from '@/components/ResearchShell'
+import { ScreenerFilterDialog, type ScreenerFilters } from '@/components/ScreenerFilterDialog'
+import { StockPreviewDialog } from '@/components/StockPreviewDialog'
+import { Button } from '@/components/ui'
 
-const presets = [
-  { id: 'large', label: 'Perusahaan besar', minMarketCap: '10' },
-  { id: 'value', label: 'P/E maksimal 15', maxPe: '15' },
-  { id: 'dividend', label: 'Membagikan dividen', minYield: '0' },
-  { id: 'growth', label: 'Laba bertumbuh', minEarningsGrowth: '0' },
-  { id: 'valuation', label: 'Valuasi tertentu', maxPe: '15', maxPb: '2' },
+const PRESETS = [
+  { id: 'large', label: 'Perusahaan Besar (Cap > 10T)', filters: { minMarketCap: '10' } },
+  { id: 'value', label: 'Valuasi Menarik (P/E < 15)', filters: { maxPe: '15' } },
+  { id: 'dividend', label: 'Membagikan Dividen', filters: { minYield: '0' } },
+  { id: 'growth', label: 'Pertumbuhan Laba Positif', filters: { minEarningsGrowth: '0' } },
+  { id: 'valuation', label: 'P/E < 15 & P/B < 2', filters: { maxPe: '15', maxPb: '2' } },
 ]
 
-export default function ScreenerPage() {
-  const [query, setQuery] = useState(() =>
-    typeof window === 'undefined'
-      ? ''
-      : (new URLSearchParams(window.location.search).get('q') ?? ''),
-  )
-  const [sector, setSector] = useState(() =>
-    typeof window === 'undefined'
-      ? ''
-      : (new URLSearchParams(window.location.search).get('sector') ?? ''),
-  )
-  const [maxPe, setMaxPe] = useState(() =>
-    typeof window === 'undefined'
-      ? ''
-      : (new URLSearchParams(window.location.search).get('pe') ?? ''),
-  )
-  const [maxPb, setMaxPb] = useState(() =>
-    typeof window === 'undefined'
-      ? ''
-      : (new URLSearchParams(window.location.search).get('pb') ?? ''),
-  )
-  const [minMarketCap, setMinMarketCap] = useState(() =>
-    typeof window === 'undefined'
-      ? ''
-      : (new URLSearchParams(window.location.search).get('mcap') ?? ''),
-  )
-  const [minYield, setMinYield] = useState(() =>
-    typeof window === 'undefined'
-      ? ''
-      : (new URLSearchParams(window.location.search).get('yield') ?? ''),
-  )
-  const [minEarningsGrowth, setMinEarningsGrowth] = useState(() =>
-    typeof window === 'undefined'
-      ? ''
-      : (new URLSearchParams(window.location.search).get('growth') ?? ''),
-  )
+function ScreenerContent() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
+  const [filters, setFilters] = useState<ScreenerFilters>(() => ({
+    sector: searchParams.get('sector') ?? '',
+    maxPe: searchParams.get('pe') ?? '',
+    maxPb: searchParams.get('pb') ?? '',
+    minMarketCap: searchParams.get('mcap') ?? '',
+    minYield: searchParams.get('yield') ?? '',
+    minEarningsGrowth: searchParams.get('growth') ?? '',
+  }))
+
+  const [nlpQuery, setNlpQuery] = useState(() => searchParams.get('q') ?? '')
+  const [nlpInput, setNlpInput] = useState(() => searchParams.get('q') ?? '')
+
   const [rows, setRows] = useState<ScreenerResult[]>([])
   const [total, setTotal] = useState(0)
-  const [offset, setOffset] = useState(0)
+  const [offset, setOffset] = useState(() => {
+    const p = parseInt(searchParams.get('offset') ?? '0', 10)
+    return isNaN(p) || p < 0 ? 0 : p
+  })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const apply = async (
-    nextOffset = offset,
-    override?: Partial<{
-      query: string
-      sector: string
-      maxPe: string
-      maxPb: string
-      minMarketCap: string
-      minYield: string
-      minEarningsGrowth: string
-    }>,
-  ) => {
-    const currentQuery = override?.query ?? query
-    const currentSector = override?.sector ?? sector
-    const currentMaxPe = override?.maxPe ?? maxPe
-    const currentMaxPb = override?.maxPb ?? maxPb
-    const currentMinMarketCap = override?.minMarketCap ?? minMarketCap
-    const currentMinYield = override?.minYield ?? minYield
-    const currentMinEarningsGrowth = override?.minEarningsGrowth ?? minEarningsGrowth
-    setLoading(true)
-    setError('')
-    const result = await runScreener({
-      query: currentQuery,
-      sector: currentSector,
-      maxPe: currentMaxPe,
-      maxPb: currentMaxPb,
-      minMarketCap: currentMinMarketCap,
-      minYield: currentMinYield,
-      minEarningsGrowth: currentMinEarningsGrowth,
-      offset: nextOffset,
-    })
-    if (result.error) setError(result.error)
-    setRows(result.data ?? [])
-    setTotal(result.total ?? 0)
-    setOffset(nextOffset)
-    setLoading(false)
-    const params = new URLSearchParams()
-    if (currentQuery) params.set('q', currentQuery)
-    if (currentSector) params.set('sector', currentSector)
-    if (currentMaxPe) params.set('pe', currentMaxPe)
-    if (currentMaxPb) params.set('pb', currentMaxPb)
-    if (currentMinMarketCap) params.set('mcap', currentMinMarketCap)
-    if (currentMinYield) params.set('yield', currentMinYield)
-    if (currentMinEarningsGrowth) params.set('growth', currentMinEarningsGrowth)
-    window.history.replaceState(null, '', '/screener' + (params.size ? '?' + params : ''))
+  // Dialog states
+  const [filterModalOpen, setFilterModalOpen] = useState(false)
+  const [previewTicker, setPreviewTicker] = useState<string | null>(null)
+  const [previewOpen, setPreviewOpen] = useState(false)
+
+  const executeSearch = useCallback(
+    async (currentFilters: ScreenerFilters, currentNlpQuery: string, currentOffset = 0) => {
+      setLoading(true)
+      setError('')
+
+      try {
+        const res = await runScreener({
+          query: currentNlpQuery,
+          sector: currentFilters.sector,
+          maxPe: currentFilters.maxPe,
+          maxPb: currentFilters.maxPb,
+          minMarketCap: currentFilters.minMarketCap,
+          minYield: currentFilters.minYield,
+          minEarningsGrowth: currentFilters.minEarningsGrowth,
+          offset: currentOffset,
+        })
+
+        if (res.error) {
+          setError(res.error)
+        } else {
+          setRows(res.data ?? [])
+          setTotal(res.total ?? 0)
+          setOffset(currentOffset)
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Penyaring gagal memuat data.')
+      } finally {
+        setLoading(false)
+      }
+
+      // Sync to URL
+      const params = new URLSearchParams()
+      if (currentNlpQuery) params.set('q', currentNlpQuery)
+      if (currentFilters.sector) params.set('sector', currentFilters.sector)
+      if (currentFilters.maxPe) params.set('pe', currentFilters.maxPe)
+      if (currentFilters.maxPb) params.set('pb', currentFilters.maxPb)
+      if (currentFilters.minMarketCap) params.set('mcap', currentFilters.minMarketCap)
+      if (currentFilters.minYield) params.set('yield', currentFilters.minYield)
+      if (currentFilters.minEarningsGrowth) params.set('growth', currentFilters.minEarningsGrowth)
+      if (currentOffset > 0) params.set('offset', String(currentOffset))
+
+      const queryString = params.toString()
+      router.replace(queryString ? `/screener?${queryString}` : '/screener', { scroll: false })
+    },
+    [router],
+  )
+
+  useEffect(() => {
+    let isMounted = true
+    const timer = window.setTimeout(() => {
+      if (!isMounted) return
+      void executeSearch(filters, nlpQuery, offset)
+    }, 0)
+    return () => {
+      isMounted = false
+      window.clearTimeout(timer)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Apply filters from modal
+  const handleApplyFilters = (draft: ScreenerFilters) => {
+    setFilters(draft)
+    setNlpQuery('')
+    setNlpInput('')
+    executeSearch(draft, '', 0)
   }
 
-  const applyPreset = (preset: (typeof presets)[number]) => {
-    setMaxPe(preset.maxPe ?? '')
-    setMaxPb(preset.maxPb ?? '')
-    setMinMarketCap(preset.minMarketCap ?? '')
-    setMinYield(preset.minYield ?? '')
-    setMinEarningsGrowth(preset.minEarningsGrowth ?? '')
-    void apply(0, {
-      maxPe: preset.maxPe ?? '',
-      maxPb: preset.maxPb ?? '',
-      minMarketCap: preset.minMarketCap ?? '',
-      minYield: preset.minYield ?? '',
-      minEarningsGrowth: preset.minEarningsGrowth ?? '',
-    })
+  // Apply preset
+  const handleApplyPreset = (presetFilters: Partial<ScreenerFilters>) => {
+    const next: ScreenerFilters = {
+      sector: '',
+      maxPe: '',
+      maxPb: '',
+      minMarketCap: '',
+      minYield: '',
+      minEarningsGrowth: '',
+      ...presetFilters,
+    }
+    setFilters(next)
+    setNlpQuery('')
+    setNlpInput('')
+    executeSearch(next, '', 0)
   }
+
+  // Remove single filter chip
+  const handleRemoveFilter = (key: keyof ScreenerFilters) => {
+    const next = { ...filters, [key]: '' }
+    setFilters(next)
+    executeSearch(next, nlpQuery, 0)
+  }
+
+  // Reset all filters
+  const handleResetAll = () => {
+    const empty: ScreenerFilters = {
+      sector: '',
+      maxPe: '',
+      maxPb: '',
+      minMarketCap: '',
+      minYield: '',
+      minEarningsGrowth: '',
+    }
+    setFilters(empty)
+    setNlpQuery('')
+    setNlpInput('')
+    executeSearch(empty, '', 0)
+  }
+
+  // Submit NLP query
+  const handleNlpSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    setNlpQuery(nlpInput.trim())
+    executeSearch(filters, nlpInput.trim(), 0)
+  }
+
+  // Active filter chips list
+  const activeChips: Array<{ key: keyof ScreenerFilters; label: string }> = []
+  if (filters.sector) activeChips.push({ key: 'sector', label: `Sektor: ${filters.sector}` })
+  if (filters.maxPe) activeChips.push({ key: 'maxPe', label: `Maks P/E: ${filters.maxPe}` })
+  if (filters.maxPb) activeChips.push({ key: 'maxPb', label: `Maks P/B: ${filters.maxPb}` })
+  if (filters.minMarketCap)
+    activeChips.push({ key: 'minMarketCap', label: `Min Cap: ${filters.minMarketCap}T` })
+  if (filters.minYield)
+    activeChips.push({ key: 'minYield', label: `Min Dividen: ${filters.minYield}%` })
+  if (filters.minEarningsGrowth)
+    activeChips.push({ key: 'minEarningsGrowth', label: `Min Laba: ${filters.minEarningsGrowth}%` })
+
+  const pageSize = 25
+  const currentPage = Math.floor(offset / pageSize) + 1
+  const totalPages = Math.ceil(total / pageSize)
 
   return (
-    <ResearchShell>
-      <section>
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold text-blue-600">Penyaring saham</p>
-            <h1 className="mt-2 text-3xl font-bold tracking-tight">
-              Cari kandidat berdasarkan data yang bisa diperiksa
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--rasi-muted)]">
-              Hasil berasal dari screener Sectors. Preset adalah titik awal riset, bukan jaminan
-              kualitas saham.
-            </p>
+    <div className="space-y-6 py-4">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-[var(--rasi-text)] sm:text-3xl">
+          Penyaring Saham (Screener)
+        </h1>
+        <p className="mt-1 text-sm text-[var(--rasi-muted)]">
+          Saring saham IDX berdasarkan rasio valuasi fundamental, pembagian dividen, dan sektor
+          industri.
+        </p>
+      </div>
+
+      {/* Toolbar: Filter Button, Presets, and Active Chips */}
+      <div className="space-y-3 rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="primary"
+              size="md"
+              icon={Filter}
+              onClick={() => setFilterModalOpen(true)}
+            >
+              Filter lanjutan {activeChips.length > 0 ? `(${activeChips.length})` : ''}
+            </Button>
+
+            {activeChips.length > 0 && (
+              <button
+                type="button"
+                onClick={handleResetAll}
+                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-[var(--rasi-muted)] hover:text-[var(--rasi-text)]"
+              >
+                <RotateCcw className="h-3 w-3" /> Reset
+              </button>
+            )}
           </div>
-          <span className="rounded-full bg-[var(--rasi-muted-bg)] px-3 py-1 text-xs text-[var(--rasi-muted)]">
-            Maksimal 25 hasil per halaman
+
+          <span className="font-mono text-xs text-[var(--rasi-muted)] tabular-nums">
+            {total} emiten ditemukan
           </span>
         </div>
-        <div className="mt-6 flex flex-wrap gap-2">
-          {presets.map((preset) => (
+
+        {/* Preset quick buttons */}
+        <div className="flex flex-wrap items-center gap-1.5 pt-1">
+          <span className="mr-1 text-xs text-[var(--rasi-muted)]">Preset:</span>
+          {PRESETS.map((p) => (
             <button
-              key={preset.id}
+              key={p.id}
               type="button"
-              onClick={() => applyPreset(preset)}
-              className="rasi-button-secondary"
+              onClick={() => handleApplyPreset(p.filters)}
+              className="rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/50 px-2.5 py-1 text-xs font-medium text-[var(--rasi-text)] transition-colors hover:bg-[var(--rasi-muted-bg)]"
             >
-              <Star className="h-3.5 w-3.5 text-amber-500" /> {preset.label}
+              {p.label}
             </button>
           ))}
         </div>
-        <form
-          className="mt-5 grid gap-3 rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-4 sm:grid-cols-2 lg:grid-cols-5"
-          onSubmit={(event) => {
-            event.preventDefault()
-            void apply(0)
-          }}
-        >
-          <label className="lg:col-span-2">
-            <span className="text-xs font-semibold">Pertanyaan bahasa biasa</span>
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="contoh: top 10 bank by market cap"
-              className="mt-1 min-h-10 w-full rounded-lg border border-[var(--rasi-border)] bg-transparent px-3 text-sm"
-            />
-          </label>
-          <label>
-            <span className="text-xs font-semibold">Sektor</span>
-            <input
-              value={sector}
-              onChange={(event) => setSector(event.target.value)}
-              placeholder="Financials"
-              className="mt-1 min-h-10 w-full rounded-lg border border-[var(--rasi-border)] bg-transparent px-3 text-sm"
-            />
-          </label>
-          <label>
-            <span className="text-xs font-semibold">P/E maksimal</span>
-            <input
-              inputMode="decimal"
-              value={maxPe}
-              onChange={(event) => setMaxPe(event.target.value)}
-              placeholder="15"
-              className="mt-1 min-h-10 w-full rounded-lg border border-[var(--rasi-border)] bg-transparent px-3 text-sm"
-            />
-          </label>
-          <label>
-            <span className="text-xs font-semibold">P/B maksimal</span>
-            <input
-              inputMode="decimal"
-              value={maxPb}
-              onChange={(event) => setMaxPb(event.target.value)}
-              placeholder="2"
-              className="mt-1 min-h-10 w-full rounded-lg border border-[var(--rasi-border)] bg-transparent px-3 text-sm"
-            />
-          </label>
-          <label>
-            <span className="text-xs font-semibold">Kapitalisasi min (T)</span>
-            <input
-              inputMode="decimal"
-              value={minMarketCap}
-              onChange={(event) => setMinMarketCap(event.target.value)}
-              placeholder="10"
-              className="mt-1 min-h-10 w-full rounded-lg border border-[var(--rasi-border)] bg-transparent px-3 text-sm"
-            />
-          </label>
-          <label>
-            <span className="text-xs font-semibold">Dividend yield min</span>
-            <input
-              inputMode="decimal"
-              value={minYield}
-              onChange={(event) => setMinYield(event.target.value)}
-              placeholder="0"
-              className="mt-1 min-h-10 w-full rounded-lg border border-[var(--rasi-border)] bg-transparent px-3 text-sm"
-            />
-          </label>
-          <label>
-            <span className="text-xs font-semibold">Pertumbuhan laba min</span>
-            <input
-              inputMode="decimal"
-              value={minEarningsGrowth}
-              onChange={(event) => setMinEarningsGrowth(event.target.value)}
-              placeholder="0"
-              className="mt-1 min-h-10 w-full rounded-lg border border-[var(--rasi-border)] bg-transparent px-3 text-sm"
-            />
-          </label>
-          <div className="flex gap-2 sm:col-span-2 lg:col-span-5">
-            <button type="submit" className="rasi-button-primary" disabled={loading}>
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Filter className="h-4 w-4" />
-              )}{' '}
-              Terapkan filter
-            </button>
-            <button
-              type="button"
-              className="rasi-button-secondary"
-              onClick={() => {
-                setQuery('')
-                setSector('')
-                setMaxPe('')
-                setMaxPb('')
-                setMinMarketCap('')
-                setMinYield('')
-                setMinEarningsGrowth('')
-                setRows([])
-                setError('')
-                setOffset(0)
-              }}
-            >
-              <RotateCcw className="h-4 w-4" /> Reset
-            </button>
-          </div>
-        </form>
-        {error && (
-          <div
-            className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900"
-            role="alert"
-          >
-            {error}
+
+        {/* Active Chips */}
+        {activeChips.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 border-t border-[var(--rasi-border)] pt-2">
+            <span className="text-xs font-semibold text-[var(--rasi-muted)]">Filter aktif:</span>
+            {activeChips.map((chip) => (
+              <span
+                key={chip.key}
+                className="inline-flex items-center gap-1.5 rounded-full border border-[var(--rasi-border)] bg-[var(--rasi-active-bg)] px-3 py-1 text-xs font-semibold text-[var(--rasi-primary)]"
+              >
+                {chip.label}
+                <button
+                  type="button"
+                  aria-label={`Hapus ${chip.label}`}
+                  onClick={() => handleRemoveFilter(chip.key)}
+                  className="hover:opacity-75 focus-visible:outline-none"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
           </div>
         )}
-        <div className="mt-6 overflow-hidden rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)]">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--rasi-border)] px-4 py-3">
-            <p className="text-sm font-semibold">
-              {rows.length
-                ? total.toLocaleString('id-ID') + ' perusahaan ditemukan'
-                : 'Belum ada hasil'}
-            </p>
-            <p className="text-xs text-[var(--rasi-muted)]">Data dan tanggal mengikuti provider</p>
+      </div>
+
+      {/* NLP Disclosure: "Cari dengan kalimat" (does not send while typing) */}
+      <details className="group rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-4 text-sm text-[var(--rasi-muted)]">
+        <summary className="flex cursor-pointer list-none items-center justify-between font-semibold text-[var(--rasi-text)] hover:text-[var(--rasi-primary)]">
+          <span className="flex items-center gap-2">
+            <Search className="h-4 w-4 text-[var(--rasi-primary)]" />
+            Cari dengan kalimat bahasa alami
+          </span>
+          <span className="text-xs transition-transform group-open:rotate-180">▾</span>
+        </summary>
+        <form onSubmit={handleNlpSubmit} className="mt-3 flex gap-2">
+          <input
+            type="text"
+            value={nlpInput}
+            onChange={(e) => setNlpInput(e.target.value)}
+            placeholder="Contoh: Perusahaan perbankan dengan dividen tinggi dan P/E murah"
+            className="min-h-[44px] flex-1 rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-surface)] px-3 text-sm text-[var(--rasi-text)] outline-none focus:border-[var(--rasi-primary)] focus:ring-2 focus:ring-[var(--rasi-primary)]/20"
+          />
+          <Button type="submit" variant="primary" size="md">
+            Cari
+          </Button>
+        </form>
+      </details>
+
+      {/* Error Message */}
+      {error && (
+        <div
+          role="alert"
+          className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/20 dark:text-rose-200"
+        >
+          {error}
+        </div>
+      )}
+
+      {/* Results Table */}
+      <div className="overflow-hidden rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)]">
+        {loading ? (
+          <div className="flex min-h-[240px] items-center justify-center p-12 text-sm text-[var(--rasi-muted)]">
+            <Loader2 className="mr-2 h-5 w-5 animate-spin text-[var(--rasi-primary)]" />
+            Menyaring saham IDX…
           </div>
-          {rows.length ? (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] text-left text-sm">
-                <thead className="bg-[var(--rasi-muted-bg)] text-xs text-[var(--rasi-muted)]">
-                  <tr>
-                    <th className="px-4 py-3">Saham</th>
-                    <th className="px-4 py-3">Sektor</th>
-                    <th className="px-4 py-3">Harga</th>
-                    <th className="px-4 py-3">P/E TTM</th>
-                    <th className="px-4 py-3">P/B MRQ</th>
-                    <th className="px-4 py-3">Aksi</th>
+        ) : rows.length === 0 ? (
+          <div className="p-12 text-center text-sm text-[var(--rasi-muted)]">
+            Tidak ada saham yang cocok dengan kriteria filter saat ini. Coba longgarkan batas rasio
+            atau reset filter.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="border-b border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/50 font-semibold text-[var(--rasi-muted)]">
+                <tr>
+                  <th scope="col" className="px-4 py-3">
+                    Kode
+                  </th>
+                  <th scope="col" className="px-4 py-3">
+                    Nama Perusahaan
+                  </th>
+                  <th scope="col" className="px-4 py-3">
+                    Sektor
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-right">
+                    Harga
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-right">
+                    P/E
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-right">
+                    P/B
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-right">
+                    Yield
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-center">
+                    Aksi
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--rasi-border)] text-[var(--rasi-text)]">
+                {rows.map((row) => (
+                  <tr
+                    key={row.symbol}
+                    className="transition-colors hover:bg-[var(--rasi-muted-bg)]/30"
+                  >
+                    <td className="px-4 py-3 font-mono font-bold">
+                      <Link
+                        href={`/saham/${row.symbol}`}
+                        className="text-[var(--rasi-primary)] hover:underline focus-visible:outline-none"
+                      >
+                        {row.symbol}
+                      </Link>
+                    </td>
+                    <td className="max-w-xs truncate px-4 py-3">{row.company_name}</td>
+                    <td className="px-4 py-3 text-[var(--rasi-muted)]">{row.sector}</td>
+                    <td className="px-4 py-3 text-right font-mono tabular-nums">
+                      {row.last_close_price
+                        ? `Rp ${row.last_close_price.toLocaleString('id-ID')}`
+                        : '—'}
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono tabular-nums">
+                      {row.pe_ttm ? `${row.pe_ttm.toFixed(1)}x` : '—'}
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono tabular-nums">
+                      {row.pb_mrq ? `${row.pb_mrq.toFixed(1)}x` : '—'}
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono tabular-nums">
+                      {row.dividend_yield ? `${(row.dividend_yield * 100).toFixed(1)}%` : '—'}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        icon={Eye}
+                        onClick={() => {
+                          setPreviewTicker(row.symbol)
+                          setPreviewOpen(true)
+                        }}
+                      >
+                        Ringkasan
+                      </Button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {rows.map((row) => {
-                    const symbol = row.symbol.replace(/\\.JK$/i, '')
-                    return (
-                      <tr key={row.symbol} className="border-t border-[var(--rasi-border)]">
-                        <td className="px-4 py-3">
-                          <Link
-                            href={'/saham/' + symbol}
-                            className="font-mono font-bold text-blue-600 hover:underline"
-                          >
-                            {symbol}
-                          </Link>
-                          <span className="mt-1 block max-w-[220px] truncate text-xs text-[var(--rasi-muted)]">
-                            {row.company_name}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-[var(--rasi-muted)]">
-                          {row.sector ?? row.sub_sector ?? 'Belum tersedia'}
-                        </td>
-                        <td className="px-4 py-3 tabular-nums">
-                          {row.last_close_price
-                            ? 'Rp ' + row.last_close_price.toLocaleString('id-ID')
-                            : '—'}
-                        </td>
-                        <td className="px-4 py-3 tabular-nums">{row.pe_ttm ?? '—'}</td>
-                        <td className="px-4 py-3 tabular-nums">{row.pb_mrq ?? '—'}</td>
-                        <td className="px-4 py-3">
-                          <Link
-                            href={'/saham/' + symbol}
-                            className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:underline"
-                          >
-                            Buka <ArrowUpRight className="h-3.5 w-3.5" />
-                          </Link>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="px-6 py-14 text-center">
-              <Search className="mx-auto h-8 w-8 text-[var(--rasi-muted)]" />
-              <p className="mt-3 text-sm font-semibold">Terapkan filter untuk melihat hasil</p>
-              <p className="mt-1 text-sm text-[var(--rasi-muted)]">
-                Jika provider gagal, RASI akan menjelaskan penyebabnya.
-              </p>
-            </div>
-          )}
-          {rows.length > 0 && (
-            <div className="flex justify-end gap-2 border-t border-[var(--rasi-border)] p-3">
-              <button
-                type="button"
-                className="rasi-button-secondary"
-                disabled={!offset || loading}
-                onClick={() => void apply(Math.max(0, offset - 25))}
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Pagination Controls */}
+        {!loading && total > pageSize && (
+          <div className="flex items-center justify-between border-t border-[var(--rasi-border)] px-4 py-3 text-xs">
+            <span className="text-[var(--rasi-muted)]">
+              Halaman {currentPage} dari {totalPages}
+            </span>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={ChevronLeft}
+                disabled={offset === 0}
+                onClick={() => executeSearch(filters, nlpQuery, Math.max(0, offset - pageSize))}
               >
                 Sebelumnya
-              </button>
-              <button
-                type="button"
-                className="rasi-button-secondary"
-                disabled={loading || offset + rows.length >= total}
-                onClick={() => void apply(offset + 25)}
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={ChevronRight}
+                iconPosition="right"
+                disabled={offset + pageSize >= total}
+                onClick={() => executeSearch(filters, nlpQuery, offset + pageSize)}
               >
                 Berikutnya
-              </button>
+              </Button>
             </div>
-          )}
+          </div>
+        )}
+      </div>
+
+      {/* Modals */}
+      <ScreenerFilterDialog
+        open={filterModalOpen}
+        onClose={() => setFilterModalOpen(false)}
+        filters={filters}
+        onApply={handleApplyFilters}
+      />
+
+      <StockPreviewDialog
+        ticker={previewTicker}
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+      />
+    </div>
+  )
+}
+
+export default function ScreenerPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="p-8 text-center text-sm text-[var(--rasi-muted)]">
+          Memuat penyaring saham…
         </div>
-      </section>
-    </ResearchShell>
+      }
+    >
+      <ScreenerContent />
+    </Suspense>
   )
 }

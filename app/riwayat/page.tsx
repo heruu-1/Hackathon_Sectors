@@ -1,5 +1,5 @@
-import Home from '@/app/page'
+import { redirect } from 'next/navigation'
 
 export default function HistoryPage() {
-  return <Home initialTab="history" />
+  redirect('/watchlist?tab=history')
 }

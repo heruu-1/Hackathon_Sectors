@@ -2,14 +2,15 @@
 
 import { headers } from 'next/headers'
 
-import { and, desc, eq } from 'drizzle-orm'
-
-import { db } from '@/db'
-import { type WatchlistItem, anomalies, watchlist } from '@/db/schema'
+import type { Anomaly } from '@/db/schema'
+import { detectCatalystDivergence } from '@/domain/divergence'
 import { auth } from '@/lib/auth'
-import { detectCatalystDivergence } from '@/lib/divergence'
-import { analyzeNewsImpact } from '@/lib/gemini'
-import { analyzeInsiderMovement } from '@/lib/insider'
+import type { BandarmologyAnalysis } from '@/lib/bandarmology'
+import type { AnalysisSnapshot } from '@/lib/contracts/analysis'
+import type { WatchlistItemDTO } from '@/lib/contracts/watchlist'
+import type { CatalystDivergence } from '@/lib/divergence'
+import type { GeminiNewsImpact } from '@/lib/gemini'
+import { type InsiderMovementAnalysis, analyzeInsiderMovement } from '@/lib/insider'
 import {
   SectorsError,
   buildFullIntelligence,
@@ -21,31 +22,149 @@ import {
   fetchMarketNews,
   normalizeTicker,
 } from '@/lib/sectors'
+import { analyzeNewsImpact } from '@/lib/server/providers/gemini'
+import { getRecentPublicSnapshots } from '@/lib/server/repositories/snapshots'
+import { deleteWatchlistItem as deleteWatchlistRepoItem } from '@/lib/server/repositories/watchlist'
+import {
+  type StockDataResult,
+  createAnalysis,
+  readLatestAnalysis,
+  readStockData,
+} from '@/lib/server/services/analysis'
+import {
+  deleteConversationById,
+  getConversationDetail,
+  listConversations,
+} from '@/lib/server/services/assistant'
+import { type HistoryListResult, deleteHistory, getHistory } from '@/lib/server/services/history'
+import {
+  addToWatchlist as addToWatchlistService,
+  getWatchlist as getWatchlistService,
+  removeFromWatchlist as removeFromWatchlistService,
+} from '@/lib/server/services/watchlist'
 
-async function getCurrentUserId() {
-  const session = await auth.api.getSession({ headers: await headers() })
-  return session?.user.id ?? null
+function parsePriority(val?: string): 'LOW' | 'MEDIUM' | 'HIGH' {
+  if (val === 'HIGH' || val === 'LOW') return val
+  return 'MEDIUM'
 }
 
-export async function getRecentAnomalies() {
+function parseStatus(val?: string): 'WATCHING' | 'ACCUMULATING' | 'SLEEPING_GIANT' | 'BOUGHT' {
+  if (val === 'ACCUMULATING' || val === 'SLEEPING_GIANT' || val === 'BOUGHT') return val
+  return 'WATCHING'
+}
+
+function parseOptionalPriority(val?: string): 'LOW' | 'MEDIUM' | 'HIGH' | undefined {
+  if (val === 'HIGH' || val === 'LOW' || val === 'MEDIUM') return val
+  return undefined
+}
+
+function parseOptionalStatus(
+  val?: string,
+): 'WATCHING' | 'ACCUMULATING' | 'SLEEPING_GIANT' | 'BOUGHT' | undefined {
+  if (
+    val === 'ACCUMULATING' ||
+    val === 'SLEEPING_GIANT' ||
+    val === 'BOUGHT' ||
+    val === 'WATCHING'
+  ) {
+    return val
+  }
+  return undefined
+}
+
+async function getCurrentUserId(): Promise<string | null> {
   try {
-    const recentAnomalies = await db
-      .select()
-      .from(anomalies)
-      .orderBy(desc(anomalies.createdAt))
-      .limit(20)
-    return { success: true, data: recentAnomalies }
+    const session = await auth.api.getSession({ headers: await headers() })
+    return session?.user.id ?? null
   } catch {
-    return { error: 'Riwayat belum dapat dimuat. Pastikan database aktif, lalu klik Refresh.' }
+    return null
   }
 }
 
+/**
+ * Reads stock market data and computed indicators via cache.
+ * Does NOT call Gemini, does NOT write to database, and does NOT consume user quota.
+ * Safe for view-only pages, comparisons, and exploratory research.
+ */
+export async function getStockData(
+  ticker: string,
+): Promise<{ success: boolean; data?: StockDataResult; error?: string }> {
+  try {
+    const data = await readStockData(ticker)
+    return { success: true, data }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Gagal memuat data saham.',
+    }
+  }
+}
+
+/**
+ * Creates an analysis snapshot with fresh data and Gemini AI news analysis.
+ * Requires user authentication, consumes user analysis quota, and saves to database.
+ */
+export async function createAnalysisAction(
+  ticker: string,
+  requestKey?: string,
+): Promise<{ success: boolean; data?: AnalysisSnapshot; error?: string }> {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return {
+      success: false,
+      error: 'AUTH_REQUIRED: Masuk dengan Google untuk membuat analisis baru.',
+    }
+  }
+
+  const key = requestKey || crypto.randomUUID()
+  const result = await createAnalysis({ ticker, requestKey: key, userId })
+  if (!result.ok) {
+    return { success: false, error: result.error.message }
+  }
+  return { success: true, data: result.data }
+}
+
+/**
+ * Reads the latest available public snapshot for a ticker without triggering a new analysis.
+ */
+export async function getLatestAnalysisAction(
+  ticker: string,
+): Promise<{ success: boolean; data?: AnalysisSnapshot | null; error?: string }> {
+  try {
+    const data = await readLatestAnalysis(ticker)
+    return { success: true, data }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Gagal membaca snapshot analisis.',
+    }
+  }
+}
+
+/**
+ * Reads recent public snapshots from the database.
+ */
+export async function getRecentPublicSnapshotsAction(
+  limit = 20,
+): Promise<{ success: boolean; data?: AnalysisSnapshot[]; error?: string }> {
+  try {
+    const data = await getRecentPublicSnapshots(limit)
+    return { success: true, data }
+  } catch {
+    return { success: false, error: 'Gagal memuat riwayat analisis publik.' }
+  }
+}
+
+/**
+ * Backward-compatible analyzeTicker function that computes intelligence WITHOUT
+ * inserting into the database on read! (F04 resolved)
+ */
 export async function analyzeTicker(ticker: string) {
   try {
     const cleanTicker = normalizeTicker(ticker)
     const apiKey = process.env.SECTORS_API_KEY
 
-    // 1. Fetch data concurrently (cached by getCached)
+    // Fetch data concurrently (cached)
     const [reportData, dailyRows, brokerData, brokerRegistry, newsItems, filings] =
       await Promise.all([
         fetchCompanyReport(cleanTicker, apiKey),
@@ -56,14 +175,14 @@ export async function analyzeTicker(ticker: string) {
         fetchInsiderFilings(cleanTicker, apiKey, 3).catch(() => []),
       ])
 
-    // 2. Analyze News with Gemini AI if any news exists
+    // Analyze News with rule-based / Gemini provider
     let newsImpact = null
     if (newsItems.length > 0) {
       const topNews = newsItems[0]
       newsImpact = await analyzeNewsImpact(topNews.title, topNews.body, cleanTicker)
     }
 
-    // 3. Build unified 4-pillar intelligence
+    // Build unified 4-pillar intelligence (pure function)
     const intelligence = buildFullIntelligence({
       ticker: cleanTicker,
       reportData,
@@ -71,43 +190,93 @@ export async function analyzeTicker(ticker: string) {
       brokerData,
       brokerRegistry,
       newsItems,
-      newsImpact,
+      newsImpact: newsImpact as unknown as GeminiNewsImpact | null,
       filings,
     })
 
-    // 4. Persist to PostgreSQL database
-    const [insertedAnomaly] = await db
-      .insert(anomalies)
-      .values({
-        umaId: `UMA-${crypto.randomUUID()}`,
-        ticker: intelligence.ticker,
-        name: intelligence.name,
-        risk: intelligence.risk,
-        price: intelligence.price,
-        change: intelligence.change,
-        priceDate: intelligence.priceDate,
-        rawPrice: intelligence.rawPrice,
-        rawChange: intelligence.rawChange,
-        volumeSpike: intelligence.volumeSpike,
-        volumeSpikeRatio: intelligence.volumeSpikeRatio,
-        status: intelligence.status,
-        compositeScore: intelligence.compositeScore,
-        reason: intelligence.reason,
-        bandarmology: intelligence.bandarmology,
-        catalystDivergence: intelligence.catalystDivergence,
-        insiderMovement: intelligence.insiderMovement,
-        newsImpact: intelligence.newsImpact,
-      })
-      .returning()
+    // Return the calculated intelligence object directly without database insert
+    const anomalyData = {
+      id: 0,
+      umaId: `UMA-${cleanTicker}`,
+      ticker: intelligence.ticker,
+      name: intelligence.name,
+      risk: intelligence.risk,
+      price: intelligence.price,
+      change: intelligence.change,
+      priceDate: intelligence.priceDate,
+      rawPrice: intelligence.rawPrice,
+      rawChange: intelligence.rawChange,
+      volumeSpike: intelligence.volumeSpike,
+      volumeSpikeRatio: intelligence.volumeSpikeRatio,
+      status: intelligence.status,
+      compositeScore: intelligence.compositeScore,
+      reason: intelligence.reason,
+      bandarmology: intelligence.bandarmology,
+      catalystDivergence: intelligence.catalystDivergence,
+      insiderMovement: intelligence.insiderMovement,
+      newsImpact: intelligence.newsImpact,
+      createdAt: new Date(),
+    }
 
-    return { success: true, data: insertedAnomaly }
+    return { success: true, data: anomalyData }
   } catch (error) {
     return {
       error:
         error instanceof SectorsError
           ? error.message
-          : 'Analisis belum dapat disimpan. Pastikan database aktif, lalu coba lagi.',
+          : 'Data saham belum dapat dimuat. Pastikan koneksi atau periksa kode saham.',
     }
+  }
+}
+
+export async function getRecentAnomalies(): Promise<{
+  success?: boolean
+  data?: Anomaly[]
+  error?: string
+}> {
+  try {
+    const { db } = await import('@/db')
+    const { analysisSnapshots } = await import('@/db/schema')
+    const { desc } = await import('drizzle-orm')
+
+    const rows = await db
+      .select()
+      .from(analysisSnapshots)
+      .orderBy(desc(analysisSnapshots.createdAt))
+      .limit(20)
+
+    const mapped: Anomaly[] = rows.map((r, index) => {
+      const snap = r.payload as AnalysisSnapshot
+      return {
+        id: index + 1,
+        umaId: `SNAP-${r.id}`,
+        ticker: r.ticker,
+        name: r.companyName,
+        risk: snap.composite?.score ?? 50,
+        price: snap.price ? `Rp ${snap.price.toLocaleString('id-ID')}` : '—',
+        change: snap.priceChangeFraction
+          ? `${(snap.priceChangeFraction * 100).toFixed(2)}%`
+          : '0.00%',
+        priceDate: snap.priceDate,
+        rawPrice: snap.price,
+        rawChange: snap.priceChangeFraction,
+        volumeSpike: snap.indicators?.volume?.formattedRatio ?? 'NORMAL 1.0x',
+        volumeSpikeRatio: snap.indicators?.volume?.spikeRatio
+          ? String(snap.indicators.volume.spikeRatio)
+          : null,
+        status: snap.composite?.status ?? 'NORMAL',
+        compositeScore: snap.composite?.score ?? null,
+        reason: snap.composite?.reason ?? '',
+        bandarmology: snap.indicators?.bandarmology as unknown as BandarmologyAnalysis,
+        catalystDivergence: snap.indicators?.divergence as unknown as CatalystDivergence,
+        insiderMovement: snap.indicators?.insider as unknown as InsiderMovementAnalysis,
+        newsImpact: null,
+        createdAt: r.createdAt,
+      }
+    })
+    return { success: true, data: mapped }
+  } catch {
+    return { error: 'Riwayat belum dapat dimuat. Pastikan database aktif, lalu klik Refresh.' }
   }
 }
 
@@ -117,7 +286,7 @@ export interface MarketRadarData {
     headline: string
     impactScore: number
     sentiment: string
-    priceChangePct: number
+    priceChangePct: number | null
     verdict: string
     timestamp?: string
   }>
@@ -152,7 +321,7 @@ export async function getMarketRadarFeed(): Promise<{
       const rawSymbol = symbols[0]
       const cleanSymbol = rawSymbol ? rawSymbol.replace(/\.JK$/i, '') : 'IDX'
       const impact = await analyzeNewsImpact(news.title, news.body, cleanSymbol)
-      // Estimate or fetch quick divergence
+
       // A radar headline without a matching price series must not be treated
       // as a measured 0% move. The divergence engine will mark this as
       // NO_PRICE_RESPONSE and keep the result explanatory for beginners.
@@ -176,8 +345,6 @@ export async function getMarketRadarFeed(): Promise<{
     const insiderAlerts: MarketRadarData['insiderAlerts'] = []
     for (const filing of filings.slice(0, 4)) {
       const ticker = (filing.symbol ?? 'IDX').replace(/\.JK$/i, '')
-      // Never manufacture a market price for an insider filing. A filing can
-      // still be shown while its discount comparison remains unavailable.
       const analysis = analyzeInsiderMovement([filing], null)
       if (analysis.status !== 'NO_RECENT_FILINGS') {
         insiderAlerts.push({
@@ -211,155 +378,148 @@ export async function getMarketRadarFeed(): Promise<{
 
 export async function getWatchlist(): Promise<{
   success: boolean
-  data?: WatchlistItem[]
+  data?: WatchlistItemDTO[]
   error?: string
 }> {
-  try {
-    const userId = await getCurrentUserId()
-    if (!userId) return { success: true, data: [] }
-    const items = await db
-      .select()
-      .from(watchlist)
-      .where(eq(watchlist.userId, userId))
-      .orderBy(desc(watchlist.updatedAt))
-    return { success: true, data: items }
-  } catch {
-    return { success: false, error: 'Gagal memuat watchlist. Pastikan database aktif.' }
-  }
+  const userId = await getCurrentUserId()
+  if (!userId) return { success: true, data: [] }
+  const result = await getWatchlistService(userId)
+  if (!result.ok) return { success: false, error: result.error.message }
+  return { success: true, data: result.data }
 }
 
 export async function addToWatchlist(item: {
   ticker: string
   name?: string
-  targetPrice?: string
+  targetPrice?: number | string
   notes?: string
   priority?: string
   status?: string
-  lastPrice?: string
-  lastChange?: string
-}): Promise<{
-  success: boolean
-  data?: WatchlistItem
-  isNew?: boolean
-  error?: string
-}> {
-  try {
-    const userId = await getCurrentUserId()
-    if (!userId)
-      return {
-        success: false,
-        error: 'AUTH_REQUIRED: Masuk dengan Google untuk menyimpan pantauan.',
-      }
-    const cleanTicker = normalizeTicker(item.ticker)
-    const existing = await db
-      .select()
-      .from(watchlist)
-      .where(and(eq(watchlist.userId, userId), eq(watchlist.ticker, cleanTicker)))
-      .limit(1)
-
-    if (existing.length > 0) {
-      const [updated] = await db
-        .update(watchlist)
-        .set({
-          name: item.name || existing[0].name,
-          targetPrice: item.targetPrice !== undefined ? item.targetPrice : existing[0].targetPrice,
-          notes: item.notes !== undefined ? item.notes : existing[0].notes,
-          priority: item.priority || existing[0].priority,
-          status: item.status || existing[0].status,
-          lastPrice: item.lastPrice || existing[0].lastPrice,
-          lastChange: item.lastChange || existing[0].lastChange,
-          updatedAt: new Date(),
-        })
-        .where(eq(watchlist.id, existing[0].id))
-        .returning()
-      return { success: true, data: updated, isNew: false }
-    }
-
-    const [inserted] = await db
-      .insert(watchlist)
-      .values({
-        userId,
-        ticker: cleanTicker,
-        name: item.name || cleanTicker,
-        targetPrice: item.targetPrice || null,
-        notes: item.notes || null,
-        priority: item.priority || 'MEDIUM',
-        status: item.status || 'WATCHING',
-        lastPrice: item.lastPrice || null,
-        lastChange: item.lastChange || null,
-      })
-      .returning()
-    return { success: true, data: inserted, isNew: true }
-  } catch (error) {
+  lastPrice?: number | string
+  lastChange?: number | string
+}) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Gagal menambahkan ke watchlist.',
+      error: 'AUTH_REQUIRED: Masuk dengan Google untuk menyimpan pantauan.',
     }
   }
+
+  const numTargetPrice =
+    typeof item.targetPrice === 'string' ? parseFloat(item.targetPrice) : item.targetPrice
+  const numLastPrice =
+    typeof item.lastPrice === 'string' ? parseFloat(item.lastPrice) : item.lastPrice
+  const numLastChange =
+    typeof item.lastChange === 'string'
+      ? parseFloat(item.lastChange.replace('%', '')) / 100
+      : item.lastChange
+
+  const priority = parsePriority(item.priority)
+  const status = parseStatus(item.status)
+
+  const result = await addToWatchlistService(userId, {
+    ticker: item.ticker,
+    name: item.name,
+    targetPrice: Number.isFinite(numTargetPrice) ? numTargetPrice : null,
+    notes: item.notes ?? null,
+    priority,
+    status,
+    lastPrice: Number.isFinite(numLastPrice) ? numLastPrice : null,
+    lastChange: Number.isFinite(numLastChange) ? numLastChange : null,
+  })
+
+  if (!result.ok) return { success: false, error: result.error.message }
+  return { success: true, data: result.data, isNew: true }
 }
 
 export async function updateWatchlistItem(
   id: number,
   updates: {
-    targetPrice?: string | null
+    targetPrice?: number | string | null
     notes?: string | null
     priority?: string
     status?: string
   },
-): Promise<{
-  success: boolean
-  data?: WatchlistItem
-  error?: string
-}> {
-  try {
-    const userId = await getCurrentUserId()
-    if (!userId)
-      return {
-        success: false,
-        error: 'AUTH_REQUIRED: Masuk dengan Google untuk mengubah pantauan.',
-      }
-    const [updated] = await db
-      .update(watchlist)
-      .set({
-        ...updates,
-        updatedAt: new Date(),
-      })
-      .where(and(eq(watchlist.id, id), eq(watchlist.userId, userId)))
-      .returning()
-    if (!updated) return { success: false, error: 'Pantauan tidak ditemukan.' }
-    return { success: true, data: updated }
-  } catch (error) {
+) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Gagal memperbarui watchlist.',
+      error: 'AUTH_REQUIRED: Masuk dengan Google untuk mengubah pantauan.',
     }
   }
+
+  const numTargetPrice =
+    typeof updates.targetPrice === 'string' ? parseFloat(updates.targetPrice) : updates.targetPrice
+
+  const priority = parseOptionalPriority(updates.priority)
+  const status = parseOptionalStatus(updates.status)
+
+  // Import directly from repository for id-based update
+  const { updateWatchlistItem: updateRepoItem } =
+    await import('@/lib/server/repositories/watchlist')
+  const updated = await updateRepoItem(userId, id, {
+    targetPrice: Number.isFinite(numTargetPrice) ? numTargetPrice : null,
+    notes: updates.notes ?? null,
+    priority,
+    status,
+  })
+
+  if (!updated) return { success: false, error: 'Pantauan tidak ditemukan.' }
+  return { success: true, data: updated }
 }
 
-export async function deleteWatchlistItem(id: number): Promise<{
-  success: boolean
-  id?: number
-  error?: string
-}> {
-  try {
-    const userId = await getCurrentUserId()
-    if (!userId)
-      return {
-        success: false,
-        error: 'AUTH_REQUIRED: Masuk dengan Google untuk menghapus pantauan.',
-      }
-    const deleted = await db
-      .delete(watchlist)
-      .where(and(eq(watchlist.id, id), eq(watchlist.userId, userId)))
-      .returning({ id: watchlist.id })
-    if (!deleted.length) return { success: false, error: 'Pantauan tidak ditemukan.' }
-    return { success: true, id }
-  } catch (error) {
+export async function deleteWatchlistItem(idOrTicker: number | string) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Gagal menghapus item dari watchlist.',
+      error: 'AUTH_REQUIRED: Masuk dengan Google untuk menghapus pantauan.',
     }
   }
+
+  if (typeof idOrTicker === 'string') {
+    const result = await removeFromWatchlistService(userId, idOrTicker)
+    if (!result.ok) return { success: false, error: result.error.message }
+    return { success: true, id: idOrTicker }
+  }
+
+  const deleted = await deleteWatchlistRepoItem(userId, idOrTicker)
+  if (!deleted) return { success: false, error: 'Pantauan tidak ditemukan.' }
+  return { success: true, id: idOrTicker }
+}
+
+export async function getUserHistoryAction(options?: {
+  ticker?: string
+  limit?: number
+  offset?: number
+}): Promise<{ success: boolean; data?: HistoryListResult; error?: string }> {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return {
+      success: false,
+      error: 'AUTH_REQUIRED: Masuk dengan Google untuk melihat riwayat analisis.',
+    }
+  }
+  const result = await getHistory(userId, options)
+  if (!result.ok) return { success: false, error: result.error.message }
+  return { success: true, data: result.data }
+}
+
+export async function deleteHistoryAction(
+  id: number,
+): Promise<{ success: boolean; error?: string }> {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return {
+      success: false,
+      error: 'AUTH_REQUIRED: Masuk dengan Google untuk menghapus riwayat.',
+    }
+  }
+  const result = await deleteHistory(userId, id)
+  if (!result.ok) return { success: false, error: result.error.message }
+  return { success: true }
 }
 
 export interface ScreenerResult {
@@ -442,4 +602,43 @@ export async function runScreener(filters: {
       error: 'Screener tidak dapat dihubungkan sekarang. Coba lagi setelah beberapa saat.',
     }
   }
+}
+
+export async function listConversationsAction() {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return {
+      success: false,
+      error: 'AUTH_REQUIRED: Masuk dengan Google untuk melihat percakapan.',
+    }
+  }
+  const result = await listConversations(userId)
+  if (!result.ok) return { success: false, error: result.error.message }
+  return { success: true, data: result.data }
+}
+
+export async function getConversationAction(conversationId: string) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return {
+      success: false,
+      error: 'AUTH_REQUIRED: Masuk dengan Google untuk melihat percakapan.',
+    }
+  }
+  const result = await getConversationDetail(userId, conversationId)
+  if (!result.ok) return { success: false, error: result.error.message }
+  return { success: true, data: result.data }
+}
+
+export async function deleteConversationAction(conversationId: string) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return {
+      success: false,
+      error: 'AUTH_REQUIRED: Masuk dengan Google untuk menghapus percakapan.',
+    }
+  }
+  const result = await deleteConversationById(userId, conversationId)
+  if (!result.ok) return { success: false, error: result.error.message }
+  return { success: true }
 }

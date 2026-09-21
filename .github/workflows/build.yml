@@ -1,27 +1,51 @@
-name: Build
+name: CI
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
 
 jobs:
-  build:
+  ci:
+    name: Validate, Test & Build
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        node-version: [latest]
-
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
 
-      - name: Use Node.js ${{ matrix.node-version }}
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 22
           cache: 'pnpm'
 
-      - name: Install packages
-        run: pnpm install --ignore-scripts
+      - name: Install dependencies (frozen, ignore scripts)
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
-      - run: pnpm run build
+      - name: Check code formatting
+        run: pnpm run format:check
+
+      - name: Run linter
+        run: pnpm run lint
+
+      - name: Run TypeScript check
+        run: pnpm run typecheck
+
+      - name: Run unit test suites
+        run: pnpm test
+
+      - name: Build production application
+        env:
+          DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/rasi'
+          AUTH_SECRET: 'ci-secret-value-must-be-at-least-32-chars-long'
+          NEXT_PUBLIC_APP_URL: 'http://localhost:3000'
+          SECTORS_API_KEY: 'ci-sectors-dummy-key'
+          GEMINI_API_KEY: 'ci-gemini-dummy-key'
+        run: pnpm run build

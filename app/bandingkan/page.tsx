@@ -1,175 +1,471 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
-import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
 
-import { ArrowUpRight, GitCompareArrows, Loader2, X } from 'lucide-react'
+import { ExternalLink, Plus, RefreshCw, X } from 'lucide-react'
 
-import { analyzeTicker } from '@/app/actions'
-import { ResearchShell } from '@/components/ResearchShell'
-import type { Anomaly } from '@/db/schema'
+import { getStockData } from '@/app/actions'
+import { Button, ButtonLink } from '@/components/ui'
+import { formatCurrencyIdr, formatPercentageChange, formatScore } from '@/lib/presentation/stock'
+import type { StockDataResult } from '@/lib/server/services/analysis'
 
-export default function ComparePage() {
+interface StockColumnData {
+  symbol: string
+  data: StockDataResult | null
+  loading: boolean
+  error: string | null
+}
+
+function CompareContent() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
   const [symbols, setSymbols] = useState<string[]>(() => {
-    if (typeof window === 'undefined') return ['BBCA', 'BBRI']
-    const values = new URLSearchParams(window.location.search)
-      .get('symbols')
-      ?.split(',')
-      .map((item) => item.trim().toUpperCase().replace(/\.JK$/i, ''))
-      .filter((item) => /^[A-Z]{4}$/.test(item))
-    return values?.length ? [...new Set(values)].slice(0, 3) : ['BBCA', 'BBRI']
+    const raw = searchParams.get('symbols')
+    if (raw) {
+      const parsed = raw
+        .split(',')
+        .map((s) => s.trim().toUpperCase().replace(/\.JK$/i, ''))
+        .filter((s) => /^[A-Z]{4}$/.test(s))
+      if (parsed.length >= 2) return [...new Set(parsed)].slice(0, 3)
+    }
+    return ['BBCA', 'BBRI']
   })
-  const [input, setInput] = useState('')
-  const [rows, setRows] = useState<Anomaly[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
 
-  const addSymbol = () => {
-    const value = input.trim().toUpperCase().replace(/\.JK$/i, '')
-    if (!/^[A-Z]{4}$/.test(value) || symbols.includes(value) || symbols.length >= 3) return
-    setSymbols([...symbols, value])
-    setInput('')
+  const [inputTicker, setInputTicker] = useState('')
+  const [columns, setColumns] = useState<StockColumnData[]>([])
+  const [comparing, setComparing] = useState(false)
+
+  // Fetch comparison data concurrently via getStockData (no Gemini, no DB write, no quota)
+  const loadComparison = useCallback(async (stockSymbols: string[]) => {
+    setComparing(true)
+
+    // Set placeholder loading states
+    setColumns(
+      stockSymbols.map((s) => ({
+        symbol: s,
+        data: null,
+        loading: true,
+        error: null,
+      })),
+    )
+
+    const results = await Promise.all(
+      stockSymbols.map(async (symbol) => {
+        try {
+          const res = await getStockData(symbol)
+          if (res.success && res.data) {
+            return { symbol, data: res.data, loading: false, error: null }
+          }
+          return {
+            symbol,
+            data: null,
+            loading: false,
+            error: res.error || 'Data emiten tidak ditemukan.',
+          }
+        } catch (err) {
+          return {
+            symbol,
+            data: null,
+            loading: false,
+            error: err instanceof Error ? err.message : 'Gagal memuat data.',
+          }
+        }
+      }),
+    )
+
+    setColumns(results)
+    setComparing(false)
+  }, [])
+
+  // Load comparison whenever symbols change
+  useEffect(() => {
+    let isMounted = true
+    const timer = window.setTimeout(() => {
+      if (!isMounted) return
+      void loadComparison(symbols)
+    }, 0)
+    return () => {
+      isMounted = false
+      window.clearTimeout(timer)
+    }
+  }, [symbols, loadComparison])
+
+  const addSymbol = (e: React.FormEvent) => {
+    e.preventDefault()
+    const clean = inputTicker.trim().toUpperCase().replace(/\.JK$/i, '')
+    if (!/^[A-Z]{4}$/.test(clean) || symbols.includes(clean) || symbols.length >= 3) return
+
+    const next = [...symbols, clean]
+    setSymbols(next)
+    setInputTicker('')
+    router.replace(`/bandingkan?symbols=${next.join(',')}`, { scroll: false })
   }
 
-  const remove = (symbol: string) => setSymbols(symbols.filter((item) => item !== symbol))
-
-  const compare = async () => {
-    setLoading(true)
-    setError('')
-    const results: Anomaly[] = []
-    for (const symbol of symbols) {
-      const result = await analyzeTicker(symbol)
-      if (result.data) results.push(result.data)
-      else if (result.error) setError(result.error)
-    }
-    setRows(results)
-    setLoading(false)
-    window.history.replaceState(null, '', '/bandingkan?symbols=' + symbols.join(','))
+  const removeSymbol = (symbol: string) => {
+    if (symbols.length <= 2) return // Keep minimum 2
+    const next = symbols.filter((s) => s !== symbol)
+    setSymbols(next)
+    router.replace(`/bandingkan?symbols=${next.join(',')}`, { scroll: false })
   }
 
   return (
-    <ResearchShell>
-      <section>
-        <p className="text-sm font-semibold text-blue-600">Bandingkan saham</p>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight">
-          Lihat perbedaan tanpa memaksa satu pemenang
+    <div className="space-y-6 py-4">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-[var(--rasi-text)] sm:text-3xl">
+          Bandingkan Saham
         </h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--rasi-muted)]">
-          Nilai yang tidak tersedia tetap kosong. Periode data harus diperiksa sebelum menarik
-          kesimpulan.
+        <p className="mt-1 text-sm text-[var(--rasi-muted)]">
+          Bandingkan 2 hingga 3 saham secara berdampingan tanpa penilaian subjektif. Setiap kolom
+          memuat data secara independen.
         </p>
-        <div className="mt-6 flex flex-wrap gap-2">
-          {symbols.map((symbol) => (
+      </div>
+
+      {/* Symbol selection toolbar */}
+      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-4">
+        <span className="text-xs font-semibold text-[var(--rasi-muted)]">Saham terpilih:</span>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {symbols.map((sym) => (
             <span
-              key={symbol}
-              className="inline-flex items-center gap-2 rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-surface)] px-3 py-2 font-mono text-sm font-bold"
+              key={sym}
+              className="inline-flex items-center gap-2 rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/60 px-3 py-1.5 font-mono text-sm font-bold text-[var(--rasi-text)]"
             >
-              {symbol}
-              <button type="button" aria-label={'Hapus ' + symbol} onClick={() => remove(symbol)}>
-                <X className="h-4 w-4 text-[var(--rasi-muted)] hover:text-rose-600" />
-              </button>
+              {sym}
+              {symbols.length > 2 && (
+                <button
+                  type="button"
+                  aria-label={`Hapus ${sym}`}
+                  onClick={() => removeSymbol(sym)}
+                  className="text-[var(--rasi-muted)] hover:text-[var(--rasi-danger)] focus-visible:outline-none"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
             </span>
           ))}
-          {symbols.length < 3 && (
-            <form
-              className="flex gap-2"
-              onSubmit={(event) => {
-                event.preventDefault()
-                addSymbol()
-              }}
+        </div>
+
+        {symbols.length < 3 && (
+          <form onSubmit={addSymbol} className="flex items-center gap-2">
+            <input
+              type="text"
+              maxLength={4}
+              value={inputTicker}
+              onChange={(e) => setInputTicker(e.target.value.toUpperCase())}
+              placeholder="Tambah kode (contoh: TLKM)"
+              className="min-h-[38px] w-36 rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-surface)] px-3 font-mono text-xs uppercase outline-none focus:border-[var(--rasi-primary)]"
+            />
+            <Button
+              type="submit"
+              variant="secondary"
+              size="sm"
+              icon={Plus}
+              disabled={!inputTicker.trim()}
             >
-              <input
-                value={input}
-                onChange={(event) => setInput(event.target.value)}
-                aria-label="Tambah kode saham"
-                placeholder="Tambah ticker"
-                className="min-h-10 w-32 rounded-lg border border-[var(--rasi-border)] bg-transparent px-3 text-sm"
-              />
-              <button type="submit" className="rasi-button-secondary">
-                Tambah
-              </button>
-            </form>
-          )}
-        </div>
-        <button
-          type="button"
-          className="rasi-button-primary mt-5"
-          disabled={loading || symbols.length < 2}
-          onClick={() => void compare()}
-        >
-          {loading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <GitCompareArrows className="h-4 w-4" />
-          )}{' '}
-          Muat perbandingan
-        </button>
-        {error && (
-          <p
-            className="mt-4 rounded-lg border border-rose-300 bg-rose-50 p-4 text-sm text-rose-800"
-            role="alert"
-          >
-            {error}
-          </p>
+              Tambah
+            </Button>
+          </form>
         )}
-        <div className="mt-6 overflow-x-auto rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)]">
-          {rows.length ? (
-            <table className="w-full min-w-[680px] text-left text-sm">
-              <thead className="bg-[var(--rasi-muted-bg)]">
-                <tr>
-                  <th className="px-4 py-3">Metrik</th>
-                  {rows.map((row) => (
-                    <th key={row.ticker} className="px-4 py-3 font-mono">
-                      {row.ticker}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  ['Harga penutupan', (row: Anomaly) => row.price],
-                  ['Perubahan', (row: Anomaly) => row.change],
-                  ['Volume spike', (row: Anomaly) => row.volumeSpike],
-                  [
-                    'Indikator perhatian',
-                    (row: Anomaly) => String(row.compositeScore ?? row.risk) + '/100',
-                  ],
-                  ['Status', (row: Anomaly) => row.status],
-                ].map(([label, getter]) => (
-                  <tr key={String(label)} className="border-t border-[var(--rasi-border)]">
-                    <td className="px-4 py-3 font-medium text-[var(--rasi-muted)]">
-                      {String(label)}
-                    </td>
-                    {rows.map((row) => (
-                      <td key={row.ticker} className="px-4 py-3 tabular-nums">
-                        {(getter as (value: Anomaly) => string)(row)}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-                <tr className="border-t border-[var(--rasi-border)]">
-                  <td className="px-4 py-3">Detail</td>
-                  {rows.map((row) => (
-                    <td key={row.ticker} className="px-4 py-3">
-                      <Link
-                        href={'/saham/' + row.ticker}
-                        className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:underline"
+
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={RefreshCw}
+          onClick={() => loadComparison(symbols)}
+          pending={comparing}
+          pendingText="Memperbarui…"
+          className="ml-auto"
+        >
+          Segarkan data
+        </Button>
+      </div>
+
+      {/* Comparison Table with Sticky Header & Sticky Row Label Column on Mobile */}
+      <div className="overflow-hidden rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)]">
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-left text-xs">
+            <thead className="border-b border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/50 text-[var(--rasi-muted)]">
+              <tr>
+                <th
+                  scope="col"
+                  className="sticky left-0 z-20 w-44 bg-[var(--rasi-muted-bg)]/90 px-4 py-3 font-semibold backdrop-blur-xs"
+                >
+                  Metrik / Pilar
+                </th>
+                {columns.map((col) => (
+                  <th
+                    key={col.symbol}
+                    scope="col"
+                    className="min-w-[200px] px-4 py-3 font-semibold"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-base font-bold text-[var(--rasi-text)]">
+                        {col.symbol}
+                      </span>
+                      <ButtonLink
+                        href={`/saham/${col.symbol}`}
+                        variant="ghost"
+                        size="sm"
+                        icon={ExternalLink}
                       >
-                        Buka <ArrowUpRight className="h-3.5 w-3.5" />
-                      </Link>
+                        Detail
+                      </ButtonLink>
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--rasi-border)] text-[var(--rasi-text)]">
+              {/* Nama Perusahaan */}
+              <tr>
+                <th
+                  scope="row"
+                  className="sticky left-0 z-10 bg-[var(--rasi-surface)] px-4 py-3 font-medium text-[var(--rasi-muted)]"
+                >
+                  Perusahaan
+                </th>
+                {columns.map((col) => (
+                  <td key={col.symbol} className="px-4 py-3 font-medium">
+                    {col.loading ? (
+                      <span className="animate-pulse text-[var(--rasi-muted)]">Memuat…</span>
+                    ) : col.error ? (
+                      <span className="text-rose-600 dark:text-rose-400">Gagal dimuat</span>
+                    ) : (
+                      col.data?.companyName
+                    )}
+                  </td>
+                ))}
+              </tr>
+
+              {/* Harga Terakhir */}
+              <tr>
+                <th
+                  scope="row"
+                  className="sticky left-0 z-10 bg-[var(--rasi-surface)] px-4 py-3 font-medium text-[var(--rasi-muted)]"
+                >
+                  Harga Penutupan
+                </th>
+                {columns.map((col) => {
+                  if (col.loading)
+                    return (
+                      <td
+                        key={col.symbol}
+                        className="animate-pulse px-4 py-3 text-[var(--rasi-muted)]"
+                      >
+                        …
+                      </td>
+                    )
+                  if (col.error)
+                    return (
+                      <td key={col.symbol} className="px-4 py-3 text-[var(--rasi-muted)]">
+                        —
+                      </td>
+                    )
+                  return (
+                    <td
+                      key={col.symbol}
+                      className="px-4 py-3 font-mono text-base font-bold tabular-nums"
+                    >
+                      {formatCurrencyIdr(col.data?.price)}
                     </td>
-                  ))}
-                </tr>
-              </tbody>
-            </table>
-          ) : (
-            <div className="px-6 py-14 text-center text-sm text-[var(--rasi-muted)]">
-              Tambahkan dua atau tiga saham, lalu muat perbandingan.
-            </div>
-          )}
+                  )
+                })}
+              </tr>
+
+              {/* Perubahan Harga */}
+              <tr>
+                <th
+                  scope="row"
+                  className="sticky left-0 z-10 bg-[var(--rasi-surface)] px-4 py-3 font-medium text-[var(--rasi-muted)]"
+                >
+                  Perubahan Harian
+                </th>
+                {columns.map((col) => {
+                  if (col.loading || col.error)
+                    return (
+                      <td key={col.symbol} className="px-4 py-3 text-[var(--rasi-muted)]">
+                        —
+                      </td>
+                    )
+                  const { text, trend } = formatPercentageChange(col.data?.priceChangeFraction)
+                  return (
+                    <td
+                      key={col.symbol}
+                      className={`px-4 py-3 font-mono font-bold tabular-nums ${
+                        trend === 'up'
+                          ? 'text-[var(--rasi-success)]'
+                          : trend === 'down'
+                            ? 'text-[var(--rasi-danger)]'
+                            : 'text-[var(--rasi-muted)]'
+                      }`}
+                    >
+                      {text}
+                    </td>
+                  )
+                })}
+              </tr>
+
+              {/* P/E Ratio */}
+              <tr>
+                <th
+                  scope="row"
+                  className="sticky left-0 z-10 bg-[var(--rasi-surface)] px-4 py-3 font-medium text-[var(--rasi-muted)]"
+                >
+                  Valuasi P/E
+                </th>
+                {columns.map((col) => {
+                  if (col.loading || col.error)
+                    return (
+                      <td key={col.symbol} className="px-4 py-3 text-[var(--rasi-muted)]">
+                        —
+                      </td>
+                    )
+                  const pe = col.data?.indicators.fundamental.pe
+                  return (
+                    <td key={col.symbol} className="px-4 py-3 font-mono tabular-nums">
+                      {pe !== null && pe !== undefined ? `${pe.toFixed(1)}x` : 'Data belum cukup'}
+                    </td>
+                  )
+                })}
+              </tr>
+
+              {/* P/B Ratio */}
+              <tr>
+                <th
+                  scope="row"
+                  className="sticky left-0 z-10 bg-[var(--rasi-surface)] px-4 py-3 font-medium text-[var(--rasi-muted)]"
+                >
+                  Valuasi P/B
+                </th>
+                {columns.map((col) => {
+                  if (col.loading || col.error)
+                    return (
+                      <td key={col.symbol} className="px-4 py-3 text-[var(--rasi-muted)]">
+                        —
+                      </td>
+                    )
+                  const pb = col.data?.indicators.fundamental.pb
+                  return (
+                    <td key={col.symbol} className="px-4 py-3 font-mono tabular-nums">
+                      {pb !== null && pb !== undefined ? `${pb.toFixed(1)}x` : 'Data belum cukup'}
+                    </td>
+                  )
+                })}
+              </tr>
+
+              {/* Volume Spike */}
+              <tr>
+                <th
+                  scope="row"
+                  className="sticky left-0 z-10 bg-[var(--rasi-surface)] px-4 py-3 font-medium text-[var(--rasi-muted)]"
+                >
+                  Volume Spike (SMA-20)
+                </th>
+                {columns.map((col) => {
+                  if (col.loading || col.error)
+                    return (
+                      <td key={col.symbol} className="px-4 py-3 text-[var(--rasi-muted)]">
+                        —
+                      </td>
+                    )
+                  return (
+                    <td key={col.symbol} className="px-4 py-3 font-mono tabular-nums">
+                      {col.data?.indicators.volume.formattedRatio}
+                    </td>
+                  )
+                })}
+              </tr>
+
+              {/* Arus Broker */}
+              <tr>
+                <th
+                  scope="row"
+                  className="sticky left-0 z-10 bg-[var(--rasi-surface)] px-4 py-3 font-medium text-[var(--rasi-muted)]"
+                >
+                  Status Broker
+                </th>
+                {columns.map((col) => {
+                  if (col.loading || col.error)
+                    return (
+                      <td key={col.symbol} className="px-4 py-3 text-[var(--rasi-muted)]">
+                        —
+                      </td>
+                    )
+                  return (
+                    <td key={col.symbol} className="px-4 py-3 font-semibold">
+                      {col.data?.indicators.bandarmology.status.replace(/_/g, ' ')}
+                    </td>
+                  )
+                })}
+              </tr>
+
+              {/* Status Insider */}
+              <tr>
+                <th
+                  scope="row"
+                  className="sticky left-0 z-10 bg-[var(--rasi-surface)] px-4 py-3 font-medium text-[var(--rasi-muted)]"
+                >
+                  Transaksi Orang Dalam
+                </th>
+                {columns.map((col) => {
+                  if (col.loading || col.error)
+                    return (
+                      <td key={col.symbol} className="px-4 py-3 text-[var(--rasi-muted)]">
+                        —
+                      </td>
+                    )
+                  return (
+                    <td key={col.symbol} className="px-4 py-3">
+                      {col.data?.indicators.insider.status.replace(/_/g, ' ')}
+                    </td>
+                  )
+                })}
+              </tr>
+
+              {/* Skor Komposit */}
+              <tr className="bg-[var(--rasi-muted-bg)]/20">
+                <th
+                  scope="row"
+                  className="sticky left-0 z-10 bg-[var(--rasi-surface)] px-4 py-3 font-bold text-[var(--rasi-text)]"
+                >
+                  Skor Komposit RASI
+                </th>
+                {columns.map((col) => {
+                  if (col.loading || col.error)
+                    return (
+                      <td key={col.symbol} className="px-4 py-3 text-[var(--rasi-muted)]">
+                        —
+                      </td>
+                    )
+                  return (
+                    <td key={col.symbol} className="px-4 py-3 font-mono font-bold">
+                      {formatScore(col.data?.composite.score)}
+                    </td>
+                  )
+                })}
+              </tr>
+            </tbody>
+          </table>
         </div>
-      </section>
-    </ResearchShell>
+      </div>
+    </div>
+  )
+}
+
+export default function ComparePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="p-8 text-center text-sm text-[var(--rasi-muted)]">
+          Memuat halaman perbandingan…
+        </div>
+      }
+    >
+      <CompareContent />
+    </Suspense>
   )
 }

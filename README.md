@@ -57,21 +57,17 @@ GEMINI_API_KEY="your_gemini_api_key_here"
 
 ### 4. Setup Database
 
-Pastikan PostgreSQL sudah berjalan, lalu buat database `rasi`:
+Pastikan PostgreSQL sudah berjalan. Untuk pengembangan lokal standar proyek ini, PostgreSQL berjalan di port **5433** (`.local/postgres`):
 
 ```bash
-createdb rasi
+# Jalankan migrasi mandiri terstruktur (idempotent untuk fresh DB maupun existing)
+node scripts/migrate.mjs
+
+# Jalankan seeder untuk mengisi data snapshot awal (BBCA, TLKM, ASII, BBRI)
+pnpm db:seed
 ```
 
-Untuk pengembangan lokal, jalankan schema Drizzle:
-
-```bash
-corepack pnpm db:push
-```
-
-Untuk staging/produksi, tinjau lalu jalankan SQL aditif
-[`drizzle/0001_rasi_auth_and_watchlist.sql`](drizzle/0001_rasi_auth_and_watchlist.sql). Jangan
-menggunakan `db:push` sebagai prosedur peluncuran produksi.
+> **Peringatan Produksi:** Jangan gunakan `drizzle-kit push` di lingkungan staging atau produksi. Selalu gunakan `node scripts/migrate.mjs` atau terapkan file SQL aditif di `drizzle/0002_rasi_v2_clean.sql`.
 
 ### 5. Run Development Server
 
@@ -90,7 +86,7 @@ RASI dirancang sebagai **Financial Intelligence Terminal** untuk mendeteksi perg
 1. **Bandarmology & Big Money Flow Radar**:
    - Menghitung konsentrasi broker Top 3 (CR3) dan Top 5 (CR5) dari data _broker summary_ harian.
    - Mengidentifikasi status: `BIG_ACCUMULATION`, `NORMAL_ACCUMULATION`, `NEUTRAL`, `BIG_DISTRIBUTION`.
-   - Mengukur arus dana asing (_Foreign Flow Net Inflow/Outflow_) menggunakan registry 88 broker IDX.
+   - Mengukur arus dana asing (_Foreign Flow Net Inflow/Outflow_) dari transaksi investor asing (`f_bval`/`f_sval`), bukan sekadar kode broker asing.
    - Menghitung rata-rata harga beli broker terpilih, dengan label dan periode yang jelas.
    - Tabel Top 5 Pembeli vs Top 5 Penjual dengan badge Institusi, Retail (YP, XC, PD, dsb.), dan Asing.
 
@@ -108,122 +104,105 @@ RASI dirancang sebagai **Financial Intelligence Terminal** untuk mendeteksi perg
      - ⚠️ _Massive Divestment_: pelepasan saham bernilai jumbo (> Rp 10 Miliar atau > 1%).
 
 4. **Kesehatan Fundamental & Lonjakan Volume (_Volume Spike_)**:
-   - Menghitung rasio lonjakan volume harian terhadap rata-rata volume 20 hari bursa (SMA-20).
+   - Menghitung rasio lonjakan volume harian terhadap rata-rata volume 20 hari bursa (SMA-20, minimal 21 observasi sah).
    - Evaluasi kelayakan P/E dan P/B tahun terbaru.
-   - Skor Risiko Komposit Terpadu 0–100.
+   - Skor Risiko Komposit Terpadu 0–100 berbasis 4 pilar lengkap (Fundamental 25%, Broker 35%, Divergensi 25%, Insider 15%).
 
 5. **Arsitektur Hemat Kuota (Quota Shield)**:
-   - Caching pintar bertingkat (In-Memory + PostgreSQL `api_cache`) untuk mengoptimalkan kuota Sectors API (500–1.000 kredit).
-   - Cache PostgreSQL dipakai sebagai cache persisten ketika `DATABASE_URL` tersedia; cache proses
-     tetap menjadi lapisan cepat.
+   - Caching pintar bertingkat (In-Memory LRU + PostgreSQL `api_cache` + distributed lease) untuk mengoptimalkan kuota Sectors API.
+   - Rate limiting atomik berbasis PostgreSQL `quota_buckets` per menit dan per hari WIB.
+   - Pemisahan operasi baca (`readStockData`) tanpa penulisan otomatis ke database atau pemborosan kuota AI.
 
 ---
 
 ## 📦 Environment Variables
 
-| Variable                                    | Deskripsi                                                                                                               | Contoh                                           |
-| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| `DATABASE_URL`                              | URL koneksi PostgreSQL. Digunakan oleh Drizzle ORM untuk menyimpan riwayat analisis dan cache API.                      | `postgresql://postgres:pass@localhost:5432/rasi` |
-| `SECTORS_API_KEY`                           | API Key dari Sectors Financial API. Digunakan untuk data broker summary, transaksi harian, berita, dan insider filings. | `cde1971d...`                                    |
-| `GEMINI_API_KEY`                            | _(Opsional)_ API Key Google Gemini untuk analisis sentimen & dampak berita terstruktur. Gratis di Google AI Studio.     | `AIzaSy...`                                      |
-| `GEMINI_MODEL`                              | Nama model percakapan yang dipakai server.                                                                              | `gemini-3-flash-preview`                         |
-| `BETTER_AUTH_SECRET`                        | Secret sesi minimal 32 karakter; wajib diganti di produksi.                                                             | `random-secret...`                               |
-| `BETTER_AUTH_URL`                           | URL aplikasi yang dipakai OAuth callback.                                                                               | `https://rasi.example.com`                       |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Kredensial OAuth Google.                                                                                                | `...apps.googleusercontent.com`                  |
+| Variable               | Wajib di Prod | Deskripsi                                                   | Contoh                                  |
+| ---------------------- | :-----------: | ----------------------------------------------------------- | --------------------------------------- |
+| `DATABASE_URL`         |      Ya       | URL koneksi PostgreSQL.                                     | `postgresql://user:pass@host:5432/rasi` |
+| `SECTORS_API_KEY`      |      Ya       | API Key dari Sectors Financial API.                         | `cde1971d...`                           |
+| `GEMINI_API_KEY`       |      Ya       | API Key Google Gemini untuk analisis berita dan asisten.    | `AIzaSy...`                             |
+| `GEMINI_MODEL`         |     Tidak     | Nama model percakapan server (default: `gemini-2.5-flash`). | `gemini-2.5-flash`                      |
+| `BETTER_AUTH_SECRET`   |      Ya       | Secret sesi minimal 32 karakter; wajib diganti di produksi. | `random-secret-32-chars...`             |
+| `BETTER_AUTH_URL`      |      Ya       | URL aplikasi yang dipakai OAuth callback.                   | `https://rasi.example.com`              |
+| `GOOGLE_CLIENT_ID`     |      Ya       | Kredensial OAuth Google Client ID.                          | `...apps.googleusercontent.com`         |
+| `GOOGLE_CLIENT_SECRET` |      Ya       | Kredensial OAuth Google Client Secret.                      | `GOCSPX-...`                            |
 
-Lihat file [`env.example`](env.example) untuk template lengkap beserta penjelasan setiap variabel.
+Periksa kelayakan variabel lingkungan sebelum deploy:
 
----
-
-## 🛠️ Tech Stack
-
-- **Framework:** Next.js 16 (Turbopack, App Router, Server Actions)
-- **Database:** PostgreSQL + Drizzle ORM
-- **Styling:** Tailwind CSS v4
-- **Animation:** Framer Motion
-- **Icons:** Lucide React
-- **API:** Sectors Financial API v2
-- **AI Engine:** Google Gemini API (dengan rule-based NLP fallback)
-
----
-
-## 📁 Project Structure
-
+```bash
+node scripts/check-env.mjs
 ```
-hackathon/
-├── app/
-│   ├── actions.ts       # Server actions (fetch multi-endpoint & pipeline intelejen)
-│   ├── layout.tsx       # Root layout + SEO metadata
-│   └── page.tsx         # Dashboard Fintech Intelligence Terminal (3 Tabs)
-├── db/
-│   ├── index.ts         # Koneksi database (Drizzle + postgres)
-│   └── schema.ts        # Schema tabel anomalies & api_cache
-├── lib/
-│   ├── bandarmology.ts  # Engine Bandarmology (CR3/CR5, Foreign Flow, Volume Spike)
-│   ├── divergence.ts    # Engine Sleeping Giant & Catalyst Divergence
-│   ├── gemini.ts        # Integrasi Gemini AI terstruktur & Rule-based fallback
-│   ├── insider.ts       # Deteksi transaksi orang dalam tidak wajar
-│   ├── sectors.ts       # Sectors API client v2 & memory/DB caching layer
-│   └── utils.ts         # Helper utilities (cn)
-├── tests/
-│   ├── intelligence.test.mjs # Unit tests kalkulasi Bandarmology, Divergensi & Insider
-│   └── sectors.test.mjs      # Unit tests Sectors API & scoring
-├── drizzle.config.ts    # Konfigurasi Drizzle Kit
-├── env.example          # Template environment variables
-└── .env.local           # Environment variables lokal
+
+---
+
+## 🛠️ Tech Stack & Arsitektur
+
+- **Framework:** Next.js 16 (App Router, Turbopack, Server Actions)
+- **Database:** PostgreSQL + Drizzle ORM
+- **Autentikasi:** Better Auth (Google OAuth)
+- **Styling:** Tailwind CSS v4 + Framer Motion + Lucide React
+- **API Data:** Sectors Financial API v2
+- **AI Engine:** Google Gemini API (dengan rule-based fallback berlabel)
+
+```text
+Halaman / Komponen
+        ↓
+Server Action atau Route Handler (app/actions.ts, app/api/*)
+        ↓
+Validasi Input + Sesi (Zod contracts di lib/contracts/ & lib/auth.ts)
+        ↓
+Layanan Fitur (lib/server/services/)
+        ↓
+Repository & Provider (lib/server/repositories/ & lib/server/providers/)
+        ↓
+Indikator Murni (domain/)
+        ↓
+Data DTO Aman ke UI
 ```
 
 ---
 
 ## 🧪 Pengujian & Verifikasi
 
-Proyek memiliki 20 tes unit/kontrak. Runner glob dapat terhalang `spawn EPERM` pada sebagian
-sandbox Windows; jalankan kedua fixture langsung untuk memisahkan masalah lingkungan:
+Proyek memiliki 60 tes unit otomatis yang mencakup kontrak data, sanitasi env, perhitungan indikator, isolasi akun, adapter provider, dan dedup idempotensi:
 
 ```powershell
-node --experimental-strip-types tests/intelligence.test.mjs
-node --experimental-strip-types tests/sectors.test.mjs
-corepack pnpm lint
-corepack pnpm exec tsc --noEmit --incremental false
-corepack pnpm format:check
-corepack pnpm build
+# Jalankan seluruh test suites (60 tes)
+pnpm test
+
+# Jalankan typecheck, lint, format check, dan build
+pnpm typecheck
+pnpm lint
+pnpm format:check
+pnpm build
 ```
+
+Endpoint pemantauan kesehatan aplikasi tersedia di:
+
+- `GET /api/health` — memverifikasi status aplikasi, konektivitas database, uptime, dan latensi.
 
 ---
 
-## 🏗️ Build & Deploy
+## 🏗️ Deployment (Vercel & Staging)
 
-### Production Build
-
-```bash
-pnpm build
-pnpm start
-```
-
-### Deploy ke Vercel
-
-1. Push repository ke GitHub.
-2. Import project di [vercel.com](https://vercel.com).
-3. Tambahkan environment variables (`DATABASE_URL`, `SECTORS_API_KEY`, `BETTER_AUTH_SECRET`,
-   `BETTER_AUTH_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, dan `GEMINI_API_KEY`) di Vercel
-   Dashboard → Settings → Environment Variables.
-4. Deploy otomatis setiap push ke branch `main`.
-
-### Deploy ke VPS / Server
-
-```bash
-git clone https://github.com/YOUR_USERNAME/hackathon.git
-cd hackathon
-pnpm install
-cp env.example .env.local
-# Edit .env.local dengan kredensial production
-pnpm drizzle-kit push
-pnpm build
-pnpm start
-```
+1. **Persiapan Database:**
+   - Jalankan `node scripts/migrate.mjs` menggunakan `DATABASE_URL` staging/produksi.
+   - Opsional: jalankan `node scripts/seed.mjs` jika ingin mengisi snapshot data awal.
+2. **Konfigurasi Environment:**
+   - Isi seluruh variabel wajib di Vercel Dashboard → Project Settings → Environment Variables.
+   - Pastikan `BETTER_AUTH_URL` sesuai domain produksi dan `BETTER_AUTH_SECRET` memiliki panjang minimal 32 karakter acak.
+3. **Deploy:**
+   - Push ke branch `main`. CI GitHub Actions akan menjalankan linting, format check, typecheck, seluruh 60 unit tests, dan production build secara otomatis.
+   - Vercel akan membangun dan meluncurkan aplikasi.
+4. **Verifikasi Pasca-Deploy:**
+   - Buka `https://<domain>/api/health` dan pastikan status `"ok"` dan database `"connected"`.
+   - Uji login Google OAuth di `/masuk`.
+   - Uji pencarian ticker saham (misal: BBCA, TLKM).
+   - Uji penambahan saham ke Watchlist dan pembukaan percakapan di Asisten.
 
 ---
 
 ## 📝 License
 
-Lisensi proyek belum ditentukan. Jangan menggunakan, menyalin, atau mendistribusikan kode ini sebelum lisensi ditambahkan.
+Hak Cipta (c) 2026 RASI Team. Seluruh hak cipta dilindungi undang-undang.
