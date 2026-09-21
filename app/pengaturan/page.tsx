@@ -10,19 +10,22 @@ export default function SettingsPage() {
       <div>
         <p className="text-sm font-semibold text-[var(--rasi-primary)]">Pengaturan</p>
         <h1 className="mt-1 text-2xl font-bold tracking-tight text-[var(--rasi-text)] sm:text-3xl">
-          Atur Cara RASI Menampilkan Data
+          {' '}
+          Atur tampilan RASI{' '}
         </h1>
         <p className="mt-2 text-sm text-[var(--rasi-muted)]">
-          Sesuaikan tema visual dan kedalaman penjelasan metrik sesuai tingkat kenyamanan Anda.
+          {' '}
+          Pilih warna tampilan dan seberapa banyak penjelasan yang ingin Anda lihat.{' '}
         </p>
       </div>
 
       <div className="space-y-4">
         {/* Theme Settings */}
         <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-5">
-          <h2 className="font-semibold text-[var(--rasi-text)]">Tema Tampilan</h2>
+          <h2 className="font-semibold text-[var(--rasi-text)]"> Warna tampilan </h2>
           <p className="mt-1 text-xs text-[var(--rasi-muted)]">
-            Pilih antara tema terang, gelap, atau mengikuti pengaturan sistem perangkat Anda.
+            {' '}
+            Pilih terang, gelap, atau ikuti pengaturan perangkat.{' '}
           </p>
           <div className="mt-4 flex flex-wrap gap-2" role="radiogroup" aria-label="Tema tampilan">
             {(['system', 'light', 'dark'] as const).map((val) => (
@@ -45,10 +48,11 @@ export default function SettingsPage() {
 
         {/* Mode Settings: Pemula vs Detail */}
         <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-5">
-          <h2 className="font-semibold text-[var(--rasi-text)]">Kedalaman Informasi</h2>
+          <h2 className="font-semibold text-[var(--rasi-text)]"> Pilihan penjelasan </h2>
           <p className="mt-1 text-xs text-[var(--rasi-muted)]">
-            Mode pemula menampilkan ringkasan ramah pemula dan penjelasan istilah, sedangkan mode
-            detail membuka seluruh metrik teknis secara lengkap.
+            {' '}
+            Pilih “Dengan penjelasan” untuk melihat arti istilah, atau “Langsung ke data” jika sudah
+            terbiasa.{' '}
           </p>
           <div className="mt-4 flex flex-wrap gap-2" role="radiogroup" aria-label="Mode penjelasan">
             <button
@@ -61,7 +65,8 @@ export default function SettingsPage() {
                   : 'border-[var(--rasi-border)] bg-[var(--rasi-surface)] text-[var(--rasi-text)] hover:bg-[var(--rasi-muted-bg)]'
               }`}
             >
-              Mode Pemula (Ringkasan & Istilah)
+              {' '}
+              Dengan penjelasan istilah{' '}
             </button>
             <button
               type="button"
@@ -73,17 +78,17 @@ export default function SettingsPage() {
                   : 'border-[var(--rasi-border)] bg-[var(--rasi-surface)] text-[var(--rasi-text)] hover:bg-[var(--rasi-muted-bg)]'
               }`}
             >
-              Mode Detail (Metrik Lengkap)
+              {' '}
+              Langsung ke data{' '}
             </button>
           </div>
         </div>
 
         {/* Account Privacy & Security Notice */}
         <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/40 p-5 text-xs leading-relaxed text-[var(--rasi-muted)]">
-          <strong className="text-[var(--rasi-text)]">Privasi & Keamanan Akun:</strong> Pantauan
-          pribadi, catatan riset, riwayat analisis, dan percakapan AI disimpan secara terisolasi per
-          akun Google. Data pasar publik tetap dapat diakses tanpa login. RASI tidak pernah meminta
-          kredensial akun sekuritas atau broker Anda.
+          <strong className="text-[var(--rasi-text)]"> Data akun Anda: </strong> Daftar pantauan,
+          catatan, dan percakapan Anda tersimpan di akun Google yang digunakan untuk masuk. Data
+          saham bisa dilihat tanpa masuk. RASI tidak meminta kata sandi akun sekuritas Anda.{' '}
         </div>
       </div>
     </section>

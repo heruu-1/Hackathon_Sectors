@@ -15,11 +15,13 @@ import {
   updateWatchlistItem,
 } from '@/app/actions'
 import { StockPreviewDialog } from '@/components/StockPreviewDialog'
+import { StockSearchCombobox } from '@/components/StockSearchCombobox'
 import { WatchlistDeleteDialog } from '@/components/WatchlistDeleteDialog'
 import { WatchlistNoteDialog } from '@/components/WatchlistNoteDialog'
 import { ActionMenu, Button, ButtonLink } from '@/components/ui'
 import type { Anomaly } from '@/db/schema'
 import { authClient } from '@/lib/auth-client'
+import { getStatusLabel } from '@/lib/presentation/stock'
 
 export interface WatchlistCardItem {
   id: number
@@ -142,7 +144,7 @@ function WatchlistContent({ initialTab = 'watchlist' }: { initialTab?: 'watchlis
     e.preventDefault()
     const ticker = newTicker.trim().toUpperCase().replace(/\.JK$/i, '')
     if (!/^[A-Z]{4}$/.test(ticker)) {
-      setAddError('Kode saham harus berupa 4 huruf IDX.')
+      setAddError('Masukkan kode saham 4 huruf, misalnya BBCA.')
       return
     }
 
@@ -154,7 +156,7 @@ function WatchlistContent({ initialTab = 'watchlist' }: { initialTab?: 'watchlis
       setNewTicker('')
       loadWatchlist()
     } else {
-      setAddError(res.error || 'Gagal menambahkan ke pantauan. Pastikan sudah login.')
+      setAddError(res.error || 'Saham belum tersimpan. Pastikan Anda sudah masuk, lalu coba lagi.')
     }
     setAddingTicker(false)
   }
@@ -184,7 +186,8 @@ function WatchlistContent({ initialTab = 'watchlist' }: { initialTab?: 'watchlis
         <div>
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Pantauan & Riwayat</h1>
           <p className="mt-1 text-sm text-[var(--rasi-muted)]">
-            Kelola emiten yang Anda ikuti dan telusuri analisis yang pernah Anda buka.
+            {' '}
+            Simpan saham yang ingin Anda ikuti dan buka kembali hasil analisis.{' '}
           </p>
         </div>
 
@@ -245,14 +248,17 @@ function WatchlistContent({ initialTab = 'watchlist' }: { initialTab?: 'watchlis
             <label htmlFor="quick-add-ticker" className="sr-only">
               Kode saham
             </label>
-            <input
+            <StockSearchCombobox
               id="quick-add-ticker"
-              type="text"
-              maxLength={4}
               value={newTicker}
-              onChange={(e) => setNewTicker(e.target.value.toUpperCase())}
-              placeholder="Tambah kode saham (contoh: BBCA)"
-              className="min-h-[44px] flex-1 rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-surface)] px-3 font-mono text-sm text-[var(--rasi-text)] uppercase outline-none focus:border-[var(--rasi-primary)] focus:ring-2 focus:ring-[var(--rasi-primary)]/20"
+              onChange={(val) => setNewTicker(val.toUpperCase())}
+              onSelect={(sym) => {
+                setNewTicker(sym)
+              }}
+              placeholder="Tambah kode saham (contoh: TLKM, BBCA)"
+              size="md"
+              className="min-w-[240px] flex-1"
+              aria-label="Kode saham untuk ditambahkan ke pantauan"
             />
             <Button
               type="submit"
@@ -261,6 +267,7 @@ function WatchlistContent({ initialTab = 'watchlist' }: { initialTab?: 'watchlis
               pending={addingTicker}
               pendingText="Menambahkan…"
               icon={Plus}
+              disabled={!newTicker.trim()}
             >
               Simpan ke pantauan
             </Button>
@@ -343,7 +350,7 @@ function WatchlistContent({ initialTab = 'watchlist' }: { initialTab?: 'watchlis
                       aria-label={`Pilihan untuk ${item.ticker}`}
                       items={[
                         {
-                          label: 'Edit catatan',
+                          label: 'Ubah catatan',
                           icon: Edit3,
                           onClick: () => {
                             setNoteItem(item)
@@ -374,7 +381,8 @@ function WatchlistContent({ initialTab = 'watchlist' }: { initialTab?: 'watchlis
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-xs text-[var(--rasi-muted)]">
-              Snapshot analisis publik yang tersimpan di database.
+              {' '}
+              Hasil analisis saham yang tersimpan dan dapat dilihat semua pengguna.{' '}
             </p>
             <Button
               variant="secondary"
@@ -408,7 +416,9 @@ function WatchlistContent({ initialTab = 'watchlist' }: { initialTab?: 'watchlis
               />
               <p className="font-semibold text-[var(--rasi-text)]">Belum ada riwayat analisis</p>
               <p className="mt-1 text-xs">
-                Buat analisis mendalam pada halaman detail saham untuk menyimpan snapshot riwayat.
+                {' '}
+                Buka halaman saham, lalu pilih “Buat analisis baru” untuk menyimpan hasilnya di
+                sini.{' '}
               </p>
             </div>
           ) : (
@@ -430,7 +440,7 @@ function WatchlistContent({ initialTab = 'watchlist' }: { initialTab?: 'watchlis
                         {row.name}
                       </span>
                       <span className="rounded-md border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] px-2 py-0.5 text-xs font-semibold">
-                        {row.status}
+                        {getStatusLabel(row.status).label}
                       </span>
                     </div>
                     <p className="mt-1 text-xs text-[var(--rasi-muted)]">

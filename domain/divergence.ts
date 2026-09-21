@@ -9,6 +9,7 @@ export interface NewsImpactInput {
   isAiGenerated: boolean
   analysisSource: 'GEMINI' | 'RULE_BASED'
   model?: string
+  url?: string | null
 }
 
 /**
@@ -23,7 +24,10 @@ export function detectCatalystDivergence(
   newsImpact: NewsImpactInput | null | undefined,
   priceChangeFraction: number | null,
   newsTimestamp?: string | null,
+  newsUrl?: string | null,
 ): DivergenceIndicator {
+  const resolvedUrl = newsUrl ?? newsImpact?.url ?? null
+
   if (!newsImpact) {
     return {
       dataState: 'empty',
@@ -37,6 +41,7 @@ export function detectCatalystDivergence(
       verdict: 'Tidak ditemukan katalis berita baru untuk emiten ini.',
       recommendation: 'Pantau arus transaksi dan teknikal secara berkala.',
       newsTimestamp,
+      newsUrl: resolvedUrl,
     }
   }
 
@@ -55,6 +60,7 @@ export function detectCatalystDivergence(
         'Respons harga belum dapat dinilai karena penutupan pembanding belum tersedia. Ini adalah indikasi menurut aturan RASI.',
       recommendation: 'Tunggu sesi perdagangan berikutnya untuk memeriksa respon pasar.',
       newsTimestamp,
+      newsUrl: resolvedUrl,
     }
   }
 
@@ -76,6 +82,7 @@ export function detectCatalystDivergence(
       verdict: `🚀 SLEEPING GIANT: Katalis positif besar (+${impact}) terbit, namun harga baru bergerak ${pricePct >= 0 ? '+' : ''}${pricePct}%. Pasar belum merespons penuh menurut indikasi aturan RASI.`,
       recommendation: 'Peluang akumulasi awal sebelum respon harga terjadi.',
       newsTimestamp,
+      newsUrl: resolvedUrl,
     }
   }
 
@@ -93,6 +100,7 @@ export function detectCatalystDivergence(
       verdict: `Katalis positif (+${impact}) sudah direspons pasar dengan kenaikan harga +${pricePct}% menurut aturan RASI.`,
       recommendation: 'Waspada aksi ambil untung (profit taking) jangka pendek.',
       newsTimestamp,
+      newsUrl: resolvedUrl,
     }
   }
 
@@ -111,6 +119,7 @@ export function detectCatalystDivergence(
       verdict: `⚠️ RISIKO TERTUNDA: Katalis negatif (${impact}) terbit, namun harga belum terkoreksi (${pricePct >= 0 ? '+' : ''}${pricePct}%). Potensi tekanan jual tertunda menurut aturan RASI.`,
       recommendation: 'Waspada penurunan tajam saat pasar mulai mencerna berita.',
       newsTimestamp,
+      newsUrl: resolvedUrl,
     }
   }
 
@@ -126,5 +135,6 @@ export function detectCatalystDivergence(
     verdict: `Respons harga (${pricePct >= 0 ? '+' : ''}${pricePct}%) sejalan dengan intensitas berita menurut aturan RASI.`,
     recommendation: 'Kondisi pasar wajar tanpa divergensi signifikan.',
     newsTimestamp,
+    newsUrl: resolvedUrl,
   }
 }

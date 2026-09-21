@@ -66,7 +66,7 @@ export function evaluateFundamentals(valuation: CompanyValuation | null): Fundam
 
   if (reasons.length === 0) {
     risk = 20
-    reasons.push('Tidak melewati ambang batas risiko P/E dan P/B pada aturan penilaian RASI.')
+    reasons.push('Rasio harga dibanding laba (P/E) dan aset bersih (P/B) berada dalam batas wajar.')
   }
 
   const status: IndicatorStatus =
@@ -74,7 +74,7 @@ export function evaluateFundamentals(valuation: CompanyValuation | null): Fundam
 
   const closeDate = valuation.latestCloseDate ?? 'tidak tersedia'
   reasons.push(
-    `Valuasi ${year}: P/E ${pe.toFixed(2)}x, P/B ${pb.toFixed(2)}x. Tanggal penutupan: ${closeDate}. Aturan penilaian RASI bukan penilaian universal lintas sektor.`,
+    `Data keuangan tahun ${year}: P/E ${pe.toFixed(2)}x, P/B ${pb.toFixed(2)}x (harga penutupan: ${closeDate}). Perhitungan ini bukan perkiraan universal untuk semua sektor.`,
   )
 
   return {
@@ -129,15 +129,15 @@ export function computeCompositeScore(params: {
     insiderRisk === null
   ) {
     const missing: string[] = []
-    if (fundamentalScore === null) missing.push('Fundamental')
-    if (bandarRisk === null) missing.push('Broker')
-    if (divergenceRisk === null) missing.push('Divergensi')
-    if (insiderRisk === null) missing.push('Orang Dalam')
+    if (fundamentalScore === null) missing.push('Fundamental (keuangan perusahaan)')
+    if (bandarRisk === null) missing.push('Broker (transaksi)')
+    if (divergenceRisk === null) missing.push('Divergensi (berita & perubahan harga)')
+    if (insiderRisk === null) missing.push('Orang Dalam (transaksi pengurus)')
 
     return {
       score: null,
       status: 'INSUFFICIENT_DATA',
-      reason: `Skor komposit tidak dapat dihitung karena data pilar belum lengkap: ${missing.join(', ')}. Setiap indikator yang tersedia tetap dapat dibaca secara mandiri.`,
+      reason: `Skor RASI belum dihitung karena data berikut belum lengkap: ${missing.join(', ')}. Bagian data yang tersedia tetap dapat dibaca secara mandiri.`,
       weights: COMPOSITE_WEIGHTS,
       ruleVersion: RASI_RULE_VERSION,
       componentsComplete: false,
@@ -168,23 +168,29 @@ export function computeCompositeScore(params: {
 
   const reasons: string[] = []
   if (divergence.status === 'SLEEPING_GIANT') {
-    reasons.push(
-      'Peluang: Indikasi Sleeping Giant (katalis berita belum direspons penuh oleh harga).',
-    )
+    reasons.push('Peluang: Ada berita positif, namun harga saham belum banyak naik.')
   } else if (divergence.status === 'DELAYED_SELL_OFF_RISK') {
-    reasons.push('Risiko: Katalis negatif belum direspons pelemahan harga.')
+    reasons.push('Risiko: Ada berita negatif, namun harga saham belum mengalami penurunan.')
   }
 
   if (bandarmology.status === 'BIG_ACCUMULATION') {
-    reasons.push(`Akumulasi signifikan oleh broker teratas (CR3: ${bandarmology.cr3Buy}%).`)
+    reasons.push(
+      `Pembelian besar melalui broker utama (3 broker teratas menguasai ${bandarmology.cr3Buy}% pembelian).`,
+    )
   } else if (bandarmology.status === 'BIG_DISTRIBUTION') {
-    reasons.push(`Distribusi besar oleh broker teratas (CR3 Jual: ${bandarmology.cr3Sell}%).`)
+    reasons.push(
+      `Penjualan besar melalui broker utama (3 broker teratas menguasai ${bandarmology.cr3Sell}% penjualan).`,
+    )
   }
 
   if (insider.status === 'STEEP_DISCOUNT_DUMP') {
-    reasons.push('Peringatan: Transaksi orang dalam dengan diskon ekstrem di bawah harga pasar.')
+    reasons.push(
+      'Peringatan: Pengurus atau pemegang saham besar menjual saham jauh di bawah harga pasar.',
+    )
   } else if (insider.status === 'AGGRESSIVE_BUY') {
-    reasons.push('Akumulasi kepemilikan oleh orang dalam terdeteksi.')
+    reasons.push(
+      'Pengurus atau pemegang saham besar menambah kepemilikan saham dalam jumlah besar.',
+    )
   }
 
   reasons.push(fundamental.reason)

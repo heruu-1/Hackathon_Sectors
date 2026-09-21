@@ -4,6 +4,8 @@ import { headers } from 'next/headers'
 
 import type { Anomaly } from '@/db/schema'
 import { detectCatalystDivergence } from '@/domain/divergence'
+import { getNewsPriceResponse, isRadarFresh } from '@/domain/radar'
+import { isValidTicker } from '@/domain/ticker'
 import { auth } from '@/lib/auth'
 import type { BandarmologyAnalysis } from '@/lib/bandarmology'
 import type { AnalysisSnapshot } from '@/lib/contracts/analysis'
@@ -22,7 +24,8 @@ import {
   fetchMarketNews,
   normalizeTicker,
 } from '@/lib/sectors'
-import { analyzeNewsImpact } from '@/lib/server/providers/gemini'
+import { getOrSetCache } from '@/lib/server/cache'
+import { analyzeNewsImpact, fallbackAnalyzeNews } from '@/lib/server/providers/gemini'
 import { getRecentPublicSnapshots } from '@/lib/server/repositories/snapshots'
 import { deleteWatchlistItem as deleteWatchlistRepoItem } from '@/lib/server/repositories/watchlist'
 import {
@@ -88,9 +91,10 @@ async function getCurrentUserId(): Promise<string | null> {
  */
 export async function getStockData(
   ticker: string,
+  options?: { forceRefresh?: boolean },
 ): Promise<{ success: boolean; data?: StockDataResult; error?: string }> {
   try {
-    const data = await readStockData(ticker)
+    const data = await readStockData(ticker, options)
     return { success: true, data }
   } catch (error) {
     return {
@@ -281,6 +285,7 @@ export async function getRecentAnomalies(): Promise<{
 }
 
 export interface MarketRadarData {
+  pendingCatalysts?: MarketRadarData['sleepingGiants']
   sleepingGiants: Array<{
     ticker: string
     headline: string
@@ -289,6 +294,7 @@ export interface MarketRadarData {
     priceChangePct: number | null
     verdict: string
     timestamp?: string
+    url?: string | null
   }>
   insiderAlerts: Array<{
     ticker: string
@@ -301,36 +307,201 @@ export interface MarketRadarData {
   }>
   recentNewsCount: number
   recentFilingsCount: number
+  scannedAt?: string
+  isCached?: boolean
+  warning?: string
 }
 
-export async function getMarketRadarFeed(): Promise<{
+export interface RadarHistorySnapshot {
+  pendingCatalysts?: MarketRadarData['sleepingGiants']
+  id: string
+  scannedAt: string
+  sleepingGiantsCount: number
+  insiderAlertsCount: number
+  sleepingGiants: MarketRadarData['sleepingGiants']
+  insiderAlerts: MarketRadarData['insiderAlerts']
+  recentNewsCount: number
+  recentFilingsCount: number
+}
+
+let memoryRadarCache: MarketRadarData | null = null
+let memoryRadarHistory: RadarHistorySnapshot[] = []
+
+async function getRadarCacheFromDb(): Promise<MarketRadarData | null> {
+  if (!process.env.DATABASE_URL) return null
+  try {
+    const { db } = await import('@/db')
+    const { apiCache } = await import('@/db/schema')
+    const { eq } = await import('drizzle-orm')
+    const rows = await db
+      .select()
+      .from(apiCache)
+      .where(eq(apiCache.cacheKey, 'market:radar:latest:v2'))
+      .limit(1)
+    if (rows.length > 0 && rows[0]?.data) {
+      return rows[0].data as MarketRadarData
+    }
+  } catch {
+    // Ignore cache retrieval errors
+  }
+  return null
+}
+
+async function setRadarCacheInDb(data: MarketRadarData): Promise<void> {
+  if (!process.env.DATABASE_URL) return
+  try {
+    const { db } = await import('@/db')
+    const { apiCache } = await import('@/db/schema')
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    await db
+      .insert(apiCache)
+      .values({
+        cacheKey: 'market:radar:latest:v2',
+        data: data as unknown as Record<string, unknown>,
+        expiresAt,
+        createdAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: apiCache.cacheKey,
+        set: {
+          data: data as unknown as Record<string, unknown>,
+          expiresAt,
+          createdAt: new Date(),
+        },
+      })
+  } catch {
+    // Ignore cache save errors
+  }
+}
+
+async function getRadarHistoryFromDb(): Promise<RadarHistorySnapshot[]> {
+  if (!process.env.DATABASE_URL) return []
+  try {
+    const { db } = await import('@/db')
+    const { apiCache } = await import('@/db/schema')
+    const { eq } = await import('drizzle-orm')
+    const rows = await db
+      .select()
+      .from(apiCache)
+      .where(eq(apiCache.cacheKey, 'market:radar:history:v2'))
+      .limit(1)
+    if (rows.length > 0 && Array.isArray(rows[0]?.data)) {
+      return rows[0].data as RadarHistorySnapshot[]
+    }
+  } catch {
+    // Ignore history retrieval errors
+  }
+  return []
+}
+
+async function appendRadarHistoryInDb(snapshot: RadarHistorySnapshot): Promise<void> {
+  if (!process.env.DATABASE_URL) return
+  try {
+    const { db } = await import('@/db')
+    const { apiCache } = await import('@/db/schema')
+    const existing = await getRadarHistoryFromDb()
+    const updated = [snapshot, ...existing.filter((s) => s.id !== snapshot.id)].slice(0, 30)
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+    await db
+      .insert(apiCache)
+      .values({
+        cacheKey: 'market:radar:history:v2',
+        data: updated as unknown as Record<string, unknown>,
+        expiresAt,
+        createdAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: apiCache.cacheKey,
+        set: {
+          data: updated as unknown as Record<string, unknown>,
+          expiresAt,
+          createdAt: new Date(),
+        },
+      })
+  } catch {
+    // Ignore history append errors
+  }
+}
+
+function extractTickerFromNews(news: { symbols?: string[] }): string | null {
+  // Only provider-linked symbols are evidence; free text can contain ordinary words.
+  for (const symbol of news.symbols ?? []) {
+    const clean = symbol.replace(/\.JK$/i, '').trim().toUpperCase()
+    if (isValidTicker(clean)) return clean
+  }
+  return null
+}
+
+let pendingRadarScan: Promise<{ success: boolean; data?: MarketRadarData; error?: string }> | null =
+  null
+
+export async function getMarketRadarFeed(options?: { forceRefresh?: boolean }) {
+  if (pendingRadarScan) return pendingRadarScan
+  pendingRadarScan = readMarketRadarFeed(options)
+  try {
+    return await pendingRadarScan
+  } finally {
+    pendingRadarScan = null
+  }
+}
+
+async function readMarketRadarFeed(options?: { forceRefresh?: boolean }): Promise<{
   success: boolean
   data?: MarketRadarData
   error?: string
 }> {
+  const forceRefresh = options?.forceRefresh ?? false
+
+  // Shared cache expires; rapid manual refreshes reuse the last scan for one minute.
+  const cached = memoryRadarCache ?? (await getRadarCacheFromDb())
+  if (
+    cached &&
+    Array.isArray(cached.pendingCatalysts) &&
+    isRadarFresh(cached.scannedAt) &&
+    (!forceRefresh || Date.now() - Date.parse(cached.scannedAt!) < 60_000)
+  ) {
+    memoryRadarCache = cached
+    return { success: true, data: { ...cached, isCached: true } }
+  }
+
   try {
     const apiKey = process.env.SECTORS_API_KEY
     const [newsItems, filings] = await Promise.all([
-      fetchMarketNews(undefined, apiKey, 6).catch(() => []),
-      fetchInsiderFilings(undefined, apiKey, 6).catch(() => []),
+      fetchMarketNews(undefined, apiKey, 30),
+      fetchInsiderFilings(undefined, apiKey, 30),
     ])
 
     const sleepingGiants: MarketRadarData['sleepingGiants'] = []
-    for (const news of newsItems.slice(0, 4)) {
-      const symbols = (news as { symbols?: string[] }).symbols ?? []
-      const rawSymbol = symbols[0]
-      const cleanSymbol = rawSymbol ? rawSymbol.replace(/\.JK$/i, '') : 'IDX'
-      const impact = await analyzeNewsImpact(news.title, news.body, cleanSymbol)
+    const pendingCatalysts: MarketRadarData['sleepingGiants'] = []
+    const seenTickers = new Set<string>()
 
-      // A radar headline without a matching price series must not be treated
-      // as a measured 0% move. The divergence engine will mark this as
-      // NO_PRICE_RESPONSE and keep the result explanatory for beginners.
-      const divergence = detectCatalystDivergence(impact, null, news.timestamp)
-      if (
-        divergence.status === 'SLEEPING_GIANT' ||
-        (divergence.status !== 'NO_PRICE_RESPONSE' && impact.impactScore >= 50)
-      ) {
-        sleepingGiants.push({
+    for (const news of newsItems.slice(0, 30)) {
+      const detectedTicker = extractTickerFromNews(news)
+      if (!detectedTicker || seenTickers.has(detectedTicker)) continue
+      const cleanSymbol = detectedTicker
+      const impact = fallbackAnalyzeNews(news.title, news.body ?? '')
+      if (impact.sentiment !== 'BULLISH' || impact.impactScore < 40) continue
+      seenTickers.add(detectedTicker)
+      if (seenTickers.size > 8) break
+
+      // Fetch observed price response for the ticker
+      const daily = await getOrSetCache(`radar:daily:90:${detectedTicker}`, 900_000, () =>
+        fetchDailyTransactions(detectedTicker, apiKey),
+      ).catch(() => [])
+      const priceChangeFraction = getNewsPriceResponse(daily, news.timestamp)
+
+      const newsUrl = news.source?.startsWith('http') ? news.source : ((news as any).url ?? null)
+      const divergence = detectCatalystDivergence(
+        impact,
+        priceChangeFraction,
+        news.timestamp,
+        newsUrl,
+      )
+
+      // A candidate without a measured response must not be called a sleeping giant.
+      if (divergence.status === 'SLEEPING_GIANT' || divergence.status === 'NO_PRICE_RESPONSE') {
+        const target = divergence.status === 'SLEEPING_GIANT' ? sleepingGiants : pendingCatalysts
+        target.push({
           ticker: cleanSymbol,
           headline: news.title,
           impactScore: impact.impactScore,
@@ -338,13 +509,15 @@ export async function getMarketRadarFeed(): Promise<{
           priceChangePct: divergence.priceChangePct,
           verdict: divergence.verdict,
           timestamp: news.timestamp,
+          url: newsUrl,
         })
       }
     }
 
     const insiderAlerts: MarketRadarData['insiderAlerts'] = []
-    for (const filing of filings.slice(0, 4)) {
-      const ticker = (filing.symbol ?? 'IDX').replace(/\.JK$/i, '')
+    for (const filing of filings) {
+      const ticker = (filing.symbol ?? '').replace(/\.JK$/i, '').toUpperCase()
+      if (!isValidTicker(ticker)) continue
       const analysis = analyzeInsiderMovement([filing], null)
       if (analysis.status !== 'NO_RECENT_FILINGS') {
         insiderAlerts.push({
@@ -359,20 +532,97 @@ export async function getMarketRadarFeed(): Promise<{
       }
     }
 
+    const nowIso = new Date().toISOString()
+    const radarData: MarketRadarData = {
+      sleepingGiants,
+      pendingCatalysts,
+      insiderAlerts,
+      recentNewsCount: newsItems.length,
+      recentFilingsCount: filings.length,
+      scannedAt: nowIso,
+      isCached: false,
+    }
+
+    // Update caches
+    memoryRadarCache = radarData
+    await setRadarCacheInDb(radarData)
+
+    // Append to history
+    const historySnapshot: RadarHistorySnapshot = {
+      pendingCatalysts,
+      id: `RADAR-${Date.now()}`,
+      scannedAt: nowIso,
+      sleepingGiantsCount: sleepingGiants.length,
+      insiderAlertsCount: insiderAlerts.length,
+      sleepingGiants,
+      insiderAlerts,
+      recentNewsCount: newsItems.length,
+      recentFilingsCount: filings.length,
+    }
+    memoryRadarHistory = [historySnapshot, ...memoryRadarHistory].slice(0, 30)
+    await appendRadarHistoryInDb(historySnapshot)
+
     return {
       success: true,
-      data: {
-        sleepingGiants,
-        insiderAlerts,
-        recentNewsCount: newsItems.length,
-        recentFilingsCount: filings.length,
-      },
+      data: radarData,
     }
   } catch (error) {
+    if (memoryRadarCache) {
+      return {
+        success: true,
+        data: {
+          ...memoryRadarCache,
+          isCached: true,
+          warning: 'Pemindaian baru gagal. Menampilkan hasil terakhir yang tersimpan.',
+        },
+      }
+    }
+    const dbCache = await getRadarCacheFromDb()
+    if (dbCache) {
+      return {
+        success: true,
+        data: {
+          ...dbCache,
+          isCached: true,
+          warning: 'Pemindaian baru gagal. Menampilkan hasil terakhir yang tersimpan.',
+        },
+      }
+    }
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Gagal memuat feed radar pasar.',
     }
+  }
+}
+
+export async function getRadarHistory(): Promise<{
+  success: boolean
+  data?: RadarHistorySnapshot[]
+  error?: string
+}> {
+  try {
+    const dbHistory = await getRadarHistoryFromDb()
+    if (dbHistory.length > 0) {
+      return { success: true, data: dbHistory }
+    }
+    return { success: true, data: memoryRadarHistory }
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Gagal memuat riwayat radar.',
+    }
+  }
+}
+
+export async function clearRadarHistory(): Promise<{
+  success: boolean
+  error?: string
+}> {
+  // Shared public snapshots must never be deleted by an anonymous server action.
+  return {
+    success: false,
+    error:
+      'Riwayat pasar bersifat bersama. Sembunyikan riwayat di browser ini melalui halaman radar.',
   }
 }
 
@@ -566,13 +816,33 @@ export async function runScreener(filters: {
       clauses.push('yield_ttm > ' + Number(filters.minYield))
     if (filters.minEarningsGrowth && Number.isFinite(Number(filters.minEarningsGrowth)))
       clauses.push('yoy_quarter_earnings_growth > ' + Number(filters.minEarningsGrowth))
+    const BASE_COLUMNS_WHERE = [
+      '(sector is not null or sector is null)',
+      '(sub_sector is not null or sub_sector is null)',
+      '(last_close_price is not null or last_close_price is null)',
+      '(pe_ttm is not null or pe_ttm is null)',
+      '(pb_mrq is not null or pb_mrq is null)',
+      '(yield_ttm is not null or yield_ttm is null)',
+      '(roe_ttm is not null or roe_ttm is null)',
+      '(daily_close_change is not null or daily_close_change is null)',
+      '(yoy_quarter_earnings_growth is not null or yoy_quarter_earnings_growth is null)',
+    ].join(' and ')
+
     const params = new URLSearchParams({
       limit: '25',
       offset: String(Math.max(0, filters.offset ?? 0)),
       order_by: '-market_cap',
+      include_query_values: 'true',
     })
-    if (filters.query?.trim()) params.set('q', filters.query.trim().slice(0, 120))
-    else if (clauses.length) params.set('where', clauses.join(' and '))
+    if (filters.query?.trim()) {
+      params.set('q', filters.query.trim().slice(0, 120))
+    } else {
+      const whereClause = clauses.length
+        ? `${clauses.join(' and ')} and ${BASE_COLUMNS_WHERE}`
+        : BASE_COLUMNS_WHERE
+      params.set('where', whereClause)
+    }
+
     const raw = await fetch('https://api.sectors.app/v2/companies/?' + params.toString(), {
       headers: { Authorization: key },
       signal: AbortSignal.timeout(10_000),
@@ -587,9 +857,79 @@ export async function runScreener(filters: {
       results?: ScreenerResult[]
       pagination?: { total_count?: number }
     }
+
+    if (filters.query?.trim() && payload.results && payload.results.length > 0) {
+      const symbols = payload.results.map((r) => r.symbol).filter(Boolean)
+      if (symbols.length > 0) {
+        try {
+          const enrichWhere =
+            symbols.map((s) => `symbol = '${s.replaceAll("'", "''")}'`).join(' or ') +
+            ' and ' +
+            BASE_COLUMNS_WHERE
+          const enrichParams = new URLSearchParams({
+            limit: String(symbols.length),
+            include_query_values: 'true',
+            where: enrichWhere,
+          })
+          const enrichRes = await fetch(
+            'https://api.sectors.app/v2/companies/?' + enrichParams.toString(),
+            {
+              headers: { Authorization: key },
+              signal: AbortSignal.timeout(10_000),
+              cache: 'no-store',
+            },
+          )
+          if (enrichRes.ok) {
+            const enrichPayload = (await enrichRes.json()) as {
+              results?: Array<{ symbol?: string; query_values?: Record<string, unknown> }>
+            }
+            const map = new Map<string, Record<string, unknown>>()
+            for (const item of enrichPayload.results ?? []) {
+              if (item.symbol && item.query_values) {
+                map.set(item.symbol, item.query_values)
+              }
+            }
+            for (const r of payload.results) {
+              const qv = map.get(r.symbol)
+              if (qv) {
+                const rawItem = r as ScreenerResult & { query_values?: Record<string, unknown> }
+                rawItem.query_values = { ...qv, ...rawItem.query_values }
+              }
+            }
+          }
+        } catch {
+          // If enrichment fails, continue with original results
+        }
+      }
+    }
+
     const rows = (payload.results ?? []).map((row) => {
-      const raw = row as ScreenerResult & { query_values?: Partial<ScreenerResult> }
-      return { ...raw.query_values, ...raw, query_values: undefined } as ScreenerResult
+      const raw = row as ScreenerResult & { query_values?: Record<string, unknown> }
+      const qv = raw.query_values ?? {}
+      return {
+        symbol: row.symbol,
+        company_name: row.company_name,
+        sector: (qv.sector as string) ?? (qv.sub_sector as string) ?? undefined,
+        sub_sector: (qv.sub_sector as string) ?? undefined,
+        market_cap: typeof qv.market_cap === 'number' ? qv.market_cap : null,
+        last_close_price: typeof qv.last_close_price === 'number' ? qv.last_close_price : null,
+        daily_close_change:
+          typeof qv.daily_close_change === 'number' ? qv.daily_close_change : null,
+        pe_ttm: typeof qv.pe_ttm === 'number' ? qv.pe_ttm : null,
+        pb_mrq: typeof qv.pb_mrq === 'number' ? qv.pb_mrq : null,
+        roe_ttm: typeof qv.roe_ttm === 'number' ? qv.roe_ttm : null,
+        dividend_yield:
+          typeof qv.yield_ttm === 'number'
+            ? qv.yield_ttm
+            : typeof qv.dividend_yield === 'number'
+              ? qv.dividend_yield
+              : null,
+        yield_ttm: typeof qv.yield_ttm === 'number' ? qv.yield_ttm : null,
+        yoy_quarter_earnings_growth:
+          typeof qv.yoy_quarter_earnings_growth === 'number'
+            ? qv.yoy_quarter_earnings_growth
+            : null,
+      } as ScreenerResult
     })
     return {
       success: true,

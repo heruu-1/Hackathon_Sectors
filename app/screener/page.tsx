@@ -11,12 +11,13 @@ import { type ScreenerResult, runScreener } from '@/app/actions'
 import { ScreenerFilterDialog, type ScreenerFilters } from '@/components/ScreenerFilterDialog'
 import { StockPreviewDialog } from '@/components/StockPreviewDialog'
 import { Button } from '@/components/ui'
+import { getSectorLabel } from '@/lib/presentation/stock'
 
 const PRESETS = [
-  { id: 'large', label: 'Perusahaan Besar (Cap > 10T)', filters: { minMarketCap: '10' } },
-  { id: 'value', label: 'Valuasi Menarik (P/E < 15)', filters: { maxPe: '15' } },
+  { id: 'large', label: 'Nilai perusahaan di atas Rp10 triliun', filters: { minMarketCap: '10' } },
+  { id: 'value', label: 'P/E di bawah 15', filters: { maxPe: '15' } },
   { id: 'dividend', label: 'Membagikan Dividen', filters: { minYield: '0' } },
-  { id: 'growth', label: 'Pertumbuhan Laba Positif', filters: { minEarningsGrowth: '0' } },
+  { id: 'growth', label: 'Laba bertumbuh', filters: { minEarningsGrowth: '0' } },
   { id: 'valuation', label: 'P/E < 15 & P/B < 2', filters: { maxPe: '15', maxPb: '2' } },
 ]
 
@@ -167,7 +168,8 @@ function ScreenerContent() {
 
   // Active filter chips list
   const activeChips: Array<{ key: keyof ScreenerFilters; label: string }> = []
-  if (filters.sector) activeChips.push({ key: 'sector', label: `Sektor: ${filters.sector}` })
+  if (filters.sector)
+    activeChips.push({ key: 'sector', label: `Sektor: ${getSectorLabel(filters.sector)}` })
   if (filters.maxPe) activeChips.push({ key: 'maxPe', label: `Maks P/E: ${filters.maxPe}` })
   if (filters.maxPb) activeChips.push({ key: 'maxPb', label: `Maks P/B: ${filters.maxPb}` })
   if (filters.minMarketCap)
@@ -186,11 +188,13 @@ function ScreenerContent() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-[var(--rasi-text)] sm:text-3xl">
-          Penyaring Saham (Screener)
+          {' '}
+          Cari saham sesuai kriteria{' '}
         </h1>
         <p className="mt-1 text-sm text-[var(--rasi-muted)]">
-          Saring saham IDX berdasarkan rasio valuasi fundamental, pembagian dividen, dan sektor
-          industri.
+          {' '}
+          Cari saham berdasarkan harga dibanding laba, dividen, ukuran perusahaan, atau bidang
+          usaha.{' '}
         </p>
       </div>
 
@@ -204,7 +208,8 @@ function ScreenerContent() {
               icon={Filter}
               onClick={() => setFilterModalOpen(true)}
             >
-              Filter lanjutan {activeChips.length > 0 ? `(${activeChips.length})` : ''}
+              {' '}
+              Atur kriteria {activeChips.length > 0 ? `(${activeChips.length})` : ''}
             </Button>
 
             {activeChips.length > 0 && (
@@ -213,19 +218,19 @@ function ScreenerContent() {
                 onClick={handleResetAll}
                 className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-[var(--rasi-muted)] hover:text-[var(--rasi-text)]"
               >
-                <RotateCcw className="h-3 w-3" /> Reset
+                <RotateCcw className="h-3 w-3" /> Hapus kriteria{' '}
               </button>
             )}
           </div>
 
           <span className="font-mono text-xs text-[var(--rasi-muted)] tabular-nums">
-            {total} emiten ditemukan
+            {total} saham ditemukan{' '}
           </span>
         </div>
 
         {/* Preset quick buttons */}
         <div className="flex flex-wrap items-center gap-1.5 pt-1">
-          <span className="mr-1 text-xs text-[var(--rasi-muted)]">Preset:</span>
+          <span className="mr-1 text-xs text-[var(--rasi-muted)]"> Pilihan cepat: </span>
           {PRESETS.map((p) => (
             <button
               key={p.id}
@@ -241,7 +246,10 @@ function ScreenerContent() {
         {/* Active Chips */}
         {activeChips.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 border-t border-[var(--rasi-border)] pt-2">
-            <span className="text-xs font-semibold text-[var(--rasi-muted)]">Filter aktif:</span>
+            <span className="text-xs font-semibold text-[var(--rasi-muted)]">
+              {' '}
+              Kriteria dipakai:{' '}
+            </span>
             {activeChips.map((chip) => (
               <span
                 key={chip.key}
@@ -266,8 +274,8 @@ function ScreenerContent() {
       <details className="group rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-4 text-sm text-[var(--rasi-muted)]">
         <summary className="flex cursor-pointer list-none items-center justify-between font-semibold text-[var(--rasi-text)] hover:text-[var(--rasi-primary)]">
           <span className="flex items-center gap-2">
-            <Search className="h-4 w-4 text-[var(--rasi-primary)]" />
-            Cari dengan kalimat bahasa alami
+            <Search className="h-4 w-4 text-[var(--rasi-primary)]" /> Tulis saham yang Anda
+            cari{' '}
           </span>
           <span className="text-xs transition-transform group-open:rotate-180">▾</span>
         </summary>
@@ -276,7 +284,7 @@ function ScreenerContent() {
             type="text"
             value={nlpInput}
             onChange={(e) => setNlpInput(e.target.value)}
-            placeholder="Contoh: Perusahaan perbankan dengan dividen tinggi dan P/E murah"
+            placeholder="Contoh: Saham bank dengan dividen di atas 3% dan P/E di bawah 15"
             className="min-h-[44px] flex-1 rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-surface)] px-3 text-sm text-[var(--rasi-text)] outline-none focus:border-[var(--rasi-primary)] focus:ring-2 focus:ring-[var(--rasi-primary)]/20"
           />
           <Button type="submit" variant="primary" size="md">
@@ -299,13 +307,13 @@ function ScreenerContent() {
       <div className="overflow-hidden rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)]">
         {loading ? (
           <div className="flex min-h-[240px] items-center justify-center p-12 text-sm text-[var(--rasi-muted)]">
-            <Loader2 className="mr-2 h-5 w-5 animate-spin text-[var(--rasi-primary)]" />
-            Menyaring saham IDX…
+            <Loader2 className="mr-2 h-5 w-5 animate-spin text-[var(--rasi-primary)]" /> Mencari
+            saham…{' '}
           </div>
         ) : rows.length === 0 ? (
           <div className="p-12 text-center text-sm text-[var(--rasi-muted)]">
-            Tidak ada saham yang cocok dengan kriteria filter saat ini. Coba longgarkan batas rasio
-            atau reset filter.
+            {' '}
+            Belum ada saham yang cocok. Coba ubah atau hapus sebagian kriteria.{' '}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -331,7 +339,8 @@ function ScreenerContent() {
                     P/B
                   </th>
                   <th scope="col" className="px-4 py-3 text-right">
-                    Yield
+                    {' '}
+                    Dividen (%){' '}
                   </th>
                   <th scope="col" className="px-4 py-3 text-center">
                     Aksi
@@ -353,20 +362,24 @@ function ScreenerContent() {
                       </Link>
                     </td>
                     <td className="max-w-xs truncate px-4 py-3">{row.company_name}</td>
-                    <td className="px-4 py-3 text-[var(--rasi-muted)]">{row.sector}</td>
+                    <td className="px-4 py-3 text-[var(--rasi-muted)]">
+                      {row.sector ?? row.sub_sector ?? '—'}
+                    </td>
                     <td className="px-4 py-3 text-right font-mono tabular-nums">
-                      {row.last_close_price
+                      {typeof row.last_close_price === 'number'
                         ? `Rp ${row.last_close_price.toLocaleString('id-ID')}`
                         : '—'}
                     </td>
                     <td className="px-4 py-3 text-right font-mono tabular-nums">
-                      {row.pe_ttm ? `${row.pe_ttm.toFixed(1)}x` : '—'}
+                      {typeof row.pe_ttm === 'number' ? `${row.pe_ttm.toFixed(1)}x` : '—'}
                     </td>
                     <td className="px-4 py-3 text-right font-mono tabular-nums">
-                      {row.pb_mrq ? `${row.pb_mrq.toFixed(1)}x` : '—'}
+                      {typeof row.pb_mrq === 'number' ? `${row.pb_mrq.toFixed(1)}x` : '—'}
                     </td>
                     <td className="px-4 py-3 text-right font-mono tabular-nums">
-                      {row.dividend_yield ? `${(row.dividend_yield * 100).toFixed(1)}%` : '—'}
+                      {typeof (row.dividend_yield ?? row.yield_ttm) === 'number'
+                        ? `${((row.dividend_yield ?? row.yield_ttm)! * 100).toFixed(1)}%`
+                        : '—'}
                     </td>
                     <td className="px-4 py-3 text-center">
                       <Button

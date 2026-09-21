@@ -76,7 +76,7 @@ export function analyzeInsiderMovement(
       status = 'STEEP_DISCOUNT_DUMP'
       riskScore = 90
       reasons.push(
-        `🚨 DISKON EKSTREM: ${holderName} melepas saham di harga Rp ${price.toLocaleString('id-ID')} (${discountPct.toFixed(1)}% di bawah harga pasar pembanding Rp ${currentMarketPrice.toLocaleString('id-ID')}).`,
+        `🚨 DISKON EKSTREM: ${holderName} menjual saham di harga Rp ${price.toLocaleString('id-ID')} (${discountPct.toFixed(1)}% lebih murah dibanding harga pasar terakhir Rp ${currentMarketPrice.toLocaleString('id-ID')}).`,
       )
     }
   }
@@ -87,7 +87,7 @@ export function analyzeInsiderMovement(
       status = 'MASSIVE_DIVESTMENT'
       riskScore = 75
       reasons.push(
-        `⚠️ DIVESTASI BESAR: ${holderName} melepas ${pct.toFixed(2)}% kepemilikan senilai Rp ${(value / 1_000_000_000).toFixed(2)} Miliar.`,
+        `Penjualan jumlah besar: ${holderName} melepas ${pct.toFixed(2)}% kepemilikan senilai Rp ${(value / 1_000_000_000).toFixed(2)} Miliar.`,
       )
     } else {
       riskScore = 45
@@ -103,7 +103,7 @@ export function analyzeInsiderMovement(
       status = 'AGGRESSIVE_BUY'
       riskScore = 15
       reasons.push(
-        `💎 AKUMULASI INSIDER: ${holderName} menambah kepemilikan ${pct.toFixed(2)}% senilai Rp ${(value / 1_000_000_000).toFixed(2)} Miliar.`,
+        `Pembelian jumlah besar: ${holderName} menambah kepemilikan ${pct.toFixed(2)}% senilai Rp ${(value / 1_000_000_000).toFixed(2)} Miliar.`,
       )
     } else {
       riskScore = 25

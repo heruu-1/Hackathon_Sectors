@@ -20,6 +20,23 @@ const BULLISH_KEYWORDS = [
   'rekor baru',
   'surplus',
   'divestasi menguntungkan',
+  // English keywords from Sectors API
+  'acquisition',
+  'acquire',
+  'profit jumps',
+  'profit surged',
+  'net profit up',
+  'revenue rises',
+  'dividend',
+  'contract win',
+  'expansion',
+  'buyback',
+  'surges',
+  'soars',
+  'record high',
+  'restructuring',
+  'signs mou',
+  'partnership',
 ]
 
 const BEARISH_KEYWORDS = [
@@ -40,6 +57,21 @@ const BEARISH_KEYWORDS = [
   'pemutusan hubungan kerja',
   'penurunan pendapatan',
   'delisting',
+  // English keywords
+  'net loss',
+  'plunges',
+  'debt default',
+  'bankruptcy',
+  'suspension',
+  'investigation',
+  'sanction',
+  'lawsuit',
+  'fraud',
+  'fine',
+  'layoff',
+  'revenue drops',
+  'outflow',
+  'net sell',
 ]
 
 const GeminiNewsResponseSchema = z.object({
@@ -55,11 +87,11 @@ export function fallbackAnalyzeNews(title: string, body: string): NewsImpactInpu
   let score = 0
 
   for (const kw of BULLISH_KEYWORDS) {
-    if (content.includes(kw)) score += 25
+    if (new RegExp(`\\b${kw}\\b`, 'i').test(content)) score += 25
   }
 
   for (const kw of BEARISH_KEYWORDS) {
-    if (content.includes(kw)) score -= 30
+    if (new RegExp(`\\b${kw}\\b`, 'i').test(content)) score -= 30
   }
 
   score = Math.max(-100, Math.min(100, score))
@@ -69,12 +101,39 @@ export function fallbackAnalyzeNews(title: string, body: string): NewsImpactInpu
   else if (score <= -25) sentiment = 'BEARISH'
 
   let catalystType = 'GENERAL'
-  if (content.includes('akuisisi') || content.includes('merger')) catalystType = 'ACQUISITION'
-  else if (content.includes('dividen')) catalystType = 'DIVIDEND'
-  else if (content.includes('laba') || content.includes('pendapatan')) catalystType = 'EARNINGS'
-  else if (content.includes('kontrak') || content.includes('tender')) catalystType = 'CONTRACT_WIN'
-  else if (content.includes('utang') || content.includes('obligasi') || content.includes('sukuk'))
+  if (
+    content.includes('akuisisi') ||
+    content.includes('merger') ||
+    content.includes('acquisition') ||
+    content.includes('acquire')
+  ) {
+    catalystType = 'ACQUISITION'
+  } else if (content.includes('dividen') || content.includes('dividend')) {
+    catalystType = 'DIVIDEND'
+  } else if (
+    content.includes('laba') ||
+    content.includes('pendapatan') ||
+    content.includes('profit') ||
+    content.includes('revenue') ||
+    content.includes('earnings')
+  ) {
+    catalystType = 'EARNINGS'
+  } else if (
+    content.includes('kontrak') ||
+    content.includes('tender') ||
+    content.includes('contract') ||
+    content.includes('mou')
+  ) {
+    catalystType = 'CONTRACT_WIN'
+  } else if (
+    content.includes('utang') ||
+    content.includes('obligasi') ||
+    content.includes('sukuk') ||
+    content.includes('debt') ||
+    content.includes('bond')
+  ) {
     catalystType = 'DEBT'
+  }
 
   const headlineId = title.length > 80 ? `${title.slice(0, 77)}...` : title
   const summaryId =

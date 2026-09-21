@@ -10,6 +10,7 @@ import {
   Bookmark,
   BookmarkCheck,
   Bot,
+  ExternalLink,
   GitCompareArrows,
   HelpCircle,
   Loader2,
@@ -32,7 +33,10 @@ import {
   METRIC_EXPLANATIONS,
   formatCurrencyIdr,
   formatDateWib,
+  formatForeignFlow,
   formatPercentageChange,
+  getNewsCategoryLabel,
+  getNewsSentimentLabel,
   getStatusLabel,
 } from '@/lib/presentation/stock'
 import type { StockDataResult } from '@/lib/server/services/analysis'
@@ -80,7 +84,7 @@ export default function StockDetail({ ticker }: StockDetailProps) {
       setLoadError('')
 
       try {
-        const result = await getStockData(symbol)
+        const result = await getStockData(symbol, { forceRefresh: isRefresh })
         if (result.success && result.data) {
           setData(result.data)
           setLoadState('ready')
@@ -89,7 +93,15 @@ export default function StockDetail({ ticker }: StockDetailProps) {
           setLoadState('error')
         }
       } catch (err) {
-        setLoadError(err instanceof Error ? err.message : 'Gagal memuat data pasar.')
+        const msg = err instanceof Error ? err.message : 'Gagal memuat data pasar.'
+        if (
+          msg.includes('was not found on the server') ||
+          msg.includes('Failed to find Server Action')
+        ) {
+          setLoadError('Aplikasi telah diperbarui. Muat ulang halaman untuk melanjutkan.')
+        } else {
+          setLoadError(msg)
+        }
         setLoadState('error')
       } finally {
         if (isRefresh) setRefreshState('idle')
@@ -172,12 +184,14 @@ export default function StockDetail({ ticker }: StockDetailProps) {
       const res = await createAnalysisAction(symbol)
       if (res.success && res.data) {
         setAnalysisState('done')
-        setAnalysisMessage('Analisis AI dan snapshot baru berhasil disimpan ke database.')
+        setAnalysisMessage('Analisis selesai dan tersimpan. Anda bisa membukanya lagi di Riwayat.')
         // Reload fresh data
         loadData(true)
       } else {
         setAnalysisState('error')
-        setAnalysisMessage(res.error || 'Gagal membuat analisis AI. Pastikan Anda sudah login.')
+        setAnalysisMessage(
+          res.error || 'Analisis belum berhasil dibuat. Pastikan Anda sudah masuk, lalu coba lagi.',
+        )
       }
     } catch (err) {
       setAnalysisState('error')
@@ -194,9 +208,7 @@ export default function StockDetail({ ticker }: StockDetailProps) {
       <div className="py-16 text-center text-sm text-[var(--rasi-muted)]">
         <Loader2 className="mx-auto mb-3 h-8 w-8 animate-spin text-[var(--rasi-primary)]" />
         <p className="font-semibold text-[var(--rasi-text)]">Memuat data pasar {symbol}…</p>
-        <p className="mt-1 text-xs">
-          Membaca valuasi, riwayat harga, broker, dan pelaporan insider.
-        </p>
+        <p className="mt-1 text-xs"> Memuat harga, laporan keuangan, dan transaksi saham. </p>
       </div>
     )
   }
@@ -285,7 +297,7 @@ export default function StockDetail({ ticker }: StockDetailProps) {
               pending={refreshState === 'refreshing'}
               pendingText="Memperbarui…"
               icon={RefreshCw}
-              title="Perbarui data dari cache/provider"
+              title="Periksa pembaruan data"
             >
               Perbarui data
             </Button>
@@ -345,25 +357,30 @@ export default function StockDetail({ ticker }: StockDetailProps) {
         {/* 3. Brief Summary (always visible, not duplicated in tabs) */}
         <div>
           <h2 className="text-xs font-semibold tracking-wider text-[var(--rasi-muted)] uppercase">
-            Ringkasan Kondisi Teramati
+            {' '}
+            Ringkasan saham{' '}
           </h2>
           <p className="mt-1.5 text-sm leading-relaxed text-[var(--rasi-text)]">
-            {composite?.reason ||
-              'Tidak ada peringatan ekstrem yang teridentifikasi pada snapshot data pasar terkini.'}
+            {composite?.reason || 'Belum ada hal khusus yang ditandai dari data yang tersedia.'}
           </p>
           <p className="mt-2 text-xs text-[var(--rasi-muted)]">
-            Keterbatasan: Analisis berbasis data historis penutupan hari (EOD) dan pelaporan publik.
-            Bukan merupakan nasihat investasi atau jaminan kinerja masa depan.
+            {' '}
+            Ringkasan memakai harga penutupan bursa dan laporan yang sudah terbit. Hasilnya bukan
+            prediksi harga atau anjuran membeli saham.{' '}
           </p>
         </div>
 
         {/* Deep analysis explicit trigger */}
         <div className="flex flex-col justify-between gap-3 border-t border-[var(--rasi-border)] pt-4 text-xs sm:flex-row sm:items-center">
           <div>
-            <span className="font-semibold text-[var(--rasi-text)]">Analisis AI Mendalam: </span>
+            <span className="font-semibold text-[var(--rasi-text)]">
+              {' '}
+              Jelaskan berita dengan AI{' '}
+            </span>
             <span className="text-[var(--rasi-muted)]">
-              Memproses dampak berita dengan Gemini dan menyimpan snapshot permanen (memerlukan
-              login).
+              {' '}
+              Minta Gemini menjelaskan berita saham ini dan simpan hasilnya. Masuk terlebih
+              dahulu.{' '}
             </span>
           </div>
           <Button
@@ -400,9 +417,9 @@ export default function StockDetail({ ticker }: StockDetailProps) {
         <div className="flex flex-col justify-between gap-3 border-b border-[var(--rasi-border)] sm:flex-row sm:items-center">
           <div className="flex overflow-x-auto">
             {[
-              { key: 'fundamental', label: 'Fundamental' },
-              { key: 'broker', label: 'Arus Broker' },
-              { key: 'news', label: 'Katalis Berita' },
+              { key: 'fundamental', label: 'Keuangan perusahaan' },
+              { key: 'broker', label: 'Transaksi broker' },
+              { key: 'news', label: 'Berita' },
               { key: 'insider', label: 'Transaksi Orang Dalam' },
             ].map((tab) => {
               const active = currentTab === tab.key
@@ -430,7 +447,7 @@ export default function StockDetail({ ticker }: StockDetailProps) {
               onClick={() => setMode(mode === 'beginner' ? 'detail' : 'beginner')}
               className="rounded-md border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] px-2.5 py-1 text-xs font-semibold text-[var(--rasi-text)] transition-colors hover:border-[var(--rasi-primary)]"
             >
-              {mode === 'beginner' ? 'Mode Pemula' : 'Mode Detail'}
+              {mode === 'beginner' ? 'Dengan penjelasan' : 'Langsung ke data'}
             </button>
           </div>
         </div>
@@ -442,26 +459,27 @@ export default function StockDetail({ ticker }: StockDetailProps) {
             <div className="space-y-6">
               {mode === 'beginner' && (
                 <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-4 text-xs leading-relaxed text-blue-950 dark:border-blue-900/50 dark:bg-blue-950/20 dark:text-blue-200">
-                  <strong>Panduan Pemula — Fundamental:</strong> Rasio P/E dan P/B membantu Anda
-                  mengetahui apakah harga saham saat ini murah atau mahal dibandingkan laba bersih
-                  dan nilai aset perusahaan. Angka yang lebih rendah biasanya lebih menarik, namun
-                  tetap harus dibandingkan dengan rata-rata sektor industrinya.
+                  <strong> Cara membaca angka ini: </strong> P/E membandingkan harga saham dengan
+                  laba per saham. P/B membandingkannya dengan aset bersih per saham. Angka rendah
+                  belum tentu murah; lihat juga kondisi perusahaan dan perusahaan sejenis.{' '}
                 </div>
               )}
 
               <div>
                 <h3 className="text-base font-bold text-[var(--rasi-text)]">
-                  Kondisi Fundamental & Valuasi
+                  {' '}
+                  Harga, laba, dan aset perusahaan{' '}
                 </h3>
                 <p className="mt-1 text-xs text-[var(--rasi-muted)]">
-                  Data rasio keuangan dari laporan emiten di Bursa Efek Indonesia.
+                  {' '}
+                  Perbandingan harga saham dengan angka dalam laporan keuangan perusahaan.{' '}
                 </p>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-3">
                 <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/40 p-4">
                   <div className="flex items-center justify-between text-xs text-[var(--rasi-muted)]">
-                    <span>P/E Ratio</span>
+                    <span> Harga dibanding laba (P/E) </span>
                     <details className="cursor-pointer">
                       <summary className="flex list-none items-center gap-0.5 text-[var(--rasi-primary)] hover:underline">
                         <HelpCircle className="h-3.5 w-3.5" />
@@ -479,14 +497,14 @@ export default function StockDetail({ ticker }: StockDetailProps) {
                   </span>
                   <span className="mt-1 block text-xs text-[var(--rasi-muted)]">
                     {peVal !== null && peVal !== undefined && peVal > 0 && peVal < 15
-                      ? 'Valuasi wajar berdasarkan P/E'
-                      : 'Periksa pertumbuhan laba emiten'}
+                      ? 'P/E di bawah 15; bandingkan juga dengan perusahaan sejenis'
+                      : 'Lihat juga apakah laba perusahaan bertumbuh'}
                   </span>
                 </div>
 
                 <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/40 p-4">
                   <div className="flex items-center justify-between text-xs text-[var(--rasi-muted)]">
-                    <span>P/B Ratio</span>
+                    <span> Harga dibanding aset bersih (P/B) </span>
                     <details className="cursor-pointer">
                       <summary className="flex list-none items-center gap-0.5 text-[var(--rasi-primary)] hover:underline">
                         <HelpCircle className="h-3.5 w-3.5" />
@@ -503,19 +521,21 @@ export default function StockDetail({ ticker }: StockDetailProps) {
                       : 'Data belum cukup'}
                   </span>
                   <span className="mt-1 block text-xs text-[var(--rasi-muted)]">
-                    Harga dibandingkan nilai buku ekuitas
+                    {' '}
+                    Harga dibanding aset setelah dikurangi utang, menurut laporan keuangan{' '}
                   </span>
                 </div>
 
                 <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/40 p-4">
                   <span className="block text-xs text-[var(--rasi-muted)]">
-                    Status Pilar Fundamental
+                    {' '}
+                    Hasil pemeriksaan keuangan{' '}
                   </span>
                   <span className="mt-2 block text-base font-bold">
                     {getStatusLabel(fundamental.status).label}
                   </span>
                   <span className="mt-1 block text-xs text-[var(--rasi-muted)]">
-                    {fundamental.reason || 'Pemeriksaan rasio dasar terpenuhi.'}
+                    {fundamental.reason || 'Perbandingan harga dan keuangan sudah diperiksa.'}
                   </span>
                 </div>
               </div>
@@ -527,19 +547,24 @@ export default function StockDetail({ ticker }: StockDetailProps) {
             <div className="space-y-6">
               <div>
                 <h3 className="text-base font-bold text-[var(--rasi-text)]">
-                  Arus Broker & Investor Asing
+                  {' '}
+                  Transaksi broker dan investor asing{' '}
                 </h3>
                 <p className="mt-1 text-xs text-[var(--rasi-muted)]">
-                  Ringkasan konsentrasi akumulasi/distribusi broker teratas pada sesi perdagangan
-                  terakhir.
+                  {' '}
+                  Lihat porsi pembelian dan penjualan melalui broker terbesar pada hari bursa
+                  terakhir.{' '}
                 </p>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-3">
                 <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/40 p-4">
-                  <span className="block text-xs text-[var(--rasi-muted)]">Status Akumulasi</span>
+                  <span className="block text-xs text-[var(--rasi-muted)]">
+                    {' '}
+                    Pola pembelian dan penjualan{' '}
+                  </span>
                   <span className="mt-2 block text-xl font-bold">
-                    {bandarmology.status.replace(/_/g, ' ')}
+                    {getStatusLabel(bandarmology.status).label}
                   </span>
                   <span className="mt-1 block text-xs text-[var(--rasi-muted)]">
                     {bandarmology.flowSummary || 'Arus transaksi broker seimbang.'}
@@ -548,7 +573,8 @@ export default function StockDetail({ ticker }: StockDetailProps) {
 
                 <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/40 p-4">
                   <span className="block text-xs text-[var(--rasi-muted)]">
-                    Konsentrasi Beli CR3
+                    {' '}
+                    Porsi beli 3 broker terbesar{' '}
                   </span>
                   <span className="mt-2 block font-mono text-xl font-bold tabular-nums">
                     {bandarmology.cr3Buy !== null
@@ -556,22 +582,19 @@ export default function StockDetail({ ticker }: StockDetailProps) {
                       : 'Data belum cukup'}
                   </span>
                   <span className="mt-1 block text-xs text-[var(--rasi-muted)]">
-                    Porsi transaksi oleh 3 broker pembeli terbesar
+                    Porsi dari total pembelian oleh 3 broker teratas
                   </span>
                 </div>
 
                 <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/40 p-4">
                   <span className="block text-xs text-[var(--rasi-muted)]">
-                    Arus Investor Asing
+                    Transaksi investor asing
                   </span>
                   <span className="mt-2 block text-xl font-bold">
-                    {bandarmology.foreignFlowStatus.replace(/_/g, ' ')}
+                    {getStatusLabel(bandarmology.foreignFlowStatus).label}
                   </span>
                   <span className="mt-1 block text-xs text-[var(--rasi-muted)]">
-                    Net Foreign:{' '}
-                    {bandarmology.netForeignVal !== null
-                      ? formatCurrencyIdr(bandarmology.netForeignVal)
-                      : '—'}
+                    {formatForeignFlow(bandarmology.netForeignVal)}
                   </span>
                 </div>
               </div>
@@ -579,53 +602,175 @@ export default function StockDetail({ ticker }: StockDetailProps) {
           )}
 
           {/* TAB: NEWS */}
-          {currentTab === 'news' && (
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-base font-bold text-[var(--rasi-text)]">
-                  Katalis Berita & Divergensi Harga
-                </h3>
-                <p className="mt-1 text-xs text-[var(--rasi-muted)]">
-                  Pemeriksaan apakah berita emiten terbaru sudah terefleksi pada pergerakan harga
-                  pasar.
-                </p>
-              </div>
+          {currentTab === 'news' &&
+            (() => {
+              const allNews = data?.envelopes?.news?.data ?? []
+              const latestArticle = allNews[0]
+              const otherNews = allNews.slice(1)
 
-              <div className="space-y-3 rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/40 p-5">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-xs font-bold tracking-wider text-[var(--rasi-muted)] uppercase">
-                    Status Divergensi: {divergence.status.replace(/_/g, ' ')}
-                  </span>
-                  <span className="text-xs text-[var(--rasi-muted)]">
-                    Sentimen: {divergence.sentiment}
-                  </span>
+              const featuredUrl =
+                divergence.newsUrl ||
+                (latestArticle?.source?.startsWith('http') ? latestArticle.source : null) ||
+                (divergence.headline
+                  ? `https://www.google.com/search?q=${encodeURIComponent(`${symbol} ${divergence.headline}`)}`
+                  : null)
+
+              let featuredSourceName = 'Berita Pasar'
+              if (latestArticle?.source) {
+                if (latestArticle.source.startsWith('http')) {
+                  try {
+                    featuredSourceName = new URL(latestArticle.source).hostname.replace(
+                      /^www\./,
+                      '',
+                    )
+                  } catch {
+                    featuredSourceName = 'Sumber Berita'
+                  }
+                } else {
+                  featuredSourceName = latestArticle.source
+                }
+              }
+
+              return (
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-base font-bold text-[var(--rasi-text)]">
+                      Berita dan perubahan harga
+                    </h3>
+                    <p className="mt-1 text-xs text-[var(--rasi-muted)]">
+                      Bandingkan berita perusahaan dengan perubahan harga sahamnya.
+                    </p>
+                  </div>
+
+                  {/* Kartu Utama: Analisis Respons Pasar terhadap Berita Terkini */}
+                  <div className="space-y-4 rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-5">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--rasi-border)] pb-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="rounded-md border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] px-2.5 py-1 text-xs font-semibold text-[var(--rasi-text)]">
+                          Perubahan harga: {getStatusLabel(divergence.status).label}
+                        </span>
+                        <span className="rounded-md border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] px-2.5 py-1 text-xs font-semibold text-[var(--rasi-text)]">
+                          Isi berita: {getNewsSentimentLabel(divergence.sentiment)}
+                        </span>
+                      </div>
+                      <span className="text-xs text-[var(--rasi-muted)]">
+                        Kategori: {getNewsCategoryLabel(divergence.catalystType)}
+                      </span>
+                    </div>
+
+                    {divergence.headline ? (
+                      <div>
+                        <a
+                          href={featuredUrl ?? '#'}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="group inline-flex items-start gap-1.5 text-base font-semibold text-[var(--rasi-text)] hover:text-[var(--rasi-primary)] hover:underline"
+                        >
+                          <span>{divergence.headline}</span>
+                          <ExternalLink className="mt-1 h-4 w-4 shrink-0 text-[var(--rasi-muted)] group-hover:text-[var(--rasi-primary)]" />
+                        </a>
+                        {latestArticle?.body && (
+                          <p className="mt-2 line-clamp-3 text-xs leading-relaxed text-[var(--rasi-muted)]">
+                            {latestArticle.body}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-[var(--rasi-muted)]">
+                        Belum ada berita penting dalam data yang tersedia.
+                      </p>
+                    )}
+
+                    {divergence.verdict && (
+                      <div className="rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/40 p-3.5">
+                        <span className="text-[11px] font-bold tracking-wider text-[var(--rasi-muted)] uppercase">
+                          Hasil Analisis RASI
+                        </span>
+                        <p className="mt-1 text-xs leading-relaxed text-[var(--rasi-text)]">
+                          {divergence.verdict}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="flex justify-between border-t border-[var(--rasi-border)] pt-2 text-[11px] text-[var(--rasi-muted)]">
+                      <span>Sumber: {featuredSourceName}</span>
+                      <span>{divergence.newsTimestamp?.split('T')[0] ?? 'Terkini'}</span>
+                    </div>
+                  </div>
+
+                  {/* Berita Tambahan Lainnya (jika ada lebih dari 1 artikel) */}
+                  {otherNews.length > 0 && (
+                    <div className="space-y-3">
+                      <h4 className="text-sm font-bold text-[var(--rasi-text)]">
+                        Berita Lainnya ({otherNews.length})
+                      </h4>
+                      <div className="divide-y divide-[var(--rasi-border)] rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)]">
+                        {otherNews.map((item, idx) => {
+                          const isHttp =
+                            item.source?.startsWith('http://') ||
+                            item.source?.startsWith('https://')
+                          const articleUrl = isHttp
+                            ? item.source
+                            : `https://www.google.com/search?q=${encodeURIComponent(`${symbol} ${item.title}`)}`
+                          let sourceName = 'Berita Pasar'
+                          if (isHttp) {
+                            try {
+                              sourceName = new URL(item.source).hostname.replace(/^www\./, '')
+                            } catch {
+                              sourceName = 'Sumber Berita'
+                            }
+                          } else if (item.source) {
+                            sourceName = item.source
+                          }
+
+                          return (
+                            <article
+                              key={idx}
+                              className="p-4 transition-colors hover:bg-[var(--rasi-muted-bg)]/30"
+                            >
+                              <a
+                                href={articleUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="group inline-flex items-start gap-1.5 text-sm font-semibold text-[var(--rasi-text)] hover:text-[var(--rasi-primary)] hover:underline"
+                              >
+                                <span>{item.title}</span>
+                                <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--rasi-muted)] group-hover:text-[var(--rasi-primary)]" />
+                              </a>
+                              {item.body && (
+                                <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[var(--rasi-muted)]">
+                                  {item.body}
+                                </p>
+                              )}
+                              <div className="mt-2 flex items-center gap-3 text-[11px] text-[var(--rasi-muted)]">
+                                <span className="font-medium text-[var(--rasi-text)]/80">
+                                  {sourceName}
+                                </span>
+                                <span>•</span>
+                                <span>{item.timestamp?.split('T')[0] ?? 'Terkini'}</span>
+                              </div>
+                            </article>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
-
-                <p className="text-sm font-semibold text-[var(--rasi-text)]">
-                  {divergence.headline || 'Belum ada berita katalis yang signifikan.'}
-                </p>
-
-                <p className="text-xs leading-relaxed text-[var(--rasi-muted)]">
-                  {divergence.verdict || 'Pergerakan harga saat ini sejalan dengan berita pasar.'}
-                </p>
-
-                <div className="flex justify-between border-t border-[var(--rasi-border)] pt-2 text-[11px] text-[var(--rasi-muted)]">
-                  <span>Kategori: {divergence.catalystType || 'Umum'}</span>
-                  <span>{divergence.newsTimestamp?.split('T')[0] ?? 'Terkini'}</span>
-                </div>
-              </div>
-            </div>
-          )}
+              )
+            })()}
 
           {/* TAB: INSIDER */}
           {currentTab === 'insider' && (
             <div className="space-y-6">
               <div>
                 <h3 className="text-base font-bold text-[var(--rasi-text)]">
-                  Transaksi Orang Dalam & Pemegang Saham Pengendali
+                  {' '}
+                  Jual beli pengurus dan pemegang saham besar{' '}
                 </h3>
                 <p className="mt-1 text-xs text-[var(--rasi-muted)]">
-                  Pelaporan resmi perubahan kepemilikan saham oleh jajaran manajemen di BEI.
+                  {' '}
+                  Laporan pembelian atau penjualan saham oleh direksi, komisaris, dan pemegang saham
+                  pengendali.{' '}
                 </p>
               </div>
 
@@ -642,13 +787,15 @@ export default function StockDetail({ ticker }: StockDetailProps) {
 
                   <div className="grid grid-cols-2 gap-2 pt-1 text-xs text-[var(--rasi-muted)]">
                     <div>
-                      Jumlah Lembar:{' '}
+                      {' '}
+                      Jumlah saham:{' '}
                       <strong className="font-mono text-[var(--rasi-text)]">
                         {insider.latestFiling.amountShares.toLocaleString('id-ID')}
                       </strong>
                     </div>
                     <div>
-                      Estimasi Nilai:{' '}
+                      {' '}
+                      Perkiraan nilai:{' '}
                       <strong className="font-mono text-[var(--rasi-text)]">
                         Rp {(insider.latestFiling.totalValueIdr / 1_000_000_000).toFixed(2)} M
                       </strong>
@@ -660,7 +807,8 @@ export default function StockDetail({ ticker }: StockDetailProps) {
                       </strong>
                     </div>
                     <div>
-                      Perubahan Porsi:{' '}
+                      {' '}
+                      Perubahan kepemilikan:{' '}
                       <strong className="font-mono text-[var(--rasi-text)]">
                         {insider.latestFiling.pctChanged !== null
                           ? `${(insider.latestFiling.pctChanged * 100).toFixed(2)}%`
@@ -675,7 +823,7 @@ export default function StockDetail({ ticker }: StockDetailProps) {
                 </div>
               ) : (
                 <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/20 p-8 text-center text-xs text-[var(--rasi-muted)]">
-                  Tidak ditemukan pelaporan transaksi orang dalam terbaru untuk emiten ini.
+                  Belum ada laporan jual beli saham dari pengurus perusahaan untuk saham ini.
                 </div>
               )}
             </div>
@@ -686,19 +834,21 @@ export default function StockDetail({ ticker }: StockDetailProps) {
       {/* 6. Methods, Sources, and Explanations via Inline Disclosures */}
       <div className="space-y-3 rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-5">
         <h4 className="text-xs font-bold tracking-wider text-[var(--rasi-muted)] uppercase">
-          Metodologi, Sumber Data, dan Keterbatasan
+          {' '}
+          Cara menghitung dan sumber data{' '}
         </h4>
 
         <details className="group text-xs text-[var(--rasi-muted)]">
           <summary className="flex cursor-pointer list-none items-center justify-between py-1.5 font-semibold text-[var(--rasi-text)] hover:text-[var(--rasi-primary)]">
-            <span>Bagaimana Skor Komposit RASI dihitung?</span>
+            <span> Bagaimana skor RASI dihitung? </span>
             <span className="transition-transform group-open:rotate-180">▾</span>
           </summary>
           <div className="mt-2 space-y-1.5 border-l-2 border-[var(--rasi-border)] pl-2 text-xs leading-relaxed">
             <p>{METRIC_EXPLANATIONS.compositeScore.detailed}</p>
             <p>
-              Jika salah satu pilar data tidak tersedia atau tidak mencukupi, skor komposit tidak
-              dipaksakan muncul dan ditampilkan sebagai <strong>Data belum cukup</strong>.
+              {' '}
+              Jika ada data yang belum lengkap, skor tidak dihitung. Anda akan melihat tulisan{' '}
+              <strong>Data belum cukup</strong>.
             </p>
           </div>
         </details>
@@ -710,9 +860,10 @@ export default function StockDetail({ ticker }: StockDetailProps) {
           </summary>
           <div className="mt-2 space-y-1.5 border-l-2 border-[var(--rasi-border)] pl-2 text-xs leading-relaxed">
             <p>
-              Data harga harian, rasio valuasi, ringkasan transaksi broker, berita emiten, dan
-              pelaporan orang dalam bersumber dari Sectors Financial API yang tersinkronisasi dengan
-              keterbukaan informasi Bursa Efek Indonesia (IDX).
+              {' '}
+              Harga harian, laporan keuangan, transaksi broker, berita, dan laporan kepemilikan
+              diperoleh dari Sectors. Periksa tanggal pada setiap data karena waktu pembaruannya
+              bisa berbeda.{' '}
             </p>
           </div>
         </details>

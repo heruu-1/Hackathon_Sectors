@@ -108,7 +108,7 @@ export function analyzeInsiderMovement(
       status = 'MASSIVE_DIVESTMENT'
       riskScore = 75
       reasons.push(
-        `⚠️ DIVESTASI BESAR: ${holderName} melepas ${(pct * 100).toFixed(2)}% kepemilikan senilai Rp ${(value / 1_000_000_000).toFixed(2)} Miliar.`,
+        `Penjualan jumlah besar: ${holderName} melepas ${(pct * 100).toFixed(2)}% kepemilikan senilai Rp ${(value / 1_000_000_000).toFixed(2)} Miliar.`,
       )
     } else {
       riskScore = 45
@@ -124,7 +124,7 @@ export function analyzeInsiderMovement(
       status = 'AGGRESSIVE_BUY'
       riskScore = 15 // Very bullish smart money signal!
       reasons.push(
-        `💎 AKUMULASI INSIDER: ${holderName} menambah kepemilikan ${(pct * 100).toFixed(2)}% senilai Rp ${(value / 1_000_000_000).toFixed(2)} Miliar.`,
+        `Pembelian jumlah besar: ${holderName} menambah kepemilikan ${(pct * 100).toFixed(2)}% senilai Rp ${(value / 1_000_000_000).toFixed(2)} Miliar.`,
       )
     } else {
       riskScore = 25

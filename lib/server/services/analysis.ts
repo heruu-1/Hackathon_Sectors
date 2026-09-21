@@ -58,26 +58,44 @@ export interface StockDataResult {
  * Does NOT call Gemini, does NOT write to database, and does NOT consume user quota.
  * Safe for view-only pages, comparisons, and exploratory research.
  */
-export async function readStockData(ticker: string): Promise<StockDataResult> {
+export async function readStockData(
+  ticker: string,
+  options?: { forceRefresh?: boolean },
+): Promise<StockDataResult> {
   const cleanTicker = normalizeTicker(ticker)
 
   // Fetch cached market data concurrently
   const [valuation, daily, broker, registry, news, filings] = await Promise.all([
-    getOrSetCache(`sectors:valuation:${cleanTicker}`, 3600_000, () =>
-      fetchCompanyValuation(cleanTicker),
+    getOrSetCache(
+      `sectors:valuation:${cleanTicker}`,
+      3600_000,
+      () => fetchCompanyValuation(cleanTicker),
+      options,
     ),
-    getOrSetCache(`sectors:daily:${cleanTicker}`, 900_000, () =>
-      fetchDailyPrices(cleanTicker, undefined, 30),
+    getOrSetCache(
+      `sectors:daily:90:${cleanTicker}`,
+      900_000,
+      () => fetchDailyPrices(cleanTicker, undefined, 90),
+      options,
     ),
-    getOrSetCache(`sectors:broker:${cleanTicker}`, 900_000, () =>
-      fetchBrokerSummary(cleanTicker, undefined, 10),
+    getOrSetCache(
+      `sectors:broker:${cleanTicker}`,
+      900_000,
+      () => fetchBrokerSummary(cleanTicker, undefined, 10),
+      options,
     ),
     getOrSetCache('sectors:registry', 86_400_000, () => fetchBrokersRegistry()),
-    getOrSetCache(`sectors:news:${cleanTicker}`, 600_000, () =>
-      fetchMarketNews(cleanTicker, undefined, 5),
+    getOrSetCache(
+      `sectors:news:${cleanTicker}`,
+      600_000,
+      () => fetchMarketNews(cleanTicker, undefined, 5),
+      options,
     ),
-    getOrSetCache(`sectors:filings:${cleanTicker}`, 3600_000, () =>
-      fetchInsiderFilings(cleanTicker, undefined, 5),
+    getOrSetCache(
+      `sectors:filings:${cleanTicker}`,
+      3600_000,
+      () => fetchInsiderFilings(cleanTicker, undefined, 5),
+      options,
     ),
   ])
 
@@ -114,11 +132,15 @@ export async function readStockData(ticker: string): Promise<StockDataResult> {
   const newsImpact = latestNews
     ? fallbackAnalyzeNews(latestNews.title, latestNews.body ?? latestNews.title)
     : null
+  const latestNewsUrl = latestNews?.source?.startsWith('http')
+    ? latestNews.source
+    : ((latestNews as any)?.url ?? null)
 
   const divergence = detectCatalystDivergence(
     newsImpact,
     priceChangeFraction,
     latestNews?.timestamp ?? null,
+    latestNewsUrl,
   )
   const insider = analyzeInsiderMovement(filings.data, currentPrice)
   const composite = computeCompositeScore({ fundamental, bandarmology, divergence, insider })
@@ -195,7 +217,7 @@ export async function createAnalysis(
     // 2. Fetch fresh market data from Sectors
     const [valuation, daily, broker, registry, news, filings] = await Promise.all([
       fetchCompanyValuation(cleanTicker),
-      fetchDailyPrices(cleanTicker, undefined, 30),
+      fetchDailyPrices(cleanTicker, undefined, 90),
       fetchBrokerSummary(cleanTicker, undefined, 10),
       fetchBrokersRegistry(),
       fetchMarketNews(cleanTicker, undefined, 5),
@@ -240,10 +262,14 @@ export async function createAnalysis(
       currentPrice,
       brokerDate,
     )
+    const latestNewsUrl = latestNews?.source?.startsWith('http')
+      ? latestNews.source
+      : ((latestNews as any)?.url ?? null)
     const divergence = detectCatalystDivergence(
       newsImpact,
       priceChangeFraction,
       latestNews?.timestamp ?? null,
+      latestNewsUrl,
     )
     const insider = analyzeInsiderMovement(filings.data, currentPrice)
     const composite = computeCompositeScore({ fundamental, bandarmology, divergence, insider })

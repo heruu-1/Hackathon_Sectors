@@ -7,8 +7,14 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { ExternalLink, Plus, RefreshCw, X } from 'lucide-react'
 
 import { getStockData } from '@/app/actions'
+import { StockSearchCombobox } from '@/components/StockSearchCombobox'
 import { Button, ButtonLink } from '@/components/ui'
-import { formatCurrencyIdr, formatPercentageChange, formatScore } from '@/lib/presentation/stock'
+import {
+  formatCurrencyIdr,
+  formatPercentageChange,
+  formatScore,
+  getStatusLabel,
+} from '@/lib/presentation/stock'
 import type { StockDataResult } from '@/lib/server/services/analysis'
 
 interface StockColumnData {
@@ -63,7 +69,7 @@ function CompareContent() {
             symbol,
             data: null,
             loading: false,
-            error: res.error || 'Data emiten tidak ditemukan.',
+            error: res.error || 'Data saham tidak ditemukan.',
           }
         } catch (err) {
           return {
@@ -119,8 +125,8 @@ function CompareContent() {
           Bandingkan Saham
         </h1>
         <p className="mt-1 text-sm text-[var(--rasi-muted)]">
-          Bandingkan 2 hingga 3 saham secara berdampingan tanpa penilaian subjektif. Setiap kolom
-          memuat data secara independen.
+          {' '}
+          Lihat harga, laporan keuangan, dan transaksi dari 2–3 saham dalam satu tabel.{' '}
         </p>
       </div>
 
@@ -151,13 +157,21 @@ function CompareContent() {
 
         {symbols.length < 3 && (
           <form onSubmit={addSymbol} className="flex items-center gap-2">
-            <input
-              type="text"
-              maxLength={4}
+            <StockSearchCombobox
               value={inputTicker}
-              onChange={(e) => setInputTicker(e.target.value.toUpperCase())}
+              onChange={(val) => setInputTicker(val.toUpperCase())}
+              onSelect={(sym) => {
+                const clean = sym.trim().toUpperCase().replace(/\.JK$/i, '')
+                if (/^[A-Z]{4}$/.test(clean) && !symbols.includes(clean)) {
+                  setSymbols((prev) => [...prev, clean])
+                  setInputTicker('')
+                }
+              }}
               placeholder="Tambah kode (contoh: TLKM)"
-              className="min-h-[38px] w-36 rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-surface)] px-3 font-mono text-xs uppercase outline-none focus:border-[var(--rasi-primary)]"
+              size="sm"
+              className="w-52 sm:w-64"
+              dropdownAlign="left"
+              aria-label="Tambah kode saham untuk perbandingan"
             />
             <Button
               type="submit"
@@ -194,7 +208,8 @@ function CompareContent() {
                   scope="col"
                   className="sticky left-0 z-20 w-44 bg-[var(--rasi-muted-bg)]/90 px-4 py-3 font-semibold backdrop-blur-xs"
                 >
-                  Metrik / Pilar
+                  {' '}
+                  Data yang dibandingkan{' '}
                 </th>
                 {columns.map((col) => (
                   <th
@@ -315,7 +330,8 @@ function CompareContent() {
                   scope="row"
                   className="sticky left-0 z-10 bg-[var(--rasi-surface)] px-4 py-3 font-medium text-[var(--rasi-muted)]"
                 >
-                  Valuasi P/E
+                  {' '}
+                  Harga dibanding laba (P/E){' '}
                 </th>
                 {columns.map((col) => {
                   if (col.loading || col.error)
@@ -339,7 +355,8 @@ function CompareContent() {
                   scope="row"
                   className="sticky left-0 z-10 bg-[var(--rasi-surface)] px-4 py-3 font-medium text-[var(--rasi-muted)]"
                 >
-                  Valuasi P/B
+                  {' '}
+                  Harga dibanding aset bersih (P/B){' '}
                 </th>
                 {columns.map((col) => {
                   if (col.loading || col.error)
@@ -363,7 +380,8 @@ function CompareContent() {
                   scope="row"
                   className="sticky left-0 z-10 bg-[var(--rasi-surface)] px-4 py-3 font-medium text-[var(--rasi-muted)]"
                 >
-                  Volume Spike (SMA-20)
+                  {' '}
+                  Transaksi dibanding rata-rata 20 hari{' '}
                 </th>
                 {columns.map((col) => {
                   if (col.loading || col.error)
@@ -386,7 +404,8 @@ function CompareContent() {
                   scope="row"
                   className="sticky left-0 z-10 bg-[var(--rasi-surface)] px-4 py-3 font-medium text-[var(--rasi-muted)]"
                 >
-                  Status Broker
+                  {' '}
+                  Transaksi lewat broker{' '}
                 </th>
                 {columns.map((col) => {
                   if (col.loading || col.error)
@@ -397,7 +416,7 @@ function CompareContent() {
                     )
                   return (
                     <td key={col.symbol} className="px-4 py-3 font-semibold">
-                      {col.data?.indicators.bandarmology.status.replace(/_/g, ' ')}
+                      {getStatusLabel(col.data?.indicators.bandarmology.status).label}
                     </td>
                   )
                 })}
@@ -409,7 +428,7 @@ function CompareContent() {
                   scope="row"
                   className="sticky left-0 z-10 bg-[var(--rasi-surface)] px-4 py-3 font-medium text-[var(--rasi-muted)]"
                 >
-                  Transaksi Orang Dalam
+                  Transaksi pengurus dan pemegang saham besar
                 </th>
                 {columns.map((col) => {
                   if (col.loading || col.error)
@@ -420,7 +439,7 @@ function CompareContent() {
                     )
                   return (
                     <td key={col.symbol} className="px-4 py-3">
-                      {col.data?.indicators.insider.status.replace(/_/g, ' ')}
+                      {getStatusLabel(col.data?.indicators.insider.status).label}
                     </td>
                   )
                 })}
@@ -432,7 +451,8 @@ function CompareContent() {
                   scope="row"
                   className="sticky left-0 z-10 bg-[var(--rasi-surface)] px-4 py-3 font-bold text-[var(--rasi-text)]"
                 >
-                  Skor Komposit RASI
+                  {' '}
+                  Skor RASI{' '}
                 </th>
                 {columns.map((col) => {
                   if (col.loading || col.error)

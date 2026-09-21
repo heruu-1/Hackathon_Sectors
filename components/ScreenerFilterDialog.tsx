@@ -3,6 +3,7 @@
 import { useState } from 'react'
 
 import { Button, Dialog } from '@/components/ui'
+import { getSectorLabel } from '@/lib/presentation/stock'
 
 export interface ScreenerFilters {
   sector: string
@@ -21,18 +22,17 @@ export interface ScreenerFilterDialogProps {
 }
 
 const SECTOR_OPTIONS = [
-  'Financials',
-  'Energy',
   'Basic Materials',
-  'Industrials',
-  'Consumer Non-Cyclicals',
   'Consumer Cyclicals',
+  'Consumer Non-Cyclicals',
+  'Energy',
+  'Financials',
   'Healthcare',
+  'Industrials',
+  'Infrastructures',
+  'Properties & Real Estate',
   'Technology',
-  'Telecommunication',
-  'Utilities',
-  'Real Estate',
-  'Transportation & Logistics',
+  'Transportation & Logistic',
 ]
 
 export function ScreenerFilterDialog({
@@ -72,8 +72,8 @@ export function ScreenerFilterDialog({
     <Dialog
       open={open}
       onClose={onClose}
-      title="Filter Lanjutan Saham"
-      description="Atur kriteria rasio fundamental dan sektor untuk menyaring saham IDX."
+      title="Atur kriteria saham"
+      description="Pilih batas harga dibanding laba, dividen, dan bidang usaha yang Anda cari."
       role="form"
     >
       <form onSubmit={handleApply} className="space-y-4">
@@ -93,7 +93,7 @@ export function ScreenerFilterDialog({
           >
             <option value="">Semua sektor</option>
             {SECTOR_OPTIONS.map((sec) => (
-              <option key={sec} value={sec}>
+              <option key={getSectorLabel(sec)} value={sec}>
                 {sec}
               </option>
             ))}
@@ -145,7 +145,8 @@ export function ScreenerFilterDialog({
               htmlFor="filter-mcap"
               className="block text-xs font-semibold text-[var(--rasi-muted)]"
             >
-              Kapitalisasi Min (Triliun Rp)
+              {' '}
+              Nilai pasar perusahaan minimal (Rp triliun){' '}
             </label>
             <input
               id="filter-mcap"
@@ -162,7 +163,8 @@ export function ScreenerFilterDialog({
               htmlFor="filter-yield"
               className="block text-xs font-semibold text-[var(--rasi-muted)]"
             >
-              Dividend Yield Min (%)
+              {' '}
+              Dividen dibanding harga, minimal (%){' '}
             </label>
             <input
               id="filter-yield"
@@ -182,7 +184,8 @@ export function ScreenerFilterDialog({
             htmlFor="filter-growth"
             className="block text-xs font-semibold text-[var(--rasi-muted)]"
           >
-            Pertumbuhan Laba Min (%)
+            {' '}
+            Pertumbuhan laba minimal (%){' '}
           </label>
           <input
             id="filter-growth"
@@ -202,7 +205,8 @@ export function ScreenerFilterDialog({
             onClick={handleReset}
             className="text-xs font-semibold text-[var(--rasi-muted)] underline hover:text-[var(--rasi-text)]"
           >
-            Reset filter
+            {' '}
+            Hapus kriteria{' '}
           </button>
           <div className="flex gap-2">
             <Button variant="secondary" size="md" onClick={onClose}>

@@ -200,27 +200,35 @@ export function analyzeBandarmology(
   const summaryParts: string[] = []
   if (status === 'BIG_ACCUMULATION') {
     summaryParts.push(
-      `Akumulasi masif terdeteksi. 3 broker pembeli teratas menguasai ${cr3Buy}% transaksi beli.`,
+      `Pembelian besar melalui broker utama: 3 broker pembeli teratas menguasai ${cr3Buy.toFixed(1)}% transaksi beli.`,
     )
   } else if (status === 'NORMAL_ACCUMULATION') {
-    summaryParts.push(`Terindikasi akumulasi moderat (CR3 Beli ${cr3Buy}% vs Jual ${cr3Sell}%).`)
+    summaryParts.push(
+      `Pembelian lebih dominan: 3 broker teratas membeli ${cr3Buy.toFixed(1)}% berbanding menjual ${cr3Sell.toFixed(1)}%.`,
+    )
   } else if (status === 'BIG_DISTRIBUTION') {
     summaryParts.push(
-      `Distribusi besar terdeteksi. 3 broker penjual teratas melepas ${cr3Sell}% transaksi jual.`,
+      `Penjualan besar melalui broker utama: 3 broker penjual teratas melepas ${cr3Sell.toFixed(1)}% transaksi jual.`,
     )
   } else if (status === 'NORMAL_DISTRIBUTION') {
-    summaryParts.push(`Terindikasi distribusi teratur (CR3 Jual ${cr3Sell}% vs Beli ${cr3Buy}%).`)
+    summaryParts.push(
+      `Penjualan lebih dominan: 3 broker teratas menjual ${cr3Sell.toFixed(1)}% berbanding membeli ${cr3Buy.toFixed(1)}%.`,
+    )
   } else {
     summaryParts.push(
-      `Arus transaksi broker relatif berimbang (CR3 Beli ${cr3Buy}%, Jual ${cr3Sell}%).`,
+      `Pembelian dan penjualan melalui broker relatif seimbang (porsi beli ${cr3Buy.toFixed(1)}% vs jual ${cr3Sell.toFixed(1)}%).`,
     )
   }
 
   if (hasForeignData && netForeignVal !== null) {
-    const netMiliar = (netForeignVal / 1_000_000_000).toFixed(2)
-    summaryParts.push(
-      `Arus investor asing: ${netForeignVal >= 0 ? '+' : ''}${netMiliar} Miliar (${foreignFlowStatus}).`,
-    )
+    const absMiliar = (Math.abs(netForeignVal) / 1_000_000_000).toFixed(2)
+    if (netForeignVal > 0) {
+      summaryParts.push(`Investor asing mencatat pembelian bersih sebesar Rp ${absMiliar} miliar.`)
+    } else if (netForeignVal < 0) {
+      summaryParts.push(`Investor asing mencatat penjualan bersih sebesar Rp ${absMiliar} miliar.`)
+    } else {
+      summaryParts.push(`Transaksi investor asing relatif seimbang.`)
+    }
   }
 
   return {

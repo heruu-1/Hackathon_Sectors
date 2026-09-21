@@ -236,34 +236,36 @@ export function analyzeBandarmology(
   const summaryParts: string[] = []
   if (status === 'BIG_ACCUMULATION') {
     summaryParts.push(
-      `Akumulasi masif terdeteksi (CR3 Pembeli ${cr3Buy.toFixed(1)}%). Top pembeli: ${topBuyers
+      `Pembelian besar melalui broker utama: 3 broker pembeli teratas menguasai ${cr3Buy.toFixed(1)}% transaksi. Broker pembeli teratas: ${topBuyers
         .slice(0, 3)
         .map((b) => b.code)
         .join(', ')}.`,
     )
   } else if (status === 'NORMAL_ACCUMULATION') {
     summaryParts.push(
-      `Terindikasi akumulasi teratur (CR3 ${cr3Buy.toFixed(1)}%). Konsentrasi pembeli lebih kuat dibanding penjual.`,
+      `Pembelian lebih dominan (porsi 3 broker pembeli ${cr3Buy.toFixed(1)}%). Minat beli lebih kuat dibanding jual.`,
     )
   } else if (status === 'BIG_DISTRIBUTION') {
     summaryParts.push(
-      `Distribusi besar terdeteksi (CR3 Penjual ${cr3Sell.toFixed(1)}%). Penjual dominan melepas kepemilikan.`,
+      `Penjualan besar melalui broker utama: 3 broker penjual teratas melepas ${cr3Sell.toFixed(1)}% transaksi jual.`,
     )
   } else if (status === 'NORMAL_DISTRIBUTION') {
     summaryParts.push(
-      `Terindikasi distribusi (CR3 Penjual ${cr3Sell.toFixed(1)}%). Tekanan jual lebih terkonsentrasi.`,
+      `Penjualan lebih dominan (porsi 3 broker penjual ${cr3Sell.toFixed(1)}%). Penjualan lebih terlihat.`,
     )
   } else {
     summaryParts.push(
-      `Arus transaksi relatif berimbang (CR3 Buy ${cr3Buy.toFixed(1)}% vs Sell ${cr3Sell.toFixed(1)}%).`,
+      `Transaksi jual beli relatif seimbang (porsi beli 3 broker ${cr3Buy.toFixed(1)}% vs jual ${cr3Sell.toFixed(1)}%).`,
     )
   }
 
   if (foreignFlowStatus === 'HEAVY_INFLOW' || foreignFlowStatus === 'INFLOW') {
-    summaryParts.push(`Net Asing Masuk Rp ${(netForeignVal / 1_000_000_000).toFixed(2)} Miliar.`)
+    summaryParts.push(
+      `Investor asing mencatat pembelian bersih sebesar Rp ${(netForeignVal / 1_000_000_000).toFixed(2)} miliar.`,
+    )
   } else if (foreignFlowStatus === 'HEAVY_OUTFLOW' || foreignFlowStatus === 'OUTFLOW') {
     summaryParts.push(
-      `Net Asing Keluar Rp ${(Math.abs(netForeignVal) / 1_000_000_000).toFixed(2)} Miliar.`,
+      `Investor asing mencatat penjualan bersih sebesar Rp ${(Math.abs(netForeignVal) / 1_000_000_000).toFixed(2)} miliar.`,
     )
   }
 

@@ -10,6 +10,7 @@ import {
   ProposedActionSchema,
 } from '../../contracts/assistant.ts'
 import { type Result, errorResult, successResult } from '../../contracts/result.ts'
+import { getNewsSentimentLabel, getStatusLabel } from '../../presentation/stock.ts'
 import { withIdempotency } from '../idempotency.ts'
 import { type LiveMarketQuote, fetchLiveMarketQuote } from '../providers/market.ts'
 import { consumeQuota } from '../quota.ts'
@@ -135,18 +136,26 @@ function generateRuleBasedAnswer(
     const div = snapshot.indicators?.divergence
     const ins = snapshot.indicators?.insider
 
+    const compLabel = getStatusLabel(comp?.status).label
+    const bandarLabel = getStatusLabel(bandar?.status).label
+    const foreignLabel = getStatusLabel(bandar?.foreignFlowStatus).label
+    const fundLabel = getStatusLabel(fund?.status).label
+    const divLabel = getStatusLabel(div?.status).label
+    const divSentiment = getNewsSentimentLabel(div?.sentiment)
+    const insLabel = getStatusLabel(ins?.status).label
+
     const answer = [
       ...liveLines,
-      `Berikut adalah ringkasan indikator RASI untuk **${snapshot.ticker}** (${snapshot.companyName}):`,
+      `Berikut adalah ringkasan kondisi saham **${snapshot.ticker}** (${snapshot.companyName}):`,
       `- **Harga Terakhir**: Rp${snapshot.price?.toLocaleString('id-ID') ?? '-'}`,
-      `- **Skor Komposit**: ${comp?.score !== null && comp?.score !== undefined ? `${comp.score}/100 (${comp.status})` : 'Belum lengkap (INSUFFICIENT_DATA)'}`,
-      `- **Bandarmologi**: ${bandar?.status ?? '-'} | Arus Asing: ${bandar?.foreignFlowStatus ?? '-'}`,
-      `- **Fundamental**: P/E ${fund?.pe?.toFixed(2) ?? '-'}x | P/B ${fund?.pb?.toFixed(2) ?? '-'}x (${fund?.status ?? '-'})`,
-      `- **Divergensi Katalis**: ${div?.status ?? '-'} (${div?.sentiment ?? 'NEUTRAL'})`,
-      `- **Insider**: ${ins?.status ?? '-'} (${ins?.summary ?? 'Tidak ada transaksi signifikan'})`,
+      `- **Skor RASI**: ${comp?.score !== null && comp?.score !== undefined ? `${comp.score}/100 (${compLabel})` : 'Data belum cukup'}`,
+      `- **Transaksi Broker**: ${bandarLabel} | Arus Investor Asing: ${foreignLabel}`,
+      `- **Keuangan Perusahaan**: P/E ${fund?.pe?.toFixed(2) ?? '-'}x | P/B ${fund?.pb?.toFixed(2) ?? '-'}x (${fundLabel})`,
+      `- **Berita & Perubahan Harga**: ${divLabel} (${divSentiment})`,
+      `- **Transaksi Pengurus / Pemegang Saham**: ${insLabel} (${ins?.summary ?? 'Tidak ada transaksi signifikan'})`,
       '',
       comp?.reason ? `*Catatan*: ${comp.reason}` : '',
-      div?.verdict ? `*Katalis*: ${div.verdict}` : '',
+      div?.verdict ? `*Berita*: ${div.verdict}` : '',
     ]
       .filter((line) => line !== '')
       .join('\n')
@@ -158,23 +167,23 @@ function generateRuleBasedAnswer(
     if (liveLines.length > 0) {
       const answer = [
         ...liveLines,
-        `*Catatan*: Indikator 4 pilar (Bandarmologi, Fundamental, Divergensi Katalis, dan Insider) untuk **${cleanTicker}** belum tersimpan di snapshot lokal. Buka menu analisis saham untuk memuat evaluasi lengkapnya.`,
+        `*Catatan*: Data keuangan, transaksi broker, berita, dan transaksi orang dalam untuk **${cleanTicker}** belum tersimpan. Buka menu saham untuk memuat data lengkapnya.`,
       ].join('\n')
       return { answer, proposedAction, warnings }
     }
 
     const answer = [
-      `Data snapshot untuk emiten **${cleanTicker}** belum tersedia di database.`,
-      `Silakan buka menu analisis saham atau cari kode **${cleanTicker}** di halaman utama terlebih dahulu agar data indikator 4 pilar terunduh.`,
-      `Setelah itu, tanyakan kembali di sini untuk analisis komprehensif ${cleanTicker}.`,
+      `Data saham **${cleanTicker}** belum tersedia di database.`,
+      `Silakan cari kode **${cleanTicker}** di halaman saham terlebih dahulu agar datanya terunduh.`,
+      `Setelah itu, tanyakan kembali di sini untuk penjelasan ${cleanTicker}.`,
     ].join('\n\n')
     return { answer, proposedAction, warnings }
   }
 
   const answer = [
     'Halo! Saya asisten riset RASI untuk Bursa Efek Indonesia (IDX).',
-    'Anda dapat menanyakan analisis 4 pilar (Fundamental, Bandarmologi, Divergensi Katalis, dan Transaksi Insider) untuk kode saham tertentu seperti BBCA, BBRI, ASII, atau TLKM.',
-    'Ketikkan kode saham yang ingin Anda telaah untuk melihat snapshot indikator lengkap.',
+    'Anda dapat menanyakan kondisi saham seperti BBCA, BBRI, ASII, atau TLKM berdasarkan keuangan perusahaan, transaksi broker, berita, dan laporan jual beli pengurus perusahaan.',
+    'Ketikkan kode saham yang ingin Anda ketahui.',
   ].join('\n\n')
 
   return { answer, proposedAction, warnings }
@@ -289,7 +298,7 @@ export async function sendMessage(
 
       const prompt = `Anda adalah Asisten Riset Saham Indonesia RASI (analis objektif berbasis aturan IDX).
 Pedoman utama:
-- Berikan analisis objektif, ringkas, dan jelas dalam Bahasa Indonesia.
+- Berikan analisis objektif, ringkas, dan jelas dalam Bahasa Indonesia yang mudah dipahami orang awam. Hindari gaya bahasa kaku (AI slop) dan istilah teknis berbelit-belit (seperti kode status mentah, "sleeping giant", "akumulasi masif", atau "divergensi" tanpa penjelasan). Jelaskan artinya dengan bahasa sehari-hari.
 - Jangan pernah memberikan rekomendasi beli/jual atau target harga pasti ("bukan saran finansial").
 - Selalu utamakan menggunakan "Data Pasar Real-Time Detik Ini dari Internet" di bawah untuk menjawab pertanyaan mengenai harga saham saat ini, pergerakan hari ini, rentang harga, dan volume perdagangan secara akurat.
 - Sebutkan data, angka rasio, dan status indikator jika tersedia.

@@ -90,6 +90,7 @@ export interface DivergenceIndicator {
   verdict: string
   recommendation: string
   newsTimestamp?: string | null
+  newsUrl?: string | null
 }
 
 export interface InsiderFilingDetail {

@@ -231,3 +231,43 @@ test('Ticker normalization and fundamental evaluation', () => {
   assert.equal(val.pb, 2.5)
   assert.equal(val.status, 'NORMAL')
 })
+
+test('Divergence: correctly categorizes Sleeping Giant vs Priced In Rally vs Delayed Risk', () => {
+  const bullishImpact = {
+    sentiment: 'BULLISH',
+    impactScore: 75,
+    catalystType: 'EARNINGS',
+    headlineId: 'Laba Bersih Meroket 45%',
+    summaryId: 'Perseroan membukukan lonjakan laba bersih.',
+    isAiGenerated: false,
+    analysisSource: 'RULE_BASED',
+  }
+
+  // 1. Sleeping Giant: high positive impact, lagging price (+0.5%)
+  const sleeping = detectCatalystDivergence(bullishImpact, 0.005)
+  assert.equal(sleeping.status, 'SLEEPING_GIANT')
+  assert.equal(sleeping.dataState, 'ready')
+  assert.ok(sleeping.divergenceScore && sleeping.divergenceScore >= 80)
+  assert.match(sleeping.verdict, /SLEEPING GIANT/)
+
+  // 2. Priced In Rally: high positive impact, price already surged (+7.5%)
+  const pricedIn = detectCatalystDivergence(bullishImpact, 0.075)
+  assert.equal(pricedIn.status, 'PRICED_IN_RALLY')
+  assert.equal(pricedIn.dataState, 'ready')
+  assert.match(pricedIn.verdict, /sudah direspons pasar/)
+
+  // 3. Delayed Risk: negative impact (-60), price flat (0%)
+  const bearishImpact = {
+    sentiment: 'BEARISH',
+    impactScore: -60,
+    catalystType: 'DEBT',
+    headlineId: 'Kewajiban Utang Menumpuk',
+    summaryId: 'Beban utang meningkat drastis.',
+    isAiGenerated: false,
+    analysisSource: 'RULE_BASED',
+  }
+  const delayedRisk = detectCatalystDivergence(bearishImpact, 0.0)
+  assert.equal(delayedRisk.status, 'DELAYED_SELL_OFF_RISK')
+  assert.equal(delayedRisk.dataState, 'ready')
+  assert.match(delayedRisk.verdict, /RISIKO TERTUNDA/)
+})

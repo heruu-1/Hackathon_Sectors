@@ -44,7 +44,7 @@ export function WatchlistDeleteDialog({
       open={open}
       onClose={onClose}
       title={`Hapus ${item.ticker} dari Pantauan?`}
-      description="Konfirmasi penghapusan emiten dari daftar pantauan akun Anda."
+      description="Saham ini akan dihapus dari daftar pantauan Anda."
       role="form"
     >
       <div className="space-y-4">
@@ -53,7 +53,8 @@ export function WatchlistDeleteDialog({
           <strong className="text-[var(--rasi-text)]">{item.ticker}</strong> dari daftar pantauan?
           {item.notes ? (
             <span className="mt-2 block text-xs text-amber-700 dark:text-amber-300">
-              Perhatian: Catatan riset yang tersimpan untuk emiten ini juga akan terhapus.
+              {' '}
+              Catatan untuk saham ini juga akan dihapus.{' '}
             </span>
           ) : null}
         </p>

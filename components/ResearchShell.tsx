@@ -116,7 +116,7 @@ export function ResearchShell({ children }: { children: ReactNode }) {
           </Link>
           <IconButton
             icon={collapsed ? ChevronRight : ChevronLeft}
-            aria-label={collapsed ? 'Perluas bilah samping' : 'Ringkas bilah samping'}
+            aria-label={collapsed ? 'Tampilkan nama menu' : 'Sembunyikan nama menu'}
             size="sm"
             onClick={() => setCollapsed((val) => !val)}
           />
@@ -160,7 +160,8 @@ export function ResearchShell({ children }: { children: ReactNode }) {
 
           {!collapsed && (
             <p className="mt-2 px-3 text-[11px] leading-relaxed text-[var(--rasi-muted)]">
-              Informasi publik dapat dibaca tanpa login.
+              {' '}
+              Data saham bisa dilihat tanpa masuk.{' '}
             </p>
           )}
         </div>
@@ -245,7 +246,7 @@ export function ResearchShell({ children }: { children: ReactNode }) {
                 />
               </div>
 
-              <nav aria-label="Menu mobile" className="flex-1 space-y-1 overflow-y-auto p-4">
+              <nav aria-label="Menu utama" className="flex-1 space-y-1 overflow-y-auto p-4">
                 {navLinks.map(({ href, label, icon: Icon, isActive }) => {
                   const active = isActive(pathname)
                   return (

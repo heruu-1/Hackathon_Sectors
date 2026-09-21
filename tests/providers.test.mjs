@@ -8,6 +8,20 @@ import {
   fetchMarketNews,
 } from '../lib/server/providers/sectors.ts'
 
+test('news fallback does not treat refinery as a fine or count dividend twice', () => {
+  assert.equal(fallbackAnalyzeNews('Refinery operations update', '').impactScore, 0)
+  assert.equal(fallbackAnalyzeNews('Company announces dividend', '').impactScore, 25)
+})
+
+test('daily prices preserve missing OHLC values instead of inventing zero prices', async () => {
+  const result = await fetchDailyPrices('BBCA', 'test-key', 90, async () =>
+    Response.json([{ date: '2026-09-18', close: 9000, open: null, high: null, low: null }]),
+  )
+  assert.equal(result.data[0].open, null)
+  assert.equal(result.data[0].high, null)
+  assert.equal(result.data[0].low, null)
+})
+
 test('Sectors provider: returns error DataEnvelope for missing or placeholder API key', async () => {
   const env1 = await fetchCompanyValuation('BBCA', '')
   assert.equal(env1.state, 'error')

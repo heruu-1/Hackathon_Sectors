@@ -6,9 +6,9 @@ import { ThemePreferenceProvider } from '@/components/ThemePreferenceProvider'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'RASI | Report Analisis Saham Indonesia',
+  title: 'RASI | Riset Saham Indonesia',
   description:
-    'Ruang riset saham Indonesia dengan data, sumber, dan penjelasan AI yang dapat diperiksa.',
+    'Cari dan bandingkan saham Indonesia. Lihat harga, laporan keuangan, berita, dan penjelasan istilahnya.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -6,6 +6,7 @@ import { ArrowUpRight, ExternalLink, Loader2 } from 'lucide-react'
 
 import { getStockData } from '@/app/actions'
 import { ButtonLink, Dialog } from '@/components/ui'
+import { getStatusLabel } from '@/lib/presentation/stock'
 import type { StockDataResult } from '@/lib/server/services/analysis'
 
 export interface StockPreviewDialogProps {
@@ -39,7 +40,15 @@ export function StockPreviewDialog({ ticker, open, onClose }: StockPreviewDialog
         })
         .catch((err) => {
           if (!isMounted) return
-          setError(err instanceof Error ? err.message : 'Gagal memuat pratinjau.')
+          const msg = err instanceof Error ? err.message : 'Gagal memuat pratinjau.'
+          if (
+            msg.includes('was not found on the server') ||
+            msg.includes('Failed to find Server Action')
+          ) {
+            setError('Aplikasi telah diperbarui. Muat ulang halaman untuk melanjutkan.')
+            return
+          }
+          setError(msg)
         })
         .finally(() => {
           if (isMounted) setLoading(false)
@@ -59,7 +68,7 @@ export function StockPreviewDialog({ ticker, open, onClose }: StockPreviewDialog
   const formattedChange =
     changeFraction !== null && changeFraction !== undefined
       ? `${changeFraction > 0 ? '+' : ''}${(changeFraction * 100).toFixed(2)}%`
-      : '0.00%'
+      : '—'
 
   const isUp = changeFraction !== null && changeFraction !== undefined && changeFraction > 0
   const isDown = changeFraction !== null && changeFraction !== undefined && changeFraction < 0
@@ -69,7 +78,7 @@ export function StockPreviewDialog({ ticker, open, onClose }: StockPreviewDialog
       open={open}
       onClose={onClose}
       title={`Pratinjau ${ticker}`}
-      description={data?.companyName || 'Informasi ringkas saham IDX'}
+      description={data?.companyName || 'Ringkasan saham di Bursa Efek Indonesia'}
       role="preview"
     >
       {loading && (
@@ -117,7 +126,7 @@ export function StockPreviewDialog({ ticker, open, onClose }: StockPreviewDialog
             </div>
             <div>
               <span className="rounded-md border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] px-2.5 py-1 text-xs font-semibold text-[var(--rasi-text)]">
-                {data.composite?.status ?? 'NORMAL'}
+                {getStatusLabel(data.composite?.status).label}
               </span>
             </div>
           </div>
@@ -129,14 +138,17 @@ export function StockPreviewDialog({ ticker, open, onClose }: StockPreviewDialog
             </h3>
             <p className="mt-1.5 text-sm leading-relaxed text-[var(--rasi-text)]">
               {data.composite?.reason ||
-                'Tidak ada anomali ekstrem yang terdeteksi pada snapshot data terkini.'}
+                'Belum ada hal khusus yang ditandai dari data yang tersedia.'}
             </p>
           </div>
 
           {/* Indicators grid */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/40 p-3">
-              <span className="block text-[11px] text-[var(--rasi-muted)]">Valuasi P/E</span>
+              <span className="block text-[11px] text-[var(--rasi-muted)]">
+                {' '}
+                Harga dibanding laba (P/E){' '}
+              </span>
               <span className="mt-1 block font-mono text-sm font-bold tabular-nums">
                 {data.indicators.fundamental.pe !== null
                   ? `${data.indicators.fundamental.pe.toFixed(1)}x`
@@ -144,21 +156,27 @@ export function StockPreviewDialog({ ticker, open, onClose }: StockPreviewDialog
               </span>
             </div>
             <div className="rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/40 p-3">
-              <span className="block text-[11px] text-[var(--rasi-muted)]">Arus Broker</span>
+              <span className="block text-[11px] text-[var(--rasi-muted)]"> Transaksi broker </span>
               <span className="mt-1 block text-sm font-bold">
-                {data.indicators.bandarmology.status.replace(/_/g, ' ')}
+                {getStatusLabel(data.indicators.bandarmology.status).label}
               </span>
             </div>
             <div className="rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/40 p-3">
-              <span className="block text-[11px] text-[var(--rasi-muted)]">Volume Spike</span>
+              <span className="block text-[11px] text-[var(--rasi-muted)]">
+                {' '}
+                Lonjakan jumlah transaksi{' '}
+              </span>
               <span className="mt-1 block font-mono text-sm font-bold tabular-nums">
                 {data.indicators.volume.formattedRatio}
               </span>
             </div>
             <div className="rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/40 p-3">
-              <span className="block text-[11px] text-[var(--rasi-muted)]">Transaksi Insider</span>
+              <span className="block text-[11px] text-[var(--rasi-muted)]">
+                {' '}
+                Transaksi pengurus dan pemegang saham besar{' '}
+              </span>
               <span className="mt-1 block text-sm font-bold">
-                {data.indicators.insider.status.replace(/_/g, ' ')}
+                {getStatusLabel(data.indicators.insider.status).label}
               </span>
             </div>
           </div>
@@ -166,7 +184,8 @@ export function StockPreviewDialog({ ticker, open, onClose }: StockPreviewDialog
           {/* Sources and limitations */}
           <div className="space-y-1 border-t border-[var(--rasi-border)] pt-3 text-xs text-[var(--rasi-muted)]">
             <p>
-              <strong>Sumber:</strong> Sectors API & Mesin Indikator RASI (Data EOD)
+              <strong>Sumber:</strong> Sectors dan perhitungan RASI, memakai harga penutupan
+              bursa{' '}
             </p>
             <p>Pratinjau ini bersifat informatif dan bukan rekomendasi investasi.</p>
           </div>

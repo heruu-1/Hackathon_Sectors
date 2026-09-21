@@ -36,7 +36,7 @@ export function calculateVolumeSpike(dailyRows: DailyPriceRow[]): VolumeSpikeInd
     return {
       dataState: 'partial',
       spikeRatio: null,
-      formattedRatio: `Data belum cukup untuk SMA-20 (${count}/21 sesi)`,
+      formattedRatio: `Data belum cukup (${count}/21 hari bursa)`,
       status: 'UNKNOWN',
       todayVolume: latestVolume,
       avgVolume: null,

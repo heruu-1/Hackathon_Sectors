@@ -5,10 +5,19 @@ import {
   calculatePriceSma20,
   formatCurrencyIdr,
   formatDateWib,
+  formatForeignFlow,
   formatPercentageChange,
   formatScore,
   getStatusLabel,
 } from '../lib/presentation/stock.ts'
+
+test('formatForeignFlow formats positive, negative, zero, and null amounts', () => {
+  assert.equal(formatForeignFlow(null), '—')
+  assert.equal(formatForeignFlow(undefined), '—')
+  assert.equal(formatForeignFlow(526248102500), 'Beli bersih Rp 526.248.102.500')
+  assert.equal(formatForeignFlow(-526248102500), 'Jual bersih Rp 526.248.102.500')
+  assert.equal(formatForeignFlow(0), 'Beli dan jual seimbang (Rp 0)')
+})
 
 test('formatCurrencyIdr handles null, undefined, and numbers', () => {
   assert.equal(formatCurrencyIdr(null), '—')
@@ -37,7 +46,7 @@ test('formatPercentageChange handles positive, negative, and null fractions', ()
   assert.equal(neutral.trend, 'neutral')
 
   const nullVal = formatPercentageChange(null)
-  assert.equal(nullVal.text, '0.00%')
+  assert.equal(nullVal.text, '—')
   assert.equal(nullVal.trend, 'neutral')
 })
 
@@ -54,16 +63,22 @@ test('getStatusLabel maps statuses to user-friendly labels and variants', () => 
     label: 'Data belum cukup',
     variant: 'insufficient',
   })
-  assert.deepEqual(getStatusLabel('NORMAL'), { label: 'NORMAL', variant: 'normal' })
-  assert.deepEqual(getStatusLabel('BIG_ACCUMULATION'), {
-    label: 'BIG ACCUMULATION',
+  assert.deepEqual(getStatusLabel('NORMAL'), {
+    label: 'Belum ada peringatan khusus',
     variant: 'normal',
   })
-  assert.deepEqual(getStatusLabel('CRITICAL'), { label: 'CRITICAL', variant: 'critical' })
-  assert.deepEqual(getStatusLabel('WARNING'), { label: 'WARNING', variant: 'warning' })
+  assert.deepEqual(getStatusLabel('BIG_ACCUMULATION'), {
+    label: 'Pembelian besar melalui broker utama',
+    variant: 'normal',
+  })
+  assert.deepEqual(getStatusLabel('CRITICAL'), {
+    label: 'Ada peringatan penting',
+    variant: 'critical',
+  })
+  assert.deepEqual(getStatusLabel('WARNING'), { label: 'Perlu diperiksa', variant: 'warning' })
 })
 
-test('calculatePriceSma20 returns all null if fewer than 21 sessions', () => {
+test('calculatePriceSma20 returns all null if fewer than 20 sessions', () => {
   const rows = Array.from({ length: 15 }, (_, i) => ({
     symbol: 'BBCA',
     date: `2026-01-${String(i + 1).padStart(2, '0')}`,
@@ -76,22 +91,22 @@ test('calculatePriceSma20 returns all null if fewer than 21 sessions', () => {
   assert.ok(sma.every((v) => v === null))
 })
 
-test('calculatePriceSma20 computes 20-period average for index >= 20', () => {
+test('calculatePriceSma20 includes the current close from the twentieth session', () => {
   // 25 rows with close price = 1000
   const rows = Array.from({ length: 25 }, (_, i) => ({
     symbol: 'BBCA',
     date: `2026-01-${String(i + 1).padStart(2, '0')}`,
-    close: 1000,
+    close: 1000 + i,
     volume: 50000,
   }))
 
   const sma = calculatePriceSma20(rows)
   assert.equal(sma.length, 25)
-  // First 20 are null (indices 0..19)
-  for (let i = 0; i < 20; i++) {
+  // First 19 sessions cannot form a 20-session average.
+  for (let i = 0; i < 19; i++) {
     assert.equal(sma[i], null)
   }
-  // Index 20 onwards has average of prior 20 sessions (indices 0..19)
-  assert.equal(sma[20], 1000)
-  assert.equal(sma[24], 1000)
+  assert.equal(sma[19], 1009.5)
+  assert.equal(sma[20], 1010.5)
+  assert.equal(sma[24], 1014.5)
 })

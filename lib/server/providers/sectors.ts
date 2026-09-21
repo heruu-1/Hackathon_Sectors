@@ -141,7 +141,7 @@ export async function fetchCompanyValuation(
 export async function fetchDailyPrices(
   ticker: string,
   apiKey?: string,
-  daysBack = 30,
+  daysBack = 90,
   fetchFn: typeof fetch = fetch,
 ): Promise<DataEnvelope<DailyPriceRow[]>> {
   const cleanTicker = normalizeTicker(ticker)
@@ -165,9 +165,9 @@ export async function fetchDailyPrices(
         symbol: cleanTicker,
         date: String(r.date ?? ''),
         close: Number(r.close ?? 0),
-        open: Number.isFinite(Number(r.open)) ? Number(r.open) : null,
-        high: Number.isFinite(Number(r.high)) ? Number(r.high) : null,
-        low: Number.isFinite(Number(r.low)) ? Number(r.low) : null,
+        open: r.open != null && Number.isFinite(Number(r.open)) ? Number(r.open) : null,
+        high: r.high != null && Number.isFinite(Number(r.high)) ? Number(r.high) : null,
+        low: r.low != null && Number.isFinite(Number(r.low)) ? Number(r.low) : null,
         volume: Number(r.volume ?? 0),
         marketCap: Number.isFinite(Number(r.market_cap)) ? Number(r.market_cap) : null,
       }))

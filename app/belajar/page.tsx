@@ -4,24 +4,24 @@ import { BookOpen, Info } from 'lucide-react'
 
 const lessons = [
   [
-    'P/E dan P/B',
-    'Dua cara melihat harga saham dibandingkan laba atau nilai bukunya. Angka yang lebih rendah tidak otomatis lebih baik; bandingkan dengan sektor dan periode yang sama.',
+    'Harga dibanding laba dan aset perusahaan',
+    'P/E membandingkan harga saham dengan laba per saham. P/B membandingkannya dengan aset bersih per saham dalam laporan keuangan. Angka rendah belum tentu murah; bandingkan dengan perusahaan sejenis.',
   ],
   [
-    'Akumulasi dan distribusi',
-    'Ringkasan arus beli dan jual melalui broker. Konsentrasi tinggi adalah sinyal untuk diperiksa, bukan bukti siapa yang mengendalikan pasar.',
+    'Lebih banyak membeli atau menjual',
+    'Akumulasi berarti menambah saham, distribusi berarti menjual saham. Data broker menunjukkan transaksi melalui perusahaan sekuritas, bukan identitas semua pembeli dan penjual.',
   ],
   [
-    'Volume spike',
-    'Volume hari ini dibandingkan rata-rata hari sebelumnya. Lonjakan perlu dibaca bersama berita, harga, dan likuiditas.',
+    'Lonjakan jumlah saham yang diperdagangkan',
+    'Volume adalah jumlah lembar saham yang diperdagangkan. Angka 2x berarti jumlahnya dua kali rata-rata 20 hari bursa sebelumnya. Banyak transaksi belum tentu berarti harga akan naik.',
   ],
   [
     'Transaksi orang dalam',
-    'Pelaporan perubahan kepemilikan oleh orang dalam atau pemegang saham besar. Data ini bukan bukti pelanggaran dengan sendirinya.',
+    'Ini adalah laporan jual beli saham oleh direksi, komisaris, atau pemegang saham besar. Transaksi tersebut tidak otomatis berarti ada pelanggaran.',
   ],
   [
     'Skor RASI',
-    'Indikator perhatian yang menggabungkan beberapa sinyal. Skor bukan probabilitas keuntungan, prediksi harga, atau rekomendasi transaksi.',
+    'Skor ini merangkum hal yang perlu diperiksa dari laporan keuangan, transaksi, dan berita. Angkanya bukan perkiraan keuntungan atau petunjuk membeli saham.',
   ],
 ]
 
@@ -30,11 +30,13 @@ export default function LearnPage() {
     <section className="max-w-4xl py-4">
       <p className="text-sm font-semibold text-[var(--rasi-primary)]">Belajar saham</p>
       <h1 className="mt-2 text-3xl font-bold tracking-tight">
-        Baca laporan tanpa harus menghafal semua istilah
+        {' '}
+        Kenali istilah yang sering muncul{' '}
       </h1>
       <p className="mt-3 max-w-2xl leading-7 text-[var(--rasi-muted)]">
-        Setiap definisi di sini juga tersedia langsung di halaman detail saham. Mulai dari konsep
-        yang paling sering muncul dalam riset.
+        {' '}
+        Penjelasan singkat untuk membantu Anda membaca data saham. Anda juga bisa membuka “Apa
+        artinya?” di halaman saham.{' '}
       </p>
       <div className="mt-8 grid gap-4 sm:grid-cols-2">
         {lessons.map(([title, text]) => (

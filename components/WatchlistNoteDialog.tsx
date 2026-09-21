@@ -49,7 +49,7 @@ export function WatchlistNoteDialog({ open, onClose, item, onSave }: WatchlistNo
       open={open}
       onClose={onClose}
       title={`Catatan untuk ${item.ticker}`}
-      description="Tambahkan atau perbarui catatan riset pribadi Anda untuk emiten ini."
+      description="Tulis hal yang ingin Anda ingat tentang saham ini."
       role="form"
     >
       <form onSubmit={handleSave} className="space-y-4">
@@ -66,7 +66,7 @@ export function WatchlistNoteDialog({ open, onClose, item, onSave }: WatchlistNo
             maxLength={2000}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Tuliskan alasan memantau, rencana harga beli, atau hal yang perlu dicermati…"
+            placeholder="Contoh: Periksa laporan laba berikutnya dan kabar pembagian dividen."
             className="mt-1.5 w-full rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-3 text-sm text-[var(--rasi-text)] outline-none focus:border-[var(--rasi-primary)] focus:ring-2 focus:ring-[var(--rasi-primary)]/20"
           />
           <div className="mt-1 flex justify-end text-[11px] text-[var(--rasi-muted)]">

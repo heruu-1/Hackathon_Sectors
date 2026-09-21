@@ -157,7 +157,7 @@ export async function fetchDailyTransactions(
   ticker: string,
   apiKey: string | undefined,
   request: typeof fetch = fetch,
-  daysBack: number = 30,
+  daysBack: number = 90,
 ): Promise<DailyPriceRow[]> {
   const key = validateKey(apiKey)
   const symbol = normalizeTicker(ticker)

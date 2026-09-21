@@ -5,15 +5,11 @@ import React, { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 
-import { ArrowRight, Filter, Loader2, Search } from 'lucide-react'
+import { ArrowRight, Filter, Loader2, Search, TrendingUp } from 'lucide-react'
 
 import { Button } from '@/components/ui'
-
-export interface StockSuggestion {
-  symbol: string
-  name: string
-  sector: string
-}
+import { type StockSuggestion, searchLocalStocks } from '@/domain/stocks'
+import { getSectorLabel } from '@/lib/presentation/stock'
 
 const EXAMPLE_STOCKS = [
   { symbol: 'BBCA', name: 'Bank Central Asia Tbk.', sector: 'Financials' },
@@ -27,16 +23,30 @@ export function StockSearch() {
   const initialQ = searchParams.get('q') ?? ''
 
   const [query, setQuery] = useState(initialQ)
-  const [suggestions, setSuggestions] = useState<StockSuggestion[]>([])
+  const [suggestions, setSuggestions] = useState<StockSuggestion[]>(() =>
+    searchLocalStocks(initialQ, 8),
+  )
   const [status, setStatus] = useState<'idle' | 'searching' | 'found' | 'empty' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState('')
   const [isOpen, setIsOpen] = useState(false)
   const [focusedIndex, setFocusedIndex] = useState<number>(-1)
 
+  const containerRef = useRef<HTMLDivElement>(null)
   const activeRequestRef = useRef<AbortController | null>(null)
   const requestIdRef = useRef(0)
   const inputRef = useRef<HTMLInputElement>(null)
   const listboxRef = useRef<HTMLDivElement>(null)
+
+  // Handle outside click to close dropdown
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   // Sync query changes to URL without adding history stack clutter
   useEffect(() => {
@@ -49,21 +59,22 @@ export function StockSearch() {
     window.history.replaceState(null, '', url.toString())
   }, [query])
 
-  // Debounced search with AbortController and latest-request guard
+  // Instant local suggestions + debounced remote search with AbortController
   useEffect(() => {
     const trimmed = query.trim()
-    if (trimmed.length < 2) {
-      if (activeRequestRef.current) {
-        activeRequestRef.current.abort()
-      }
-      const timer = window.setTimeout(() => {
-        setSuggestions([])
-        setStatus('idle')
-        setErrorMessage('')
-        setIsOpen(false)
-        setFocusedIndex(-1)
-      }, 0)
-      return () => window.clearTimeout(timer)
+
+    // Immediately provide local instant suggestions (0ms delay)
+    const local = searchLocalStocks(trimmed, 8)
+    if (local.length > 0) {
+      setSuggestions(local)
+      setStatus('found')
+    }
+
+    if (!trimmed) {
+      if (activeRequestRef.current) activeRequestRef.current.abort()
+      setStatus('idle')
+      setErrorMessage('')
+      return
     }
 
     const currentRequestId = ++requestIdRef.current
@@ -75,7 +86,6 @@ export function StockSearch() {
 
     const timer = window.setTimeout(() => {
       setStatus('searching')
-      setIsOpen(true)
       setFocusedIndex(-1)
 
       void fetch(`/api/stocks/search?q=${encodeURIComponent(trimmed)}`, {
@@ -93,18 +103,25 @@ export function StockSearch() {
           }
 
           const results = payload.results ?? []
-          setSuggestions(results)
-          setStatus(results.length > 0 ? 'found' : 'empty')
+          if (results.length > 0) {
+            setSuggestions(results)
+            setStatus('found')
+          } else if (local.length === 0) {
+            setSuggestions([])
+            setStatus('empty')
+          }
           setErrorMessage('')
         })
         .catch((err) => {
           if (err instanceof DOMException && err.name === 'AbortError') return
           if (currentRequestId !== requestIdRef.current) return
-          setSuggestions([])
-          setStatus('error')
-          setErrorMessage(err instanceof Error ? err.message : 'Pencarian gagal.')
+          if (local.length === 0) {
+            setSuggestions([])
+            setStatus('error')
+            setErrorMessage(err instanceof Error ? err.message : 'Pencarian gagal.')
+          }
         })
-    }, 300)
+    }, 200)
 
     return () => {
       window.clearTimeout(timer)
@@ -157,13 +174,14 @@ export function StockSearch() {
           Saham apa yang ingin Anda pahami?
         </h1>
         <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-[var(--rasi-muted)]">
-          Cari berdasarkan kode saham IDX atau nama emiten untuk membaca ringkasan data, grafik
-          riwayat, broker, berita, dan laporan orang dalam.
+          {' '}
+          Ketik kode atau nama perusahaan untuk melihat harga, laporan keuangan, transaksi, dan
+          berita.{' '}
         </p>
       </div>
 
       {/* Search form with WAI-ARIA Combobox pattern */}
-      <div className="relative mt-8">
+      <div ref={containerRef} className="relative mt-8">
         <form
           onSubmit={(e) => {
             e.preventDefault()
@@ -186,12 +204,15 @@ export function StockSearch() {
                 focusedIndex >= 0 ? `search-option-${focusedIndex}` : undefined
               }
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                setQuery(e.target.value)
+                setIsOpen(true)
+              }}
               onKeyDown={handleKeyDown}
               onFocus={() => {
-                if (suggestions.length > 0 || status === 'empty') setIsOpen(true)
+                if (suggestions.length > 0 || status === 'empty' || !query.trim()) setIsOpen(true)
               }}
-              placeholder="Cari kode atau nama perusahaan (contoh: BBCA atau Bank Central Asia)"
+              placeholder="Cari kode atau nama perusahaan (contoh: TLKM, BBCA, atau Telkom)"
               className="min-h-[44px] w-full rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-surface)] px-4 py-2 text-sm text-[var(--rasi-text)] transition-colors outline-none placeholder:text-[var(--rasi-muted)]/70 focus:border-[var(--rasi-primary)] focus:ring-2 focus:ring-[var(--rasi-primary)]/20"
             />
           </div>
@@ -209,7 +230,24 @@ export function StockSearch() {
             aria-label="Hasil pencarian saham"
             className="absolute top-full right-16 left-0 z-30 mt-2 max-h-80 overflow-y-auto rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] shadow-xl"
           >
-            {status === 'searching' && (
+            <div className="flex items-center justify-between border-b border-[var(--rasi-border)] px-4 py-2 text-[11px] font-semibold text-[var(--rasi-muted)]">
+              <span className="flex items-center gap-1">
+                {!query.trim() ? (
+                  <>
+                    <TrendingUp className="h-3.5 w-3.5 text-[var(--rasi-primary)]" />
+                    Rekomendasi Saham Populer
+                  </>
+                ) : (
+                  <>
+                    <Search className="h-3.5 w-3.5 text-[var(--rasi-primary)]" />
+                    Saran Pencarian
+                  </>
+                )}
+              </span>
+              <span className="text-[10px] text-[var(--rasi-muted)]">Pilih atau tekan Enter</span>
+            </div>
+
+            {status === 'searching' && suggestions.length === 0 && (
               <div className="flex items-center gap-2 p-4 text-sm text-[var(--rasi-muted)]">
                 <Loader2 className="h-4 w-4 animate-spin text-[var(--rasi-primary)]" />
                 Mencari perusahaan…
@@ -245,7 +283,9 @@ export function StockSearch() {
                   >
                     <div className="flex items-baseline justify-between">
                       <span className="font-mono text-base font-bold">{item.symbol}</span>
-                      <span className="text-xs text-[var(--rasi-muted)]">{item.sector}</span>
+                      <span className="text-xs text-[var(--rasi-muted)]">
+                        {getSectorLabel(item.sector)}
+                      </span>
                     </div>
                     <p className="mt-0.5 line-clamp-1 text-xs text-[var(--rasi-muted)]">
                       {item.name}
@@ -263,8 +303,7 @@ export function StockSearch() {
           href="/screener"
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--rasi-primary)] hover:underline focus-visible:outline-none"
         >
-          <Filter className="h-3.5 w-3.5" aria-hidden="true" />
-          Cari dengan filter lanjutan
+          <Filter className="h-3.5 w-3.5" aria-hidden="true" /> Cari berdasarkan kriteria{' '}
         </Link>
         <span className="text-xs text-[var(--rasi-muted)]">Tekan Enter untuk membuka detail</span>
       </div>
@@ -291,7 +330,7 @@ export function StockSearch() {
                 <p className="mt-1 line-clamp-1 text-xs text-[var(--rasi-muted)]">{example.name}</p>
               </div>
               <span className="mt-3 text-[11px] font-medium text-[var(--rasi-muted)]">
-                {example.sector}
+                {getSectorLabel(example.sector)}
               </span>
             </Link>
           ))}

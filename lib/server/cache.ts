@@ -10,6 +10,7 @@ interface MemoryEntry {
 }
 
 const memoryCache = new Map<string, MemoryEntry>()
+const pendingRequests = new Map<string, Promise<unknown>>()
 const MAX_MEMORY_ENTRIES = 500
 
 function setMemory(key: string, data: unknown, expiresAt: number) {
@@ -70,12 +71,31 @@ export async function getOrSetCache<T>(
   key: string,
   ttlMs: number,
   fetcher: () => Promise<T>,
+  options?: { forceRefresh?: boolean },
+): Promise<T> {
+  const pending = pendingRequests.get(key)
+  if (pending) return pending as Promise<T>
+  const request = readOrRefreshCache(key, ttlMs, fetcher, options?.forceRefresh === true)
+  pendingRequests.set(key, request)
+  try {
+    return await request
+  } finally {
+    pendingRequests.delete(key)
+  }
+}
+
+async function readOrRefreshCache<T>(
+  key: string,
+  ttlMs: number,
+  fetcher: () => Promise<T>,
+  forceRefresh: boolean,
 ): Promise<T> {
   const now = Date.now()
 
   // 1. Check in-memory cache
   const inMem = memoryCache.get(key)
-  if (inMem && inMem.expiresAt > now) {
+  // Manual refreshes share a short cooldown to bound public upstream requests.
+  if (inMem && inMem.expiresAt > now && (!forceRefresh || inMem.expiresAt - ttlMs > now - 60_000)) {
     return inMem.data as T
   }
 
@@ -88,7 +108,7 @@ export async function getOrSetCache<T>(
         .where(and(eq(apiCache.cacheKey, key), gt(apiCache.expiresAt, new Date(now))))
         .limit(1)
 
-      if (rows.length > 0) {
+      if (rows.length > 0 && (!forceRefresh || rows[0].createdAt.getTime() > now - 60_000)) {
         const item = rows[0]
         setMemory(key, item.data, item.expiresAt.getTime())
         return item.data as T
@@ -104,9 +124,9 @@ export async function getOrSetCache<T>(
 
   try {
     const fresh = await fetcher()
-    const expiresAtDate = new Date(now + ttlMs)
+    const expiresAtDate = new Date(Date.now() + ttlMs)
 
-    setMemory(key, fresh, now + ttlMs)
+    setMemory(key, fresh, expiresAtDate.getTime())
 
     if (process.env.DATABASE_URL) {
       try {

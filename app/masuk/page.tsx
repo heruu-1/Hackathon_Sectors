@@ -25,9 +25,7 @@ function SignInContent() {
       callbackURL,
     })
     if (result.error) {
-      setError(
-        'Login Google belum bisa dimulai. Pastikan GOOGLE_CLIENT_ID dan GOOGLE_CLIENT_SECRET sudah diisi.',
-      )
+      setError('Masuk dengan Google belum tersedia. Coba lagi nanti.')
       setBusy(false)
       return
     }
@@ -46,8 +44,9 @@ function SignInContent() {
       <p className="text-sm font-semibold text-[var(--rasi-primary)]">RASI</p>
       <h1 className="mt-2 text-2xl font-semibold tracking-tight">Masuk untuk menyimpan riset</h1>
       <p className="mt-3 text-sm leading-6 text-[var(--rasi-muted)]">
-        Pantauan, catatan, riwayat, dan percakapan AI tersimpan untuk akun Anda. Data pasar publik
-        tetap dapat dibaca tanpa login.
+        {' '}
+        Simpan daftar saham, catatan, dan percakapan Anda. Anda tetap bisa melihat data saham tanpa
+        masuk.{' '}
       </p>
       <Button
         type="button"
@@ -68,8 +67,9 @@ function SignInContent() {
         </p>
       ) : null}
       <p className="mt-5 text-xs leading-5 text-[var(--rasi-muted)]">
-        Dengan masuk, Anda memahami bahwa pertanyaan yang dikirim ke Asisten dapat diproses oleh
-        Gemini sesuai konfigurasi server.
+        {' '}
+        Saat menggunakan Asisten, pertanyaan Anda dapat dikirim ke layanan AI Google Gemini untuk
+        dijawab.{' '}
       </p>
     </section>
   )
@@ -81,7 +81,8 @@ export default function SignInPage() {
       <Suspense
         fallback={
           <div className="w-full rounded-2xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-6 text-sm text-[var(--rasi-muted)]">
-            Memuat form login…
+            {' '}
+            Memuat halaman masuk…{' '}
           </div>
         }
       >

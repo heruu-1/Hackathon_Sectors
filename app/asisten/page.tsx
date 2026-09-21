@@ -100,8 +100,8 @@ function AssistantContent() {
         ]
       : [
           'Apa arti rasio P/E dan P/B dalam analisis saham?',
-          'Bagaimana cara membaca lonjakan volume (volume spike)?',
-          'Apa itu akumulasi dan distribusi broker?',
+          'Apa arti jumlah transaksi saham yang tiba-tiba meningkat?',
+          'Apa arti akumulasi dan distribusi saham?',
         ]
   }, [ticker])
 
@@ -254,7 +254,7 @@ function AssistantContent() {
         }
       }
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Gagal mengeksekusi aksi.')
+      setActionError(err instanceof Error ? err.message : 'Saham belum tersimpan. Coba lagi.')
     } finally {
       setExecutingAction(false)
     }
@@ -275,14 +275,15 @@ function AssistantContent() {
               </h1>
               {ticker && (
                 <span className="rounded-md border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] px-2 py-0.5 font-mono text-xs font-bold">
-                  Emiten: {ticker}
+                  {' '}
+                  Saham: {ticker}
                 </span>
               )}
             </div>
             <p className="text-xs text-[var(--rasi-muted)]">
               {ticker
-                ? `Membahas emiten ${ticker} berdasarkan bukti laporan resmi.`
-                : 'Membantu menjelaskan indikator dan konsep riset saham dengan bahasa sederhana.'}
+                ? `Membahas saham ${ticker} berdasarkan laporan resmi.`
+                : 'Tanyakan arti angka, berita, atau istilah saham yang belum Anda pahami.'}
             </p>
           </div>
         </div>
@@ -318,8 +319,8 @@ function AssistantContent() {
               Masuk untuk Menggunakan Asisten AI
             </p>
             <p className="text-xs text-[var(--rasi-muted)]">
-              Login dengan Google agar riwayat percakapan dan kuota analisis tersimpan pada akun
-              Anda.
+              {' '}
+              Masuk dengan Google untuk bertanya dan menyimpan percakapan.{' '}
             </p>
           </div>
           <ButtonLink
@@ -340,9 +341,8 @@ function AssistantContent() {
           {/* Introductory notice */}
           <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/40 p-4 text-xs leading-relaxed text-[var(--rasi-muted)]">
             <strong className="text-[var(--rasi-text)]">Tentang Asisten RASI:</strong> Asisten
-            membantu menjelaskan laporan dan indikator RASI, namun tidak memberikan rekomendasi
-            beli/jual atau kepastian keuntungan. Periksa selalu tanggal data dan sumber laporan
-            sebelum mengambil keputusan investasi.
+            menjelaskan data saham, bukan menentukan saham yang harus dibeli atau dijual. Periksa
+            sumber dan tanggal data; jawaban AI bisa keliru.{' '}
           </div>
 
           {messages.map((msg, index) => {
@@ -373,8 +373,8 @@ function AssistantContent() {
                         <span className="inline-flex items-center gap-1 font-semibold">
                           <Cpu className="h-3 w-3" />
                           {msg.analysisSource === 'GEMINI'
-                            ? 'Model: Gemini'
-                            : 'Analisis: Berbasis Aturan'}
+                            ? 'Dijawab oleh Gemini'
+                            : 'Ringkasan otomatis RASI'}
                         </span>
                         <button
                           type="button"
@@ -415,7 +415,7 @@ function AssistantContent() {
                         <details className="cursor-pointer text-[var(--rasi-muted)]">
                           <summary className="flex list-none items-center gap-1 text-[11px] font-semibold hover:text-[var(--rasi-text)]">
                             <Database className="h-3 w-3" />
-                            <span>Sumber data rujukan ({msg.sources.length})</span>
+                            <span> Sumber ( {msg.sources.length})</span>
                           </summary>
                           <ul className="mt-1.5 list-disc space-y-1 pl-4 text-[11px]">
                             {msg.sources.map((src, idx) => (
@@ -456,7 +456,7 @@ function AssistantContent() {
             <div className="flex justify-start">
               <div className="flex max-w-[85%] items-center gap-2 rounded-2xl rounded-tl-xs border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-4 text-xs text-[var(--rasi-muted)]">
                 <Loader2 className="h-4 w-4 animate-spin text-[var(--rasi-primary)]" />
-                <span>Asisten sedang merumuskan jawaban berdasarkan bukti data…</span>
+                <span> Sedang menyiapkan jawaban… </span>
               </div>
             </div>
           )}
@@ -522,7 +522,7 @@ function AssistantContent() {
               session?.user
                 ? ticker
                   ? `Tanyakan tentang ${ticker}…`
-                  : 'Tanyakan konsep atau hal yang ingin dipahami…'
+                  : 'Tulis pertanyaan Anda…'
                 : 'Masuk dengan Google untuk mengirim pertanyaan'
             }
             className="min-h-[44px] flex-1 rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-surface)] px-4 text-sm text-[var(--rasi-text)] outline-none focus:border-[var(--rasi-primary)] focus:ring-2 focus:ring-[var(--rasi-primary)]/20 disabled:cursor-not-allowed disabled:bg-[var(--rasi-muted-bg)]"
@@ -543,7 +543,7 @@ function AssistantContent() {
       <Dialog
         open={convModalOpen}
         onClose={() => setConvModalOpen(false)}
-        title="Daftar Percakapan Tersimpan"
+        title="Percakapan sebelumnya"
         description="Buka kembali percakapan sebelumnya yang tersimpan di akun Anda."
         role="read"
       >
@@ -599,7 +599,7 @@ function AssistantContent() {
         open={Boolean(confirmingAction)}
         onClose={() => setConfirmingAction(null)}
         title="Konfirmasi Tambah Pantauan"
-        description="Asisten mengusulkan untuk menyimpan emiten ke daftar pantauan akun Anda."
+        description="Saham akan ditambahkan ke daftar pantauan Anda."
         role="form"
       >
         <div className="space-y-4">
@@ -608,7 +608,7 @@ function AssistantContent() {
             <strong className="font-mono text-[var(--rasi-text)]">
               {confirmingAction?.ticker}
             </strong>{' '}
-            ke daftar pantauan portofolio Anda?
+            ke daftar pantauan Anda?{' '}
           </p>
 
           {actionError && (

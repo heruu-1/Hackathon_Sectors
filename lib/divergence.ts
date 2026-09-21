@@ -17,12 +17,14 @@ export interface CatalystDivergence {
   verdict: string
   recommendation: string
   newsTimestamp?: string
+  newsUrl?: string | null
 }
 
 export function detectCatalystDivergence(
   newsImpact: GeminiNewsImpact | null,
   priceChangeFraction: number | null, // e.g. -0.015 (-1.5%)
   newsTimestamp?: string,
+  newsUrl?: string | null,
 ): CatalystDivergence {
   if (!newsImpact) {
     return {
@@ -36,6 +38,7 @@ export function detectCatalystDivergence(
       verdict: 'Tidak ditemukan katalis berita baru untuk emiten ini.',
       recommendation: 'Pantau arus transaksi dan teknikal secara berkala.',
       newsTimestamp,
+      newsUrl: newsUrl ?? null,
     }
   }
 
@@ -53,6 +56,7 @@ export function detectCatalystDivergence(
       verdict: 'Respons harga belum dapat dinilai karena penutupan pembanding belum tersedia.',
       recommendation: 'Tunggu sesi perdagangan berikutnya dan periksa sumber berita.',
       newsTimestamp,
+      newsUrl: newsUrl ?? null,
     }
   }
 
@@ -73,6 +77,7 @@ export function detectCatalystDivergence(
       verdict: `🚀 SLEEPING GIANT: Katalis positif besar (+${impact}) terbit, namun harga baru bergerak ${pricePct >= 0 ? '+' : ''}${pricePct}%. Pasar belum mengantisipasi berita ini secara penuh.`,
       recommendation: 'Peluang akumulasi awal sebelum pergerakan harga terjadi.',
       newsTimestamp,
+      newsUrl: newsUrl ?? null,
     }
   }
 
@@ -89,6 +94,7 @@ export function detectCatalystDivergence(
       verdict: `Katalis positif (+${impact}) sudah direspons pasar dengan lonjakan harga +${pricePct}%.`,
       recommendation: 'Hati-hati aksi profit taking / buy on rumor sell on news.',
       newsTimestamp,
+      newsUrl: newsUrl ?? null,
     }
   }
 
@@ -106,6 +112,7 @@ export function detectCatalystDivergence(
       verdict: `⚠️ DELAYED RISK: Katalis negatif (${impact}) terbit, namun harga belum terkoreksi (${pricePct >= 0 ? '+' : ''}${pricePct}%). Potensi tekanan jual tertunda.`,
       recommendation: 'Waspada penurunan tajam saat pasar mulai mencerna berita.',
       newsTimestamp,
+      newsUrl: newsUrl ?? null,
     }
   }
 
@@ -120,5 +127,6 @@ export function detectCatalystDivergence(
     verdict: `Respons harga (${pricePct >= 0 ? '+' : ''}${pricePct}%) sejalan dengan intensitas berita.`,
     recommendation: 'Kondisi pasar normal tanpa divergensi signifikan.',
     newsTimestamp,
+    newsUrl: newsUrl ?? null,
   }
 }
