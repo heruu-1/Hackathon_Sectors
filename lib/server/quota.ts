@@ -11,8 +11,14 @@ export interface QuotaConfig {
 }
 
 export const OPERATION_LIMITS: Record<string, QuotaConfig> = {
-  assistant: { perMinute: 5, perDay: 20 },
-  analysis: { perMinute: 3, perDay: 10 },
+  assistant: {
+    perMinute: Number(process.env.ASSISTANT_LIMIT_PER_MINUTE) || 15,
+    perDay: Number(process.env.ASSISTANT_LIMIT_PER_DAY) || 1500,
+  },
+  analysis: {
+    perMinute: Number(process.env.ANALYSIS_LIMIT_PER_MINUTE) || 15,
+    perDay: Number(process.env.ANALYSIS_LIMIT_PER_DAY) || 1500,
+  },
   screener: { perMinute: 30, perDay: 300 },
 }
 

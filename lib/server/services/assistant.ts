@@ -11,6 +11,7 @@ import {
 } from '../../contracts/assistant.ts'
 import { type Result, errorResult, successResult } from '../../contracts/result.ts'
 import { withIdempotency } from '../idempotency.ts'
+import { type LiveMarketQuote, fetchLiveMarketQuote } from '../providers/market.ts'
 import { consumeQuota } from '../quota.ts'
 import {
   addConversationMessage,
@@ -21,7 +22,6 @@ import {
   getUserConversations,
 } from '../repositories/conversations.ts'
 import { getLatestSnapshotByTicker, getSnapshotById } from '../repositories/snapshots.ts'
-import { fetchLiveMarketQuote, type LiveMarketQuote } from '../providers/market.ts'
 
 const GeminiAssistantOutputSchema = z.object({
   answer: z.string(),
@@ -271,7 +271,7 @@ export async function sendMessage(
     const key = process.env.GEMINI_API_KEY?.trim()
     const primaryModel = process.env.GEMINI_MODEL?.trim() || 'gemini-3.5-flash-lite'
     const candidateModels = Array.from(
-      new Set([primaryModel, 'gemini-flash-lite-latest', 'gemini-3.1-flash-lite'])
+      new Set([primaryModel, 'gemini-flash-lite-latest', 'gemini-3.1-flash-lite']),
     )
 
     let answer = ''
@@ -357,7 +357,12 @@ Keluarkan respons dalam format JSON dengan properti:
     }
 
     if (!answer) {
-      const fallback = generateRuleBasedAnswer(request.message, effectiveTicker, snapshot, liveQuote)
+      const fallback = generateRuleBasedAnswer(
+        request.message,
+        effectiveTicker,
+        snapshot,
+        liveQuote,
+      )
       answer = fallback.answer
       proposedAction = fallback.proposedAction
       warnings = fallback.warnings

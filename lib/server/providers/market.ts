@@ -60,9 +60,7 @@ export async function fetchLiveMarketQuote(ticker: string): Promise<LiveMarketQu
         const price = meta.regularMarketPrice
         const change = prev !== null ? price - prev : null
         const changePercent =
-          change !== null && prev && prev > 0
-            ? `${((change / prev) * 100).toFixed(2)}%`
-            : null
+          change !== null && prev && prev > 0 ? `${((change / prev) * 100).toFixed(2)}%` : null
 
         const timeStr = meta.regularMarketTime
           ? new Date(meta.regularMarketTime * 1000).toLocaleString('id-ID', {
@@ -120,9 +118,7 @@ export async function fetchLiveMarketQuote(ticker: string): Promise<LiveMarketQu
           const price = latest.close ?? null
           const change = price !== null && prev !== null ? price - prev : null
           const changePercent =
-            change !== null && prev && prev > 0
-              ? `${((change / prev) * 100).toFixed(2)}%`
-              : null
+            change !== null && prev && prev > 0 ? `${((change / prev) * 100).toFixed(2)}%` : null
 
           return {
             symbol: `${cleanTicker}.JK`,

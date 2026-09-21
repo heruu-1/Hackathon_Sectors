@@ -8,6 +8,7 @@ import {
   AlertTriangle,
   Bot,
   Check,
+  Copy,
   Cpu,
   Database,
   History,
@@ -25,6 +26,7 @@ import {
   getConversationAction,
   listConversationsAction,
 } from '@/app/actions'
+import { MarkdownContent } from '@/components/MarkdownContent'
 import { Button, ButtonLink, Dialog, IconButton } from '@/components/ui'
 import { authClient } from '@/lib/auth-client'
 import type { AssistantSourceRef, ConversationDTO, ProposedAction } from '@/lib/contracts/assistant'
@@ -68,6 +70,15 @@ function AssistantContent() {
   const [executingAction, setExecutingAction] = useState(false)
   const [actionSuccess, setActionSuccess] = useState<string | null>(null)
   const [actionError, setActionError] = useState('')
+
+  // Copied message state
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+
+  const handleCopy = (id: string, text: string) => {
+    void navigator.clipboard.writeText(text)
+    setCopiedId(id)
+    setTimeout(() => setCopiedId(null), 2000)
+  }
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -349,18 +360,42 @@ function AssistantContent() {
                       : 'space-y-3 rounded-tl-xs border border-[var(--rasi-border)] bg-[var(--rasi-surface)] text-[var(--rasi-text)]'
                   }`}
                 >
-                  <p className="whitespace-pre-wrap">{msg.content}</p>
+                  {isUser ? (
+                    <p className="whitespace-pre-wrap">{msg.content}</p>
+                  ) : (
+                    <MarkdownContent content={msg.content} />
+                  )}
 
                   {/* Assistant Provenance, Sources, and Warnings */}
                   {!isUser && (
                     <div className="space-y-2 border-t border-[var(--rasi-border)] pt-2.5 text-xs">
-                      <div className="flex flex-wrap items-center gap-2 text-[11px] text-[var(--rasi-muted)]">
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-[var(--rasi-muted)]">
                         <span className="inline-flex items-center gap-1 font-semibold">
                           <Cpu className="h-3 w-3" />
                           {msg.analysisSource === 'GEMINI'
                             ? 'Model: Gemini'
                             : 'Analisis: Berbasis Aturan'}
                         </span>
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(msg.id ?? String(index), msg.content)}
+                          className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-[var(--rasi-muted)] transition-colors hover:bg-[var(--rasi-muted-bg)] hover:text-[var(--rasi-text)]"
+                          title="Salin jawaban"
+                        >
+                          {copiedId === (msg.id ?? String(index)) ? (
+                            <>
+                              <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                              <span className="text-emerald-600 dark:text-emerald-400">
+                                Tersalin
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="h-3 w-3" />
+                              <span>Salin</span>
+                            </>
+                          )}
+                        </button>
                       </div>
 
                       {/* Warnings if any */}

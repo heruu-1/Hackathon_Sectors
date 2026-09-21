@@ -310,7 +310,7 @@ Dokumen ini mencatat command, exit code, hasil, dan keterbatasan dari setiap ver
 - **Perubahan**:
   - `lib/presentation/stock.ts`: Adapter presentasi untuk format mata uang IDR, persentase bertanda, tanggal WIB, label status pilar, dan teks penjelasan metrik.
   - `components/StockChart.tsx`: Grafik harga harian dan volume SVG sesungguhnya dengan perhitungan garis SMA-20, interaktivitas hover tooltip, dan tabel riwayat harga terbaru.
-  - `components/StockDetail.tsx`: Refactor total tampilan detail emiten. Pembacaan awal bersifat *read-only* murni via `getStockData(ticker)` dari cache/provider tanpa memicu Gemini atau membuat snapshot. Tombol Gemini AI analisis mendalam dipisahkan secara eksplisit dengan konfirmasi pengguna. Skor tidak lengkap ditampilkan sebagai "Data belum cukup".
+  - `components/StockDetail.tsx`: Refactor total tampilan detail emiten. Pembacaan awal bersifat _read-only_ murni via `getStockData(ticker)` dari cache/provider tanpa memicu Gemini atau membuat snapshot. Tombol Gemini AI analisis mendalam dipisahkan secara eksplisit dengan konfirmasi pengguna. Skor tidak lengkap ditampilkan sebagai "Data belum cukup".
 
 ### Tugas U07: Pratinjau Saham Bersama (Modal)
 
@@ -330,7 +330,7 @@ Dokumen ini mencatat command, exit code, hasil, dan keterbatasan dari setiap ver
 
 - **Status**: DONE
 - **Perubahan**:
-  - `app/bandingkan/page.tsx`: Perbandingan 2–3 emiten secara simultan menggunakan `getStockData` konkuren tanpa biaya Gemini. Isolasi error per kolom (saham yang gagal tidak merusak kolom saham lain). Tabel responsif horizontal dengan kolom metrik tetap terbaca (*sticky first column*).
+  - `app/bandingkan/page.tsx`: Perbandingan 2–3 emiten secara simultan menggunakan `getStockData` konkuren tanpa biaya Gemini. Isolasi error per kolom (saham yang gagal tidak merusak kolom saham lain). Tabel responsif horizontal dengan kolom metrik tetap terbaca (_sticky first column_).
 
 ### Tugas U09: Pantauan & Dialog Catatan / Konfirmasi Hapus
 
@@ -365,4 +365,3 @@ Dokumen ini mencatat command, exit code, hasil, dan keterbatasan dari setiap ver
   4. **Prettier Format Check**: `corepack pnpm format:check` -> Exit Code 0 (Semua file sesuai standar format).
   5. **Next.js Production Build**: `corepack pnpm build` -> Exit Code 0 (16 static & dynamic pages berhasil dioptimasi dan dikompilasi).
   6. **Git Diff Check**: `git diff --check` -> Exit Code 0 (Tidak ada error whitespace atau konflik).
-
