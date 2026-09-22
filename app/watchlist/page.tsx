@@ -255,7 +255,7 @@ function WatchlistContent({ initialTab = 'watchlist' }: { initialTab?: 'watchlis
                 placeholder="Tambah kode saham (contoh: BBCA, TLKM)…"
                 value={newTicker}
                 onChange={(e) => setNewTicker(e.target.value.toUpperCase())}
-                className="w-full rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-surface)] px-3 py-2 font-mono text-sm uppercase text-[var(--rasi-text)] placeholder:font-sans placeholder:normal-case placeholder:text-[var(--rasi-muted)] focus:border-[var(--rasi-primary)] focus:outline-none"
+                className="w-full rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-surface)] px-3 py-2 font-mono text-sm text-[var(--rasi-text)] uppercase placeholder:font-sans placeholder:text-[var(--rasi-muted)] placeholder:normal-case focus:border-[var(--rasi-primary)] focus:outline-none"
               />
             </div>
             <Button

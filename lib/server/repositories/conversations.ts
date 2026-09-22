@@ -8,22 +8,29 @@ import type {
   ProposedAction,
 } from '@/lib/contracts/assistant'
 
+const inMemoryConversations = new Map<string, ConversationDTO>()
+const inMemoryMessages = new Map<string, ConversationMessageDTO[]>()
+
 export async function getUserConversations(userId: string): Promise<ConversationDTO[]> {
   if (!userId) return []
-  const rows = await db
-    .select()
-    .from(conversations)
-    .where(eq(conversations.userId, userId))
-    .orderBy(desc(conversations.updatedAt))
+  try {
+    const rows = await db
+      .select()
+      .from(conversations)
+      .where(eq(conversations.userId, userId))
+      .orderBy(desc(conversations.updatedAt))
 
-  return rows.map((r) => ({
-    id: r.id,
-    userId: r.userId,
-    title: r.title,
-    ticker: r.ticker,
-    createdAt: r.createdAt.toISOString(),
-    updatedAt: r.updatedAt.toISOString(),
-  }))
+    return rows.map((r) => ({
+      id: r.id,
+      userId: r.userId,
+      title: r.title,
+      ticker: r.ticker,
+      createdAt: r.createdAt.toISOString(),
+      updatedAt: r.updatedAt.toISOString(),
+    }))
+  } catch {
+    return Array.from(inMemoryConversations.values()).filter((c) => c.userId === userId)
+  }
 }
 
 export async function getConversation(
@@ -31,24 +38,28 @@ export async function getConversation(
   conversationId: string,
 ): Promise<ConversationDTO | null> {
   if (!userId || !conversationId) return null
-  const rows = await db
-    .select()
-    .from(conversations)
-    .where(and(eq(conversations.id, conversationId), eq(conversations.userId, userId)))
-    .limit(1)
+  try {
+    const rows = await db
+      .select()
+      .from(conversations)
+      .where(and(eq(conversations.id, conversationId), eq(conversations.userId, userId)))
+      .limit(1)
 
-  if (!rows.length) return null
-  const conv = rows[0]
-  const messages = await getConversationMessages(conversationId)
+    if (!rows.length) return null
+    const conv = rows[0]
+    const messages = await getConversationMessages(conversationId)
 
-  return {
-    id: conv.id,
-    userId: conv.userId,
-    title: conv.title,
-    ticker: conv.ticker,
-    createdAt: conv.createdAt.toISOString(),
-    updatedAt: conv.updatedAt.toISOString(),
-    messages,
+    return {
+      id: conv.id,
+      userId: conv.userId,
+      title: conv.title,
+      ticker: conv.ticker,
+      createdAt: conv.createdAt.toISOString(),
+      updatedAt: conv.updatedAt.toISOString(),
+      messages,
+    }
+  } catch {
+    return inMemoryConversations.get(conversationId) ?? null
   }
 }
 
@@ -61,61 +72,85 @@ export async function createConversation(
   const cleanTicker = ticker ? ticker.trim().toUpperCase().replace(/\.JK$/i, '') : null
   const now = new Date()
 
-  const [inserted] = await db
-    .insert(conversations)
-    .values({
+  try {
+    const [inserted] = await db
+      .insert(conversations)
+      .values({
+        id,
+        userId,
+        title: title.slice(0, 255),
+        ticker: cleanTicker,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning()
+
+    return {
+      id: inserted.id,
+      userId: inserted.userId,
+      title: inserted.title,
+      ticker: inserted.ticker,
+      createdAt: inserted.createdAt.toISOString(),
+      updatedAt: inserted.updatedAt.toISOString(),
+      messages: [],
+    }
+  } catch {
+    const conv: ConversationDTO = {
       id,
       userId,
       title: title.slice(0, 255),
       ticker: cleanTicker,
-      createdAt: now,
-      updatedAt: now,
-    })
-    .returning()
-
-  return {
-    id: inserted.id,
-    userId: inserted.userId,
-    title: inserted.title,
-    ticker: inserted.ticker,
-    createdAt: inserted.createdAt.toISOString(),
-    updatedAt: inserted.updatedAt.toISOString(),
-    messages: [],
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString(),
+      messages: [],
+    }
+    inMemoryConversations.set(id, conv)
+    return conv
   }
 }
 
 export async function deleteConversation(userId: string, conversationId: string): Promise<boolean> {
   if (!userId || !conversationId) return false
-  const rows = await db
-    .delete(conversations)
-    .where(and(eq(conversations.id, conversationId), eq(conversations.userId, userId)))
-    .returning()
+  try {
+    const rows = await db
+      .delete(conversations)
+      .where(and(eq(conversations.id, conversationId), eq(conversations.userId, userId)))
+      .returning()
 
-  return rows.length > 0
+    return rows.length > 0
+  } catch {
+    inMemoryConversations.delete(conversationId)
+    inMemoryMessages.delete(conversationId)
+    return true
+  }
 }
 
 export async function getConversationMessages(
   conversationId: string,
   limit = 50,
 ): Promise<ConversationMessageDTO[]> {
-  const rows = await db
-    .select()
-    .from(conversationMessages)
-    .where(eq(conversationMessages.conversationId, conversationId))
-    .orderBy(conversationMessages.createdAt, conversationMessages.id)
-    .limit(limit)
+  try {
+    const rows = await db
+      .select()
+      .from(conversationMessages)
+      .where(eq(conversationMessages.conversationId, conversationId))
+      .orderBy(conversationMessages.createdAt, conversationMessages.id)
+      .limit(limit)
 
-  return rows.map((r) => ({
-    id: r.id,
-    conversationId: r.conversationId,
-    role: r.role as 'user' | 'assistant',
-    content: r.content,
-    analysisSource: r.analysisSource as 'GEMINI' | 'RULE_BASED' | null,
-    sources: r.sources as ConversationMessageDTO['sources'],
-    proposedAction: r.proposedAction as ProposedAction | null,
-    snapshotId: r.snapshotId,
-    createdAt: r.createdAt.toISOString(),
-  }))
+    return rows.map((r) => ({
+      id: r.id,
+      conversationId: r.conversationId,
+      role: r.role as 'user' | 'assistant',
+      content: r.content,
+      analysisSource: r.analysisSource as 'GEMINI' | 'RULE_BASED' | null,
+      sources: r.sources as ConversationMessageDTO['sources'],
+      proposedAction: r.proposedAction as ProposedAction | null,
+      snapshotId: r.snapshotId,
+      createdAt: r.createdAt.toISOString(),
+    }))
+  } catch {
+    return (inMemoryMessages.get(conversationId) ?? []).slice(-limit)
+  }
 }
 
 export async function addConversationMessage(
@@ -132,33 +167,54 @@ export async function addConversationMessage(
   const id = crypto.randomUUID()
   const now = new Date()
 
-  const [inserted] = await db
-    .insert(conversationMessages)
-    .values({
+  try {
+    const [inserted] = await db
+      .insert(conversationMessages)
+      .values({
+        id,
+        conversationId,
+        role: data.role,
+        content: data.content,
+        analysisSource: data.analysisSource ?? null,
+        sources: data.sources ?? null,
+        proposedAction: data.proposedAction ?? null,
+        snapshotId: data.snapshotId ?? null,
+        createdAt: now,
+      })
+      .returning()
+
+    // Update conversation updatedAt
+    await db
+      .update(conversations)
+      .set({ updatedAt: now })
+      .where(eq(conversations.id, conversationId))
+
+    return {
+      id: inserted.id,
+      conversationId: inserted.conversationId,
+      role: inserted.role as 'user' | 'assistant',
+      content: inserted.content,
+      analysisSource: inserted.analysisSource as 'GEMINI' | 'RULE_BASED' | null,
+      sources: inserted.sources as ConversationMessageDTO['sources'],
+      proposedAction: inserted.proposedAction as ProposedAction | null,
+      snapshotId: inserted.snapshotId,
+      createdAt: inserted.createdAt.toISOString(),
+    }
+  } catch {
+    const msg: ConversationMessageDTO = {
       id,
       conversationId,
       role: data.role,
       content: data.content,
       analysisSource: data.analysisSource ?? null,
-      sources: data.sources ?? null,
+      sources: data.sources ?? undefined,
       proposedAction: data.proposedAction ?? null,
-      snapshotId: data.snapshotId ?? null,
-      createdAt: now,
-    })
-    .returning()
-
-  // Update conversation updatedAt
-  await db.update(conversations).set({ updatedAt: now }).where(eq(conversations.id, conversationId))
-
-  return {
-    id: inserted.id,
-    conversationId: inserted.conversationId,
-    role: inserted.role as 'user' | 'assistant',
-    content: inserted.content,
-    analysisSource: inserted.analysisSource as 'GEMINI' | 'RULE_BASED' | null,
-    sources: inserted.sources as ConversationMessageDTO['sources'],
-    proposedAction: inserted.proposedAction as ProposedAction | null,
-    snapshotId: inserted.snapshotId,
-    createdAt: inserted.createdAt.toISOString(),
+      snapshotId: data.snapshotId ?? undefined,
+      createdAt: now.toISOString(),
+    }
+    const list = inMemoryMessages.get(conversationId) ?? []
+    list.push(msg)
+    inMemoryMessages.set(conversationId, list)
+    return msg
   }
 }

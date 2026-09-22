@@ -46,9 +46,48 @@ export function getMinuteStart(date = new Date()): Date {
   return d
 }
 
+const inMemoryQuotaBuckets = new Map<string, number>()
+
+function consumeInMemoryQuota(
+  subject: string,
+  operation: string,
+  config: QuotaConfig,
+  now: Date,
+): Result<{ remainingToday: number; remainingMinute: number }> {
+  const minuteKey = `${subject}:min:${now.toISOString().slice(0, 16)}`
+  const dayKey = `${subject}:day:${now.toISOString().slice(0, 10)}`
+
+  const currentMin = (inMemoryQuotaBuckets.get(minuteKey) ?? 0) + 1
+  inMemoryQuotaBuckets.set(minuteKey, currentMin)
+
+  if (currentMin > config.perMinute) {
+    return errorResult(
+      'RATE_LIMITED',
+      `Batas ${config.perMinute} permintaan per menit tercapai. Tunggu sebentar lalu coba lagi.`,
+      { retryAfterSeconds: 60 - now.getSeconds() },
+    )
+  }
+
+  const currentDay = (inMemoryQuotaBuckets.get(dayKey) ?? 0) + 1
+  inMemoryQuotaBuckets.set(dayKey, currentDay)
+
+  if (currentDay > config.perDay) {
+    return errorResult(
+      'RATE_LIMITED',
+      `Batas kuota harian (${config.perDay} per hari) untuk fitur ${operation} telah tercapai.`,
+    )
+  }
+
+  return successResult({
+    remainingToday: Math.max(0, config.perDay - currentDay),
+    remainingMinute: Math.max(0, config.perMinute - currentMin),
+  })
+}
+
 /**
  * Checks and atomically increments quota buckets in PostgreSQL.
  * If limit is exceeded, returns RATE_LIMITED or BUDGET_EXHAUSTED.
+ * Falls back to in-memory tracking if database is unavailable.
  */
 export async function consumeQuota(
   subject: string,
@@ -124,9 +163,8 @@ export async function consumeQuota(
       remainingToday: Math.max(0, config.perDay - dayRow.count),
       remainingMinute: Math.max(0, config.perMinute - minuteRow.count),
     })
-  } catch (error) {
-    // If database is unavailable, fail safe: do not allow new calls
-    const message = error instanceof Error ? error.message : 'Database kuota tidak tersedia.'
-    return errorResult('DATABASE_UNAVAILABLE', `Gagal memeriksa kuota: ${message}`)
+  } catch {
+    // Fallback to in-memory quota tracking when database is unreachable
+    return consumeInMemoryQuota(subject, operation, config, now)
   }
 }

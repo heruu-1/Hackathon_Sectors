@@ -25,9 +25,11 @@ import {
   getStockData,
   getWatchlist,
 } from '@/app/actions'
+import { ResearchWorkspace } from '@/components/ResearchWorkspace'
 import { StockChart } from '@/components/StockChart'
 import { useThemePreference } from '@/components/ThemePreferenceProvider'
 import { Button, ButtonLink } from '@/components/ui'
+import type { AnalysisSnapshot } from '@/lib/contracts/analysis'
 import type { DailyPriceRow } from '@/lib/contracts/market'
 import {
   METRIC_EXPLANATIONS,
@@ -50,10 +52,17 @@ export default function StockDetail({ ticker }: StockDetailProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const currentTab = ['fundamental', 'broker', 'news', 'insider'].includes(
-    searchParams.get('tab') ?? '',
-  )
-    ? (searchParams.get('tab') as 'fundamental' | 'broker' | 'news' | 'insider')
+  const currentTab = [
+    'fundamental',
+    'valuation',
+    'ownership',
+    'broker',
+    'news',
+    'insider',
+    'research',
+  ].includes(searchParams.get('tab') ?? '')
+    ? (searchParams.get('tab') as
+        'fundamental' | 'valuation' | 'ownership' | 'broker' | 'news' | 'insider' | 'research')
     : 'fundamental'
 
   const { mode, setMode } = useThemePreference()
@@ -306,7 +315,7 @@ export default function StockDetail({ ticker }: StockDetailProps) {
       </div>
 
       {/* 2. Price, Change, Summary, and Primary Actions */}
-      <div className="relative overflow-hidden space-y-5 rounded-2xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-5 sm:p-8 shadow-2xl shadow-black/40">
+      <div className="relative space-y-5 overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-5 shadow-2xl shadow-black/40 sm:p-8">
         <div className="flex flex-col justify-between gap-4 border-b border-[var(--rasi-border)] pb-5 sm:flex-row sm:items-baseline">
           <div className="flex items-baseline gap-4">
             <span className="font-mono text-3xl font-extrabold text-[var(--rasi-text)] tabular-nums sm:text-4xl">
@@ -417,10 +426,12 @@ export default function StockDetail({ ticker }: StockDetailProps) {
         <div className="flex flex-col justify-between gap-3 border-b border-[var(--rasi-border)] sm:flex-row sm:items-center">
           <div className="flex overflow-x-auto">
             {[
-              { key: 'fundamental', label: 'Keuangan perusahaan' },
-              { key: 'broker', label: 'Transaksi broker' },
-              { key: 'news', label: 'Berita' },
-              { key: 'insider', label: 'Transaksi Orang Dalam' },
+              { key: 'fundamental', label: 'Keuangan & Kinerja' },
+              { key: 'valuation', label: 'Valuasi & Pembanding' },
+              { key: 'ownership', label: 'Kepemilikan & Float' },
+              { key: 'broker', label: 'Transaksi Broker' },
+              { key: 'news', label: 'Berita & Katalis' },
+              { key: 'research', label: 'Ruang Riset & Tesis' },
             ].map((tab) => {
               const active = currentTab === tab.key
               return (
@@ -459,23 +470,168 @@ export default function StockDetail({ ticker }: StockDetailProps) {
             <div className="space-y-6">
               {mode === 'beginner' && (
                 <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-xs leading-relaxed text-blue-950 dark:border-blue-900 dark:bg-[#071328] dark:text-blue-200">
-                  <strong> Cara membaca angka ini: </strong> P/E membandingkan harga saham dengan
-                  laba per saham. P/B membandingkannya dengan aset bersih per saham. Angka rendah
-                  belum tentu murah; lihat juga kondisi perusahaan dan perusahaan sejenis.{' '}
+                  <strong> Cara membaca keuangan: </strong> Evaluasi kinerja bisnis membandingkan
+                  kuartal terkini dengan periode sama tahun sebelumnya (YoY). Perusahaan keuangan
+                  (bank) dinilai dari pertumbuhan bunga dan kredit, sedangkan perusahaan nonkeuangan
+                  dinilai dari pendapatan, laba, dan arus kas operasi.{' '}
                 </div>
               )}
 
-              <div>
-                <h3 className="text-base font-bold text-[var(--rasi-text)]">
-                  {' '}
-                  Harga, laba, dan aset perusahaan{' '}
-                </h3>
-                <p className="mt-1 text-xs text-[var(--rasi-muted)]">
-                  {' '}
-                  Perbandingan harga saham dengan angka dalam laporan keuangan perusahaan.{' '}
-                </p>
-              </div>
+              {/* R07 Divergence Warning if present */}
+              {data?.fundamentals &&
+                'isCashFlowDivergent' in data.fundamentals &&
+                data.fundamentals.isCashFlowDivergent && (
+                  <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-200">
+                    <strong className="font-semibold text-amber-300">
+                      ⚠️ Divergensi Arus Kas Operasi (R07):
+                    </strong>{' '}
+                    Perusahaan membukukan laba bersih positif, namun arus kas operasi negatif.
+                    Periksa apakah laba tertahan di piutang atau persediaan sebelum mengambil
+                    kesimpulan.
+                  </div>
+                )}
 
+              {/* Bank Layout */}
+              {data?.fundamentals?.group === 'BANK' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-base font-bold text-[var(--rasi-text)]">
+                      Kinerja Perbankan & Lembaga Keuangan ({data.fundamentals.quarter})
+                    </h3>
+                    <span className="rounded bg-blue-500/20 px-2 py-0.5 text-xs font-semibold text-blue-400">
+                      Basis: {data.fundamentals.basis}
+                    </span>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-4">
+                      <span className="block text-xs text-[var(--rasi-muted)]">
+                        Pendapatan Bunga Bersih (NII) YoY
+                      </span>
+                      <span className="mt-2 block font-mono text-xl font-bold tabular-nums">
+                        {data.fundamentals.netInterestIncomeGrowth.growthLabel}
+                      </span>
+                    </div>
+
+                    <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-4">
+                      <span className="block text-xs text-[var(--rasi-muted)]">
+                        Pertumbuhan Laba Bersih YoY
+                      </span>
+                      <span className="mt-2 block font-mono text-xl font-bold tabular-nums">
+                        {data.fundamentals.netIncomeGrowth.growthLabel}
+                      </span>
+                    </div>
+
+                    <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-4">
+                      <span className="block text-xs text-[var(--rasi-muted)]">
+                        Rasio Kredit terhadap Simpanan (LDR)
+                      </span>
+                      <span className="mt-2 block font-mono text-xl font-bold tabular-nums">
+                        {typeof data.fundamentals.loanToDepositRatio === 'number'
+                          ? `${(data.fundamentals.loanToDepositRatio * 100).toFixed(1)}%`
+                          : 'Data tidak tersedia'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-4">
+                      <span className="block text-xs text-[var(--rasi-muted)]">
+                        Pertumbuhan Kredit (Loans) YoY
+                      </span>
+                      <span className="mt-1 block font-mono text-lg font-bold tabular-nums">
+                        {data.fundamentals.loanGrowth?.growthLabel ?? 'Data tidak tersedia'}
+                      </span>
+                    </div>
+
+                    <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-4">
+                      <span className="block text-xs text-[var(--rasi-muted)]">
+                        Pertumbuhan DPK (Deposits) YoY
+                      </span>
+                      <span className="mt-1 block font-mono text-lg font-bold tabular-nums">
+                        {data.fundamentals.depositGrowth?.growthLabel ?? 'Data tidak tersedia'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Non-Financial Layout */}
+              {data?.fundamentals?.group === 'NON_FINANCIAL' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-base font-bold text-[var(--rasi-text)]">
+                      Kinerja Bisnis & Arus Kas ({data.fundamentals.quarter})
+                    </h3>
+                    <span className="rounded bg-blue-500/20 px-2 py-0.5 text-xs font-semibold text-blue-400">
+                      Basis: {data.fundamentals.basis}
+                    </span>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-4">
+                      <span className="block text-xs text-[var(--rasi-muted)]">
+                        Pertumbuhan Pendapatan YoY
+                      </span>
+                      <span className="mt-2 block font-mono text-xl font-bold tabular-nums">
+                        {data.fundamentals.revenueGrowth.growthLabel}
+                      </span>
+                    </div>
+
+                    <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-4">
+                      <span className="block text-xs text-[var(--rasi-muted)]">
+                        Pertumbuhan Laba Bersih YoY
+                      </span>
+                      <span className="mt-2 block font-mono text-xl font-bold tabular-nums">
+                        {data.fundamentals.netIncomeGrowth.growthLabel}
+                      </span>
+                    </div>
+
+                    <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-4">
+                      <span className="block text-xs text-[var(--rasi-muted)]">
+                        Margin Laba Bersih (NPM)
+                      </span>
+                      <span className="mt-2 block font-mono text-xl font-bold tabular-nums">
+                        {data.fundamentals.netMarginCurrent !== null
+                          ? `${(data.fundamentals.netMarginCurrent * 100).toFixed(2)}%`
+                          : 'Data tidak tersedia'}
+                      </span>
+                      {data.fundamentals.marginChangePoints !== null && (
+                        <span className="mt-1 block text-xs text-[var(--rasi-muted)]">
+                          Perubahan: {data.fundamentals.marginChangePoints >= 0 ? '+' : ''}
+                          {data.fundamentals.marginChangePoints} pp vs tahun lalu
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-4">
+                      <span className="block text-xs text-[var(--rasi-muted)]">
+                        Arus Kas Operasi (OCF)
+                      </span>
+                      <span className="mt-1 block font-mono text-lg font-bold tabular-nums">
+                        {data.fundamentals.operatingCashFlow !== null
+                          ? `Rp ${(data.fundamentals.operatingCashFlow / 1_000_000_000).toFixed(2)} M`
+                          : 'Data tidak tersedia'}
+                      </span>
+                    </div>
+
+                    <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-4">
+                      <span className="block text-xs text-[var(--rasi-muted)]">
+                        Debt to Equity Ratio (DER)
+                      </span>
+                      <span className="mt-1 block font-mono text-lg font-bold tabular-nums">
+                        {data.fundamentals.debtToEquity !== null
+                          ? `${data.fundamentals.debtToEquity.toFixed(2)}x`
+                          : 'Data tidak tersedia'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Standard P/E & P/B Overview */}
               <div className="grid gap-4 sm:grid-cols-3">
                 <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-4">
                   <div className="flex items-center justify-between text-xs text-[var(--rasi-muted)]">
@@ -521,15 +677,13 @@ export default function StockDetail({ ticker }: StockDetailProps) {
                       : 'Data belum cukup'}
                   </span>
                   <span className="mt-1 block text-xs text-[var(--rasi-muted)]">
-                    {' '}
-                    Harga dibanding aset setelah dikurangi utang, menurut laporan keuangan{' '}
+                    Harga dibanding aset setelah dikurangi utang
                   </span>
                 </div>
 
                 <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-4">
                   <span className="block text-xs text-[var(--rasi-muted)]">
-                    {' '}
-                    Hasil pemeriksaan keuangan{' '}
+                    Hasil pemeriksaan keuangan
                   </span>
                   <span className="mt-2 block text-base font-bold">
                     {getStatusLabel(fundamental.status).label}
@@ -539,6 +693,379 @@ export default function StockDetail({ ticker }: StockDetailProps) {
                   </span>
                 </div>
               </div>
+
+              {/* Business Exposure & Commodity Mapping (F11) */}
+              {data?.businessExposure && (
+                <div className="space-y-4 rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-5">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--rasi-border)] pb-3">
+                    <div>
+                      <h4 className="text-sm font-bold text-[var(--rasi-text)]">
+                        Peta Bisnis & Eksposur Komoditas (F11)
+                      </h4>
+                      <p className="mt-0.5 text-xs text-[var(--rasi-muted)]">
+                        {data.businessExposure.summary}
+                      </p>
+                    </div>
+                    {data.businessExposure.concentrationLevel !== 'UNKNOWN' && (
+                      <span
+                        className={`rounded px-2.5 py-1 text-xs font-bold ${
+                          data.businessExposure.concentrationLevel === 'HIGH'
+                            ? 'bg-amber-500/20 text-amber-300'
+                            : data.businessExposure.concentrationLevel === 'MODERATE'
+                              ? 'bg-blue-500/20 text-blue-300'
+                              : 'bg-emerald-500/20 text-emerald-300'
+                        }`}
+                      >
+                        Konsentrasi:{' '}
+                        {data.businessExposure.concentrationLevel === 'HIGH'
+                          ? 'Tinggi'
+                          : data.businessExposure.concentrationLevel === 'MODERATE'
+                            ? 'Moderat'
+                            : 'Terdiversifikasi'}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Revenue Segments List */}
+                  {data.businessExposure.segments.length > 0 && (
+                    <div className="space-y-2">
+                      <span className="block text-xs font-semibold text-[var(--rasi-muted)]">
+                        Rincian Segmen Pendapatan
+                      </span>
+                      <div className="space-y-2">
+                        {data.businessExposure.segments.map((seg, idx) => (
+                          <div key={idx} className="space-y-1">
+                            <div className="flex justify-between text-xs">
+                              <span className="font-medium text-[var(--rasi-text)]">
+                                {seg.name}
+                              </span>
+                              <span className="font-mono font-bold text-[var(--rasi-text)]">
+                                {seg.percentage !== null ? `${seg.percentage}%` : '-'}
+                              </span>
+                            </div>
+                            {seg.percentage !== null && (
+                              <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--rasi-surface)]">
+                                <div
+                                  className="h-full bg-[var(--rasi-primary)]"
+                                  style={{
+                                    width: `${Math.min(100, Math.max(0, seg.percentage))}%`,
+                                  }}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Commodity Exposures */}
+                  {data.businessExposure.commodityExposures.length > 0 && (
+                    <div className="space-y-2 pt-2">
+                      <span className="block text-xs font-semibold text-[var(--rasi-muted)]">
+                        Keterhubungan Komoditas Terverifikasi
+                      </span>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {data.businessExposure.commodityExposures.map((exp, idx) => (
+                          <div
+                            key={idx}
+                            className="rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-3 text-xs"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-[var(--rasi-text)]">
+                                {exp.commodityName}
+                              </span>
+                              <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-[10px] font-bold text-emerald-300">
+                                {exp.verificationStatus}
+                              </span>
+                            </div>
+                            <p className="mt-1 text-[var(--rasi-muted)]">{exp.relationship}</p>
+                            <span className="mt-1 block text-[10px] text-[var(--rasi-muted)]/70">
+                              {exp.sourceNote}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB: VALUATION & PEERS (F06) */}
+          {currentTab === 'valuation' && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-base font-bold text-[var(--rasi-text)]">
+                  Valuasi Relatif & Pembanding Industri
+                </h3>
+                <p className="mt-1 text-xs text-[var(--rasi-muted)]">
+                  Bandingkan valuasi {symbol} terhadap median emiten sejenis dalam{' '}
+                  <strong className="text-[var(--rasi-text)]">
+                    {data?.peerComparison?.peerGroupName ?? 'Kelompok Industri'}
+                  </strong>
+                  .
+                </p>
+              </div>
+
+              {/* R06 Value Trap Alert */}
+              {data?.peerComparison?.ruleR06.triggered && (
+                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-200">
+                  <strong className="font-semibold text-amber-300">
+                    ⚠️ Peringatan Valuasi Semu (R06):
+                  </strong>{' '}
+                  {data.peerComparison.ruleR06.explanation}
+                </div>
+              )}
+
+              {/* Sample size warning */}
+              {data?.peerComparison && !data.peerComparison.isSampleSufficient && (
+                <div className="rounded-xl border border-blue-500/20 bg-blue-500/10 p-3 text-xs text-blue-300">
+                  ℹ️ Jumlah pembanding aktif kurang dari 5 emiten; median mungkin kurang
+                  representatif.
+                </div>
+              )}
+
+              {/* Valuation Ranks Grid */}
+              {data?.peerComparison && (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-4">
+                    <span className="block text-xs text-[var(--rasi-muted)]">P/E vs Median</span>
+                    <span className="mt-1 block font-mono text-2xl font-bold tabular-nums">
+                      {data.peerComparison.peRank.value !== null
+                        ? `${data.peerComparison.peRank.value.toFixed(1)}x`
+                        : 'N/A'}
+                    </span>
+                    <span className="mt-1 block text-xs text-[var(--rasi-muted)]">
+                      Median: {data.peerComparison.peRank.median?.toFixed(1) ?? 'N/A'}x
+                    </span>
+                    <span className="mt-2 inline-block rounded bg-[var(--rasi-surface)] px-2 py-0.5 text-xs font-semibold">
+                      {data.peerComparison.peRank.summaryLabel}
+                    </span>
+                  </div>
+
+                  <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-4">
+                    <span className="block text-xs text-[var(--rasi-muted)]">P/B vs Median</span>
+                    <span className="mt-1 block font-mono text-2xl font-bold tabular-nums">
+                      {data.peerComparison.pbRank.value !== null
+                        ? `${data.peerComparison.pbRank.value.toFixed(1)}x`
+                        : 'N/A'}
+                    </span>
+                    <span className="mt-1 block text-xs text-[var(--rasi-muted)]">
+                      Median: {data.peerComparison.pbRank.median?.toFixed(1) ?? 'N/A'}x
+                    </span>
+                    <span className="mt-2 inline-block rounded bg-[var(--rasi-surface)] px-2 py-0.5 text-xs font-semibold">
+                      {data.peerComparison.pbRank.summaryLabel}
+                    </span>
+                  </div>
+
+                  <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-4">
+                    <span className="block text-xs text-[var(--rasi-muted)]">ROE vs Median</span>
+                    <span className="mt-1 block font-mono text-2xl font-bold tabular-nums">
+                      {data.peerComparison.roeRank.value !== null
+                        ? `${(data.peerComparison.roeRank.value * 100).toFixed(1)}%`
+                        : 'N/A'}
+                    </span>
+                    <span className="mt-1 block text-xs text-[var(--rasi-muted)]">
+                      Median:{' '}
+                      {data.peerComparison.roeRank.median
+                        ? `${(data.peerComparison.roeRank.median * 100).toFixed(1)}%`
+                        : 'N/A'}
+                    </span>
+                    <span className="mt-2 inline-block rounded bg-[var(--rasi-surface)] px-2 py-0.5 text-xs font-semibold">
+                      {data.peerComparison.roeRank.summaryLabel}
+                    </span>
+                  </div>
+
+                  <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-4">
+                    <span className="block text-xs text-[var(--rasi-muted)]">
+                      Dividend Yield vs Median
+                    </span>
+                    <span className="mt-1 block font-mono text-2xl font-bold tabular-nums">
+                      {data.peerComparison.dividendYieldRank.value !== null
+                        ? `${(data.peerComparison.dividendYieldRank.value * 100).toFixed(1)}%`
+                        : 'N/A'}
+                    </span>
+                    <span className="mt-1 block text-xs text-[var(--rasi-muted)]">
+                      Median:{' '}
+                      {data.peerComparison.dividendYieldRank.median
+                        ? `${(data.peerComparison.dividendYieldRank.median * 100).toFixed(1)}%`
+                        : 'N/A'}
+                    </span>
+                    <span className="mt-2 inline-block rounded bg-[var(--rasi-surface)] px-2 py-0.5 text-xs font-semibold">
+                      {data.peerComparison.dividendYieldRank.summaryLabel}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Peers Table */}
+              {data?.peerComparison?.peers && data.peerComparison.peers.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="text-sm font-bold text-[var(--rasi-text)]">
+                    Daftar Emiten Pembanding ({data.peerComparison.peers.length})
+                  </h4>
+                  <div className="overflow-x-auto rounded-xl border border-[var(--rasi-border)]">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-[var(--rasi-muted-bg)] text-[var(--rasi-muted)]">
+                        <tr>
+                          <th className="p-3">Emiten</th>
+                          <th className="p-3 text-right">P/E</th>
+                          <th className="p-3 text-right">P/B</th>
+                          <th className="p-3 text-right">ROE</th>
+                          <th className="p-3 text-right">Div Yield</th>
+                          <th className="p-3 text-right">Kapitalisasi Pasar</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[var(--rasi-border)]">
+                        {data.peerComparison.peers.map((peer) => (
+                          <tr
+                            key={peer.symbol}
+                            className={`transition-colors hover:bg-[var(--rasi-muted-bg)] ${
+                              peer.symbol === symbol ? 'bg-[var(--rasi-primary)]/10 font-bold' : ''
+                            }`}
+                          >
+                            <td className="p-3">
+                              <Link
+                                href={`/saham/${peer.symbol}`}
+                                className="font-mono text-[var(--rasi-primary)] hover:underline"
+                              >
+                                {peer.symbol}
+                              </Link>
+                              {peer.symbol === symbol && (
+                                <span className="ml-2 rounded bg-[var(--rasi-primary)]/20 px-1.5 py-0.5 text-[10px] text-[var(--rasi-primary)]">
+                                  Saham ini
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-3 text-right font-mono">
+                              {peer.pe !== null ? `${peer.pe.toFixed(1)}x` : '-'}
+                            </td>
+                            <td className="p-3 text-right font-mono">
+                              {peer.pb !== null ? `${peer.pb.toFixed(1)}x` : '-'}
+                            </td>
+                            <td className="p-3 text-right font-mono">
+                              {peer.roe !== null ? `${(peer.roe * 100).toFixed(1)}%` : '-'}
+                            </td>
+                            <td className="p-3 text-right font-mono">
+                              {peer.dividendYield !== null
+                                ? `${(peer.dividendYield * 100).toFixed(1)}%`
+                                : '-'}
+                            </td>
+                            <td className="p-3 text-right font-mono">
+                              {peer.marketCap !== null
+                                ? `Rp ${(peer.marketCap / 1_000_000_000_000).toFixed(1)} T`
+                                : '-'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB: OWNERSHIP & FLOAT (F07) */}
+          {currentTab === 'ownership' && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-base font-bold text-[var(--rasi-text)]">
+                  Struktur Kepemilikan & Free Float
+                </h3>
+                <p className="mt-1 text-xs text-[var(--rasi-muted)]">
+                  Komposisi pemegang saham pengendali, saham publik (free float), dan pergeseran
+                  antarbulan.
+                </p>
+              </div>
+
+              {/* Free Float & Controlling Grid */}
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-4">
+                  <span className="block text-xs text-[var(--rasi-muted)]">Free Float Publik</span>
+                  <span className="mt-2 block font-mono text-2xl font-bold tabular-nums">
+                    {data?.ownership?.freeFloat.percentage !== null &&
+                    data?.ownership?.freeFloat.percentage !== undefined
+                      ? `${data.ownership.freeFloat.percentage.toFixed(2)}%`
+                      : 'Data tidak tersedia'}
+                  </span>
+                  <span className="mt-1 block text-xs text-[var(--rasi-muted)]">
+                    {data?.ownership?.freeFloat.definition}
+                  </span>
+                </div>
+
+                <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-4">
+                  <span className="block text-xs text-[var(--rasi-muted)]">
+                    Porsi Pemegang Pengendali
+                  </span>
+                  <span className="mt-2 block font-mono text-2xl font-bold tabular-nums">
+                    {data?.ownership?.totalControllingPct !== null &&
+                    data?.ownership?.totalControllingPct !== undefined
+                      ? `${data.ownership.totalControllingPct.toFixed(2)}%`
+                      : 'N/A'}
+                  </span>
+                  <span className="mt-1 block text-xs text-[var(--rasi-muted)]">
+                    Akumulasi kepemilikan pihak pengendali terdaftar
+                  </span>
+                </div>
+
+                <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-4">
+                  <span className="block text-xs text-[var(--rasi-muted)]">
+                    Pergeseran Antarbulan
+                  </span>
+                  <span className="mt-2 block text-sm font-semibold">
+                    {data?.ownership?.shift?.summary ??
+                      'Data pergeseran bulanan belum mencukupi minimal 2 periode.'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Top Shareholders Table */}
+              {data?.ownership?.topShareholders && data.ownership.topShareholders.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="text-sm font-bold text-[var(--rasi-text)]">
+                    Pemegang Saham Terbesar ({data.ownership.topShareholders.length})
+                  </h4>
+                  <div className="overflow-x-auto rounded-xl border border-[var(--rasi-border)]">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-[var(--rasi-muted-bg)] text-[var(--rasi-muted)]">
+                        <tr>
+                          <th className="p-3">Nama Pemegang Saham</th>
+                          <th className="p-3 text-right">Jumlah Saham</th>
+                          <th className="p-3 text-right">Persentase</th>
+                          <th className="p-3 text-center">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[var(--rasi-border)]">
+                        {data.ownership.topShareholders.map((sh, idx) => (
+                          <tr key={idx} className="hover:bg-[var(--rasi-muted-bg)]">
+                            <td className="p-3 font-medium">{sh.name}</td>
+                            <td className="p-3 text-right font-mono">
+                              {sh.shares ? sh.shares.toLocaleString('id-ID') : '-'}
+                            </td>
+                            <td className="p-3 text-right font-mono font-bold">
+                              {sh.percentage ? `${sh.percentage.toFixed(2)}%` : '-'}
+                            </td>
+                            <td className="p-3 text-center">
+                              {sh.isController ? (
+                                <span className="rounded bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold text-indigo-300">
+                                  Pengendali
+                                </span>
+                              ) : (
+                                <span className="rounded bg-gray-500/20 px-2 py-0.5 text-[10px] text-[var(--rasi-muted)]">
+                                  Publik / Lainnya
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -827,6 +1354,33 @@ export default function StockDetail({ ticker }: StockDetailProps) {
                 </div>
               )}
             </div>
+          )}
+
+          {/* TAB: RESEARCH WORKSPACE (F12) */}
+          {currentTab === 'research' && (
+            <ResearchWorkspace
+              ticker={symbol}
+              companyName={data?.companyName || symbol}
+              currentSnapshot={
+                data
+                  ? {
+                      id: `snap-${data.ticker}-${data.priceDate || 'current'}`,
+                      ticker: data.ticker,
+                      companyName: data.companyName,
+                      createdAt: new Date().toISOString(),
+                      schemaVersion: '1.0.0',
+                      ruleVersion: '1.0.0',
+                      price: data.price,
+                      priceChangeFraction: data.priceChangeFraction,
+                      priceDate: data.priceDate,
+                      envelopes: data.envelopes as unknown as AnalysisSnapshot['envelopes'],
+                      indicators: data.indicators,
+                      composite: data.composite,
+                      provenance: { newsAnalysis: 'RULE_BASED' },
+                    }
+                  : null
+              }
+            />
           )}
         </div>
       </div>

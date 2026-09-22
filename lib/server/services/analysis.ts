@@ -1,6 +1,20 @@
 import { analyzeBandarmology } from '../../../domain/bandarmology.ts'
+import {
+  type BusinessExposureAnalysis,
+  analyzeBusinessExposure,
+} from '../../../domain/business-exposure.ts'
 import { detectCatalystDivergence } from '../../../domain/divergence.ts'
+import {
+  type FundamentalAnalysisResult,
+  analyzeFundamentals,
+} from '../../../domain/fundamentals.ts'
 import { analyzeInsiderMovement } from '../../../domain/insider.ts'
+import { type OwnershipAnalysisResult, analyzeOwnership } from '../../../domain/ownership.ts'
+import {
+  type PeerComparisonResult,
+  type PeerValuationInput,
+  compareTargetWithPeers,
+} from '../../../domain/peer-comparison.ts'
 import { computeCompositeScore, evaluateFundamentals } from '../../../domain/scoring.ts'
 import { normalizeTicker } from '../../../domain/ticker.ts'
 import { calculateVolumeSpike } from '../../../domain/volume.ts'
@@ -23,14 +37,20 @@ import { TickerSchema } from '../../contracts/watchlist.ts'
 import { getOrSetCache } from '../cache.ts'
 import { withIdempotency } from '../idempotency.ts'
 import { analyzeNewsImpact, fallbackAnalyzeNews } from '../providers/gemini.ts'
+import { type RawQuarterlyFinancial, fetchQuarterlyFinancials } from '../providers/quarterly.ts'
 import {
+  type CompanyShareholdersData,
   fetchBrokerSummary,
   fetchBrokersRegistry,
+  fetchCompanyShareholders,
   fetchCompanyValuation,
   fetchDailyPrices,
   fetchInsiderFilings,
   fetchMarketNews,
+  fetchUniverseCompanies,
 } from '../providers/sectors.ts'
+import { type CompanySegmentsData, fetchCompanySegments } from '../providers/segments.ts'
+import { requestSectorsShared } from '../providers/transport.ts'
 import { consumeQuota } from '../quota.ts'
 import { addHistoryEntry } from '../repositories/history.ts'
 import { getLatestSnapshotByTicker, insertSnapshot } from '../repositories/snapshots.ts'
@@ -48,9 +68,16 @@ export interface StockDataResult {
     registry: DataEnvelope<Record<string, BrokerRegistryEntry>>
     news: DataEnvelope<MarketNewsItem[]>
     filings: DataEnvelope<InsiderFilingRow[]>
+    quarterly?: DataEnvelope<RawQuarterlyFinancial[]>
+    shareholders?: DataEnvelope<CompanyShareholdersData>
+    segments?: DataEnvelope<CompanySegmentsData>
   }
   indicators: AnalysisSnapshot['indicators']
   composite: AnalysisSnapshot['composite']
+  fundamentals?: FundamentalAnalysisResult | null
+  peerComparison?: PeerComparisonResult | null
+  ownership?: OwnershipAnalysisResult | null
+  businessExposure?: BusinessExposureAnalysis | null
 }
 
 /**
@@ -65,7 +92,18 @@ export async function readStockData(
   const cleanTicker = normalizeTicker(ticker)
 
   // Fetch cached market data concurrently
-  const [valuation, daily, broker, registry, news, filings] = await Promise.all([
+  const [
+    valuation,
+    daily,
+    broker,
+    registry,
+    news,
+    filings,
+    quarterly,
+    shareholders,
+    segments,
+    screener,
+  ] = await Promise.all([
     getOrSetCache(
       `sectors:valuation:${cleanTicker}`,
       3600_000,
@@ -97,6 +135,25 @@ export async function readStockData(
       () => fetchInsiderFilings(cleanTicker, undefined, 5),
       options,
     ),
+    getOrSetCache(
+      `sectors:quarterly:${cleanTicker}`,
+      86_400_000,
+      () => fetchQuarterlyFinancials(cleanTicker),
+      options,
+    ),
+    getOrSetCache(
+      `sectors:shareholders:${cleanTicker}`,
+      86_400_000,
+      () => fetchCompanyShareholders(cleanTicker),
+      options,
+    ),
+    getOrSetCache(
+      `sectors:segments:${cleanTicker}`,
+      86_400_000,
+      () => fetchCompanySegments(cleanTicker),
+      options,
+    ),
+    fetchUniverseCompanies(200, options).catch(() => []),
   ])
 
   // Extract reference price and change
@@ -115,8 +172,68 @@ export async function readStockData(
     valuation.data?.latestCloseDate ??
     (daily.data && daily.data.length > 0 ? daily.data[daily.data.length - 1].date : null)
 
-  // Compute indicators
+  // Screener & Peer mapping
+  const screenerItems = Array.isArray(screener)
+    ? screener
+    : (((screener as { results?: unknown[] } | null)?.results as Record<string, unknown>[]) ?? [])
+
+  const candidatePeers: PeerValuationInput[] = screenerItems.map((c: Record<string, unknown>) => ({
+    symbol: String(c.symbol ?? ''),
+    sector: typeof c.sector === 'string' ? c.sector : undefined,
+    sub_sector: typeof c.sub_sector === 'string' ? c.sub_sector : undefined,
+    market_cap: typeof c.market_cap === 'number' ? c.market_cap : null,
+    pe: typeof c.pe === 'number' ? c.pe : null,
+    pb: typeof c.pb === 'number' ? c.pb : null,
+    roe: typeof c.roe === 'number' ? c.roe : null,
+    dividend_yield: typeof c.dividend_yield === 'number' ? c.dividend_yield : null,
+    net_income_growth_yoy:
+      typeof c.net_income_growth_yoy === 'number' ? c.net_income_growth_yoy : null,
+    revenue_growth_yoy: typeof c.revenue_growth_yoy === 'number' ? c.revenue_growth_yoy : null,
+  }))
+
+  const targetInScreener = candidatePeers.find((c) => normalizeTicker(c.symbol) === cleanTicker)
+  const targetSector = targetInScreener?.sector
+  const targetSubSector = targetInScreener?.sub_sector
+
+  // Compute indicators & domain analyses
   const fundamental = evaluateFundamentals(valuation.data)
+  const fundamentals = analyzeFundamentals(quarterly?.data ?? [], targetSector, targetSubSector)
+
+  const targetPeerInput: PeerValuationInput = {
+    symbol: cleanTicker,
+    sector: targetSector,
+    sub_sector: targetSubSector,
+    market_cap: targetInScreener?.market_cap ?? null,
+    pe: valuation.data?.historicalValuation?.[0]?.pe ?? targetInScreener?.pe ?? null,
+    pb: valuation.data?.historicalValuation?.[0]?.pb ?? targetInScreener?.pb ?? null,
+    roe: targetInScreener?.roe ?? null,
+    dividend_yield: targetInScreener?.dividend_yield ?? null,
+    net_income_growth_yoy:
+      fundamentals && 'netIncomeGrowth' in fundamentals
+        ? fundamentals.netIncomeGrowth.growthFraction
+        : (targetInScreener?.net_income_growth_yoy ?? null),
+    revenue_growth_yoy:
+      fundamentals && 'revenueGrowth' in fundamentals
+        ? fundamentals.revenueGrowth.growthFraction
+        : (targetInScreener?.revenue_growth_yoy ?? null),
+  }
+
+  const peerComparison = compareTargetWithPeers(targetPeerInput, candidatePeers)
+
+  const ownership = analyzeOwnership(
+    cleanTicker,
+    shareholders?.data?.topShareholders ?? [],
+    shareholders?.data?.monthlyReports ?? [],
+    filings.data ?? [],
+    currentPrice,
+  )
+
+  const businessExposure = analyzeBusinessExposure(
+    cleanTicker,
+    valuation.data?.companyName || cleanTicker,
+    segments?.data?.revenueSegments ?? [],
+  )
+
   const volume = calculateVolumeSpike(daily.data ?? [])
   const latestBrokerSummary = broker.data?.data?.[0]?.summary ?? []
   const brokerDate = broker.data?.data?.[0]?.date ?? broker.sourceDate
@@ -134,7 +251,7 @@ export async function readStockData(
     : null
   const latestNewsUrl = latestNews?.source?.startsWith('http')
     ? latestNews.source
-    : ((latestNews as any)?.url ?? null)
+    : (((latestNews as unknown as Record<string, unknown>)?.url as string | null) ?? null)
 
   const divergence = detectCatalystDivergence(
     newsImpact,
@@ -158,6 +275,9 @@ export async function readStockData(
       registry,
       news,
       filings,
+      quarterly,
+      shareholders,
+      segments,
     },
     indicators: {
       fundamental,
@@ -167,6 +287,10 @@ export async function readStockData(
       insider,
     },
     composite,
+    fundamentals,
+    peerComparison,
+    ownership,
+    businessExposure,
   }
 }
 
@@ -264,7 +388,7 @@ export async function createAnalysis(
     )
     const latestNewsUrl = latestNews?.source?.startsWith('http')
       ? latestNews.source
-      : ((latestNews as any)?.url ?? null)
+      : (((latestNews as unknown as Record<string, unknown>)?.url as string | null) ?? null)
     const divergence = detectCatalystDivergence(
       newsImpact,
       priceChangeFraction,

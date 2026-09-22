@@ -30,7 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="id"
       data-rasi-theme="dark"
-      className={`${roboto.variable} ${robotoMono.variable} h-full antialiased font-sans`}
+      className={`${roboto.variable} ${robotoMono.variable} h-full font-sans antialiased`}
       suppressHydrationWarning
     >
       <head>

@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import type { AnalysisSnapshot } from '../../contracts/analysis.ts'
 import {
   type AssistantRequest,
   AssistantRequestSchema,
@@ -238,21 +239,49 @@ export async function sendMessage(
     let snapshot = null
     let effectiveTicker = request.ticker
     if (!effectiveTicker) {
-      const match = request.message.match(/\b([A-Za-z]{4})\b/)
-      if (match) {
-        effectiveTicker = match[1].toUpperCase()
-      } else if (/\bbri\b/i.test(request.message)) {
-        effectiveTicker = 'BBRI'
-      } else if (/\bbca\b/i.test(request.message)) {
-        effectiveTicker = 'BBCA'
-      } else if (/\bmandiri\b/i.test(request.message)) {
-        effectiveTicker = 'BMRI'
-      } else if (/\bbni\b/i.test(request.message)) {
-        effectiveTicker = 'BBNI'
-      } else if (/\btelkom\b/i.test(request.message)) {
-        effectiveTicker = 'TLKM'
-      } else if (/\bastra\b/i.test(request.message)) {
-        effectiveTicker = 'ASII'
+      // Detect explicit 4-letter uppercase tickers (e.g. BBCA, BBRI, TLKM)
+      const uppercaseMatches = request.message.match(/\b([A-Z]{4})\b/g)
+      if (uppercaseMatches) {
+        const STOPWORDS = new Set([
+          'YANG',
+          'DARI',
+          'PADA',
+          'BISA',
+          'LABA',
+          'ATAS',
+          'CARA',
+          'SAYA',
+          'TAHU',
+          'JUGA',
+          'ATAU',
+          'SAJA',
+          'ARTI',
+          'IKUT',
+          'AKAN',
+          'KITA',
+          'MAKA',
+          'BUAT',
+        ])
+        const validTicker = uppercaseMatches.find((m) => !STOPWORDS.has(m))
+        if (validTicker) {
+          effectiveTicker = validTicker
+        }
+      }
+
+      if (!effectiveTicker) {
+        if (/\bbri\b/i.test(request.message)) {
+          effectiveTicker = 'BBRI'
+        } else if (/\bbca\b/i.test(request.message)) {
+          effectiveTicker = 'BBCA'
+        } else if (/\bmandiri\b/i.test(request.message)) {
+          effectiveTicker = 'BMRI'
+        } else if (/\bbni\b/i.test(request.message)) {
+          effectiveTicker = 'BBNI'
+        } else if (/\btelkom\b/i.test(request.message)) {
+          effectiveTicker = 'TLKM'
+        } else if (/\bastra\b/i.test(request.message)) {
+          effectiveTicker = 'ASII'
+        }
       }
     }
 
@@ -265,6 +294,17 @@ export async function sendMessage(
       effectiveTicker ? fetchLiveMarketQuote(effectiveTicker) : Promise.resolve(null),
     ])
     snapshot = snapshotResult
+    if (!snapshot && request.snapshotId) {
+      try {
+        const { getResearchSnapshotById } = await import('../repositories/research-snapshots.ts')
+        const rSnap = await getResearchSnapshotById(request.snapshotId)
+        if (rSnap && rSnap.payload) {
+          snapshot = rSnap.payload as unknown as AnalysisSnapshot
+        }
+      } catch {
+        // Fallback
+      }
+    }
 
     // 5. Build sources
     const sources = buildSourcesFromSnapshot(snapshot)
@@ -296,6 +336,11 @@ export async function sendMessage(
         .map((m) => `${m.role === 'user' ? 'Pengguna' : 'Asisten'}: ${m.content}`)
         .join('\n')
 
+      const { generateAssistantSnapshotContext } = await import('../../../domain/snapshot-diff.ts')
+      const snapshotContext = snapshot
+        ? generateAssistantSnapshotContext(snapshot as unknown as AnalysisSnapshot)
+        : 'Data snapshot belum dipilih/tidak tersedia.'
+
       const prompt = `Anda adalah Asisten Riset Saham Indonesia RASI (analis objektif berbasis aturan IDX).
 Pedoman utama:
 - Berikan analisis objektif, ringkas, dan jelas dalam Bahasa Indonesia yang mudah dipahami orang awam. Hindari gaya bahasa kaku (AI slop) dan istilah teknis berbelit-belit (seperti kode status mentah, "sleeping giant", "akumulasi masif", atau "divergensi" tanpa penjelasan). Jelaskan artinya dengan bahasa sehari-hari.
@@ -310,8 +355,7 @@ ${historyText || '(Belum ada percakapan)'}
 Data Pasar Real-Time Detik Ini dari Internet (Bursa Efek Indonesia):
 ${liveQuote ? JSON.stringify(liveQuote, null, 2) : 'Data pasar real-time khusus tidak tersedia/tidak terdeteksi.'}
 
-Data Snapshot Indikator 4 Pilar RASI:
-${snapshot ? JSON.stringify(snapshot, null, 2) : 'Data snapshot belum dipilih/tidak tersedia.'}
+${snapshotContext}
 
 Pertanyaan Pengguna:
 ${request.message}

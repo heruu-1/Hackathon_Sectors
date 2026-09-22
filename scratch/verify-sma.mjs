@@ -14,9 +14,12 @@ const apiKey = process.env.SECTORS_API_KEY
 const today = new Date().toISOString().split('T')[0]
 const sixtyDaysAgo = new Date(Date.now() - 60 * 86400000).toISOString().split('T')[0]
 
-const res = await fetch(`https://api.sectors.app/v2/daily/BBCA/?start=${sixtyDaysAgo}&end=${today}`, {
-  headers: { Authorization: apiKey },
-})
+const res = await fetch(
+  `https://api.sectors.app/v2/daily/BBCA/?start=${sixtyDaysAgo}&end=${today}`,
+  {
+    headers: { Authorization: apiKey },
+  },
+)
 const rows = await res.json()
 
 // Import calculatePriceSma20 logic
@@ -41,5 +44,7 @@ const smaValues = calculatePriceSma20(rows)
 console.log(`Total rows fetched (60 days): ${rows.length}`)
 console.log('Sample latest 5 rows with SMA-20:')
 for (let i = rows.length - 5; i < rows.length; i++) {
-  console.log(`Date: ${rows[i].date} | Close: Rp ${rows[i].close} | SMA-20: ${smaValues[i] ? 'Rp ' + smaValues[i] : '—'}`)
+  console.log(
+    `Date: ${rows[i].date} | Close: Rp ${rows[i].close} | SMA-20: ${smaValues[i] ? 'Rp ' + smaValues[i] : '—'}`,
+  )
 }

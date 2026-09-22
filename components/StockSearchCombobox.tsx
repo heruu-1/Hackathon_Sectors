@@ -63,23 +63,24 @@ export function StockSearchCombobox({
   // Remote fetch with debounce
   useEffect(() => {
     const trimmed = value.trim()
-    updateSuggestions(trimmed)
+    const localTimer = window.setTimeout(() => {
+      updateSuggestions(trimmed)
+      if (!trimmed) {
+        setRemoteLoading(false)
+      }
+    }, 0)
 
     if (!trimmed) {
-      setRemoteLoading(false)
       if (activeRequestRef.current) activeRequestRef.current.abort()
-      return
+      return () => window.clearTimeout(localTimer)
     }
 
     const currentRequestId = ++requestIdRef.current
     if (activeRequestRef.current) activeRequestRef.current.abort()
 
     const controller = new AbortController()
-    activeRequestRef.current = controller
-
-    setRemoteLoading(true)
-
     const timer = window.setTimeout(() => {
+      setRemoteLoading(true)
       void fetch(`/api/stocks/search?q=${encodeURIComponent(trimmed)}`, {
         signal: controller.signal,
       })

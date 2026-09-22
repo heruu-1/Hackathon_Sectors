@@ -330,3 +330,171 @@ export const requestKeys = pgTable(
 )
 
 export type RequestKeyRow = typeof requestKeys.$inferSelect
+
+// ---------------------------------------------------------------------------
+// 11. Market Intelligence: API Budgets & API Usage (500 credit limit protection)
+// ---------------------------------------------------------------------------
+export const apiBudgets = pgTable('api_budgets', {
+  campaign: varchar('campaign', { length: 50 }).primaryKey(),
+  totalLimit: integer('total_limit').notNull().default(500),
+  usedCredits: integer('used_credits').notNull().default(0),
+  reservedCredits: integer('reserved_credits').notNull().default(0),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+})
+
+export type ApiBudgetRow = typeof apiBudgets.$inferSelect
+
+export const apiUsage = pgTable(
+  'api_usage',
+  {
+    id: serial('id').primaryKey(),
+    requestId: varchar('request_id', { length: 100 }).unique().notNull(),
+    capability: varchar('capability', { length: 100 }).notNull(),
+    creditsReserved: integer('credits_reserved').notNull(),
+    creditsUsed: integer('credits_used').notNull().default(0),
+    status: varchar('status', { length: 50 }).notNull(), // 'RESERVED' | 'COMMITTED' | 'RELEASED' | 'FAILED'
+    endpoint: text('endpoint').notNull(),
+    statusCode: integer('status_code'),
+    durationMs: integer('duration_ms'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    reqIdIdx: uniqueIndex('api_usage_request_id_idx').on(table.requestId),
+    statusIdx: index('api_usage_status_idx').on(table.status),
+  }),
+)
+
+export type ApiUsageRow = typeof apiUsage.$inferSelect
+
+// ---------------------------------------------------------------------------
+// 12. Market Intelligence: Market Scans & Research Snapshots
+// ---------------------------------------------------------------------------
+export const marketScans = pgTable(
+  'market_scans',
+  {
+    id: text('id').primaryKey(), // UUID
+    marketCutoffDate: varchar('market_cutoff_date', { length: 20 }).notNull(),
+    universeCoverage: jsonb('universe_coverage'),
+    discoverySources: jsonb('discovery_sources'),
+    candidateTickers: jsonb('candidate_tickers').notNull(), // Array of tickers
+    snapshotIds: jsonb('snapshot_ids').notNull(), // Array of snapshot IDs
+    paginationStatus: jsonb('pagination_status'),
+    status: varchar('status', { length: 20 }).notNull(), // 'RUNNING' | 'COMPLETED' | 'FAILED'
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    cutoffIdx: index('market_scans_cutoff_idx').on(table.marketCutoffDate),
+  }),
+)
+
+export type MarketScanRow = typeof marketScans.$inferSelect
+
+export const researchSnapshots = pgTable(
+  'research_snapshots',
+  {
+    id: text('id').primaryKey(), // UUID
+    ticker: varchar('ticker', { length: 10 }).notNull(),
+    companyName: varchar('company_name', { length: 255 }),
+    schemaVersion: varchar('schema_version', { length: 20 }).notNull(),
+    ruleVersion: varchar('rule_version', { length: 20 }).notNull(),
+    marketCutoffDate: varchar('market_cutoff_date', { length: 20 }).notNull(),
+    payload: jsonb('payload').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    tickerCutoffIdx: index('research_snapshots_ticker_cutoff_idx').on(
+      table.ticker,
+      table.marketCutoffDate,
+    ),
+  }),
+)
+
+export type ResearchSnapshotRow = typeof researchSnapshots.$inferSelect
+
+// ---------------------------------------------------------------------------
+// 13. Market Intelligence: Research Notes (User thesis & invalidation conditions)
+// ---------------------------------------------------------------------------
+export const researchNotes = pgTable(
+  'research_notes',
+  {
+    id: text('id').primaryKey(), // UUID
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    snapshotId: text('snapshot_id')
+      .notNull()
+      .references(() => researchSnapshots.id, { onDelete: 'cascade' }),
+    ticker: varchar('ticker', { length: 10 }).notNull(),
+    thesis: text('thesis').notNull(),
+    invalidationTriggers: text('invalidation_triggers'),
+    watchMetrics: jsonb('watch_metrics'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    userSnapshotUnique: uniqueIndex('research_notes_user_snapshot_unique').on(
+      table.userId,
+      table.snapshotId,
+    ),
+    userTickerIdx: index('research_notes_user_ticker_idx').on(table.userId, table.ticker),
+  }),
+)
+
+export type ResearchNoteRow = typeof researchNotes.$inferSelect
+
+// ---------------------------------------------------------------------------
+// 14. Market Intelligence: Saved Screens
+// ---------------------------------------------------------------------------
+export const savedScreens = pgTable(
+  'saved_screens',
+  {
+    id: serial('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    title: varchar('title', { length: 255 }).notNull(),
+    presetId: varchar('preset_id', { length: 100 }),
+    filters: jsonb('filters').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdx: index('saved_screens_user_idx').on(table.userId),
+  }),
+)
+
+export type SavedScreenRow = typeof savedScreens.$inferSelect
+
+// ---------------------------------------------------------------------------
+// 15. Market Intelligence: Signal Outcomes (Evaluation for 1, 3, 5 sessions)
+// ---------------------------------------------------------------------------
+export const signalOutcomes = pgTable(
+  'signal_outcomes',
+  {
+    id: serial('id').primaryKey(),
+    snapshotId: text('snapshot_id')
+      .notNull()
+      .references(() => researchSnapshots.id, { onDelete: 'cascade' }),
+    ruleId: varchar('rule_id', { length: 50 }).notNull(),
+    ruleVersion: varchar('rule_version', { length: 20 }).notNull(),
+    ticker: varchar('ticker', { length: 10 }).notNull(),
+    horizon: integer('horizon').notNull(), // 1, 3, 5 sessions
+    signalDate: varchar('signal_date', { length: 20 }).notNull(),
+    targetDate: varchar('target_date', { length: 20 }),
+    initialPrice: doublePrecision('initial_price'),
+    targetPrice: doublePrecision('target_price'),
+    returnFraction: doublePrecision('return_fraction'),
+    status: varchar('status', { length: 40 }).notNull(), // 'PENDING' | 'MATURED' | 'MISSING_PRICE' | 'CORPORATE_ACTION_SUSPENDED'
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    outcomeUnique: uniqueIndex('signal_outcomes_snapshot_rule_horizon_version_unique').on(
+      table.snapshotId,
+      table.ruleId,
+      table.horizon,
+      table.ruleVersion,
+    ),
+  }),
+)
+
+export type SignalOutcomeRow = typeof signalOutcomes.$inferSelect

@@ -34,25 +34,19 @@ export async function GET(request: Request) {
   })
 
   try {
-    const response = await fetch('https://api.sectors.app/v2/companies/?' + params.toString(), {
-      headers: { Authorization: key },
-      signal: AbortSignal.timeout(8_000),
-      cache: 'no-store',
-    })
-
-    if (!response.ok) {
-      // Fallback to local matches if remote API fails
-      return NextResponse.json({ results: localMatches })
-    }
-
-    const payload = (await response.json()) as {
+    const { requestSectorsShared } = await import('@/lib/server/providers/transport')
+    const payload = await requestSectorsShared<{
       results?: Array<{
         symbol?: string
         company_name?: string
         sector?: string
         sub_sector?: string
       }>
-    }
+    }>('https://api.sectors.app/v2/companies/?' + params.toString(), {
+      capabilityId: 'companies_screener',
+      apiKey: key,
+      timeoutMs: 8_000,
+    })
 
     const remoteItems = (payload.results ?? []).map((item) => ({
       symbol: item.symbol?.replace(/\.JK$/i, '') ?? '',

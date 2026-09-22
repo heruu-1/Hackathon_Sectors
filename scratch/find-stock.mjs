@@ -1,6 +1,9 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
+import { calculatePriceSma20 } from '../lib/presentation/stock.ts'
+import { readStockData } from '../lib/server/services/analysis.ts'
+
 // Read .env.local
 const envContent = fs.readFileSync(path.resolve('.env.local'), 'utf8')
 for (const line of envContent.split('\n')) {
@@ -9,9 +12,6 @@ for (const line of envContent.split('\n')) {
     process.env[match[1]] = match[2]
   }
 }
-
-import { readStockData } from '../lib/server/services/analysis.ts'
-import { calculatePriceSma20 } from '../lib/presentation/stock.ts'
 
 // Let's test reading TLKM
 const res = await readStockData('TLKM', { forceRefresh: true })

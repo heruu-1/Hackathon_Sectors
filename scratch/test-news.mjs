@@ -16,7 +16,10 @@ if (!apiKey) {
 }
 
 console.log('=== TEST KONEKSI SECTORS API NEWS ===')
-console.log('API Key terdeteksi:', apiKey ? `Ya (panjang: ${apiKey.length} karakter)` : 'TIDAK ADA / KOSONG')
+console.log(
+  'API Key terdeteksi:',
+  apiKey ? `Ya (panjang: ${apiKey.length} karakter)` : 'TIDAK ADA / KOSONG',
+)
 
 if (!apiKey || apiKey === 'your_sectors_api_key_here') {
   console.error('\n[PERINGATAN] SECTORS_API_KEY belum diisi atau masih berupa placeholder!')
@@ -68,13 +71,22 @@ async function testFetch(url, label) {
 
 async function run() {
   // Test 1: General IDX news
-  await testFetch('https://api.sectors.app/v2/news/?extension=idx&limit=5', 'Berita Pasar Umum (extension=idx)')
+  await testFetch(
+    'https://api.sectors.app/v2/news/?extension=idx&limit=5',
+    'Berita Pasar Umum (extension=idx)',
+  )
 
   // Test 2: Specific ticker news (BBCA)
-  await testFetch('https://api.sectors.app/v2/news/?symbols=BBCA&limit=5', 'Berita Saham Spesifik (symbols=BBCA)')
+  await testFetch(
+    'https://api.sectors.app/v2/news/?symbols=BBCA&limit=5',
+    'Berita Saham Spesifik (symbols=BBCA)',
+  )
 
   // Test 3: Specific ticker news (BBRI)
-  await testFetch('https://api.sectors.app/v2/news/?symbols=BBRI&limit=5', 'Berita Saham Spesifik (symbols=BBRI)')
+  await testFetch(
+    'https://api.sectors.app/v2/news/?symbols=BBRI&limit=5',
+    'Berita Saham Spesifik (symbols=BBRI)',
+  )
 }
 
 run()

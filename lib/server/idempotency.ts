@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm'
 
-import { db } from '@/db'
-import { requestKeys } from '@/db/schema'
+import { db } from '../../db/index.ts'
+import { requestKeys } from '../../db/schema.ts'
 
 /**
  * Retrieves a previously saved response payload for the given user, operation, and request key.
@@ -69,10 +69,12 @@ export async function saveIdempotentResponse<T>(
   }
 }
 
+const inFlightRequests = new Map<string, Promise<unknown>>()
+
 /**
  * Wraps an asynchronous operation with idempotency deduplication.
  * If a matching (userId, operation, requestKey) exists, returns the cached response.
- * Otherwise executes the function and stores the result.
+ * Concurrent executions with the same key share the same in-flight Promise.
  */
 export async function withIdempotency<T>(
   userId: string,
@@ -80,12 +82,27 @@ export async function withIdempotency<T>(
   requestKey: string,
   execute: () => Promise<T>,
 ): Promise<T> {
-  const existing = await getIdempotentResponse<T>(userId, operation, requestKey)
-  if (existing !== null && existing !== undefined) {
-    return existing
+  const compoundKey = `${userId}:${operation}:${requestKey}`
+  const pending = inFlightRequests.get(compoundKey)
+  if (pending) {
+    return (await pending) as T
   }
 
-  const result = await execute()
-  await saveIdempotentResponse<T>(userId, operation, requestKey, result)
-  return result
+  const task = (async () => {
+    const existing = await getIdempotentResponse<T>(userId, operation, requestKey)
+    if (existing !== null && existing !== undefined) {
+      return existing
+    }
+
+    const result = await execute()
+    await saveIdempotentResponse<T>(userId, operation, requestKey, result)
+    return result
+  })()
+
+  inFlightRequests.set(compoundKey, task)
+  try {
+    return await task
+  } finally {
+    inFlightRequests.delete(compoundKey)
+  }
 }

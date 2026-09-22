@@ -5,21 +5,32 @@ import { Suspense, useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 
-import { ChevronLeft, ChevronRight, Eye, Filter, Loader2, RotateCcw, Search, X } from 'lucide-react'
+import {
+  Bookmark,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Eye,
+  Filter,
+  Loader2,
+  RotateCcw,
+  Search,
+  Trash2,
+  X,
+} from 'lucide-react'
 
-import { type ScreenerResult, runScreener } from '@/app/actions'
+import {
+  type ScreenerResult,
+  deleteSavedScreenAction,
+  getSavedScreensAction,
+  runScreener,
+  saveScreenAction,
+} from '@/app/actions'
 import { ScreenerFilterDialog, type ScreenerFilters } from '@/components/ScreenerFilterDialog'
 import { StockPreviewDialog } from '@/components/StockPreviewDialog'
-import { Button } from '@/components/ui'
+import { Button, Dialog } from '@/components/ui'
+import { MANDATORY_SCREENER_PRESETS, generateSafeCsv } from '@/domain/screener-presets'
 import { getSectorLabel } from '@/lib/presentation/stock'
-
-const PRESETS = [
-  { id: 'large', label: 'Nilai perusahaan di atas Rp10 triliun', filters: { minMarketCap: '10' } },
-  { id: 'value', label: 'P/E di bawah 15', filters: { maxPe: '15' } },
-  { id: 'dividend', label: 'Membagikan Dividen', filters: { minYield: '0' } },
-  { id: 'growth', label: 'Laba bertumbuh', filters: { minEarningsGrowth: '0' } },
-  { id: 'valuation', label: 'P/E < 15 & P/B < 2', filters: { maxPe: '15', maxPb: '2' } },
-]
 
 function ScreenerContent() {
   const router = useRouter()
@@ -50,6 +61,34 @@ function ScreenerContent() {
   const [filterModalOpen, setFilterModalOpen] = useState(false)
   const [previewTicker, setPreviewTicker] = useState<string | null>(null)
   const [previewOpen, setPreviewOpen] = useState(false)
+  const [saveModalOpen, setSaveModalOpen] = useState(false)
+  const [saveTitle, setSaveTitle] = useState('')
+  const [saveLoading, setSaveLoading] = useState(false)
+  const [saveMessage, setSaveMessage] = useState('')
+
+  // Saved screens state
+  const [savedScreens, setSavedScreens] = useState<
+    Array<{ id: number; title: string; filters: Record<string, unknown> }>
+  >([])
+
+  const loadSavedScreens = useCallback(async () => {
+    const res = await getSavedScreensAction()
+    if (res.success && res.data) {
+      setSavedScreens(res.data as unknown as typeof savedScreens)
+    }
+  }, [])
+
+  useEffect(() => {
+    let isMounted = true
+    const timer = window.setTimeout(() => {
+      if (!isMounted) return
+      void loadSavedScreens()
+    }, 0)
+    return () => {
+      isMounted = false
+      window.clearTimeout(timer)
+    }
+  }, [loadSavedScreens])
 
   const executeSearch = useCallback(
     async (currentFilters: ScreenerFilters, currentNlpQuery: string, currentOffset = 0) => {
@@ -136,6 +175,66 @@ function ScreenerContent() {
     executeSearch(next, '', 0)
   }
 
+  // Save current screen
+  const handleSaveScreen = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!saveTitle.trim()) return
+    setSaveLoading(true)
+    setSaveMessage('')
+
+    const res = await saveScreenAction(
+      saveTitle.trim(),
+      filters as unknown as Record<string, unknown>,
+    )
+    setSaveLoading(false)
+
+    if (res.success) {
+      setSaveMessage('Preset berhasil disimpan.')
+      setSaveTitle('')
+      setSaveModalOpen(false)
+      void loadSavedScreens()
+    } else {
+      setSaveMessage(res.error ?? 'Gagal menyimpan preset.')
+    }
+  }
+
+  // Delete saved screen
+  const handleDeleteScreen = async (id: number) => {
+    const res = await deleteSavedScreenAction(id)
+    if (res.success) {
+      setSavedScreens((prev) => prev.filter((s) => s.id !== id))
+    }
+  }
+
+  // Safe CSV export with formula injection protection
+  const handleExportCsv = () => {
+    if (rows.length === 0) return
+    const columns = [
+      { key: 'symbol' as const, header: 'Kode Saham' },
+      { key: 'company_name' as const, header: 'Nama Perusahaan' },
+      { key: 'sector' as const, header: 'Sektor' },
+      { key: 'sub_sector' as const, header: 'Sub Sektor' },
+      { key: 'last_close_price' as const, header: 'Harga Terakhir' },
+      { key: 'market_cap' as const, header: 'Kapitalisasi Pasar' },
+      { key: 'pe_ttm' as const, header: 'P/E (TTM)' },
+      { key: 'pb_mrq' as const, header: 'P/B (MRQ)' },
+      { key: 'roe_ttm' as const, header: 'ROE (TTM)' },
+      { key: 'dividend_yield' as const, header: 'Dividen Yield' },
+      { key: 'yoy_quarter_earnings_growth' as const, header: 'Pertumbuhan Laba YoY' },
+    ]
+
+    const csvData = generateSafeCsv(columns, rows as unknown as Array<Record<string, unknown>>)
+    const blob = new Blob(['\uFEFF' + csvData], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `screener-rasi-${new Date().toISOString().slice(0, 10)}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
   // Remove single filter chip
   const handleRemoveFilter = (key: keyof ScreenerFilters) => {
     const next = { ...filters, [key]: '' }
@@ -212,6 +311,25 @@ function ScreenerContent() {
               Atur kriteria {activeChips.length > 0 ? `(${activeChips.length})` : ''}
             </Button>
 
+            <Button
+              variant="secondary"
+              size="md"
+              icon={Bookmark}
+              onClick={() => setSaveModalOpen(true)}
+            >
+              Simpan Kriteria
+            </Button>
+
+            <Button
+              variant="secondary"
+              size="md"
+              icon={Download}
+              onClick={handleExportCsv}
+              disabled={rows.length === 0}
+            >
+              Ekspor CSV
+            </Button>
+
             {activeChips.length > 0 && (
               <button
                 type="button"
@@ -229,18 +347,56 @@ function ScreenerContent() {
         </div>
 
         {/* Preset quick buttons */}
-        <div className="flex flex-wrap items-center gap-1.5 pt-1">
-          <span className="mr-1 text-xs text-[var(--rasi-muted)]"> Pilihan cepat: </span>
-          {PRESETS.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => handleApplyPreset(p.filters)}
-              className="rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] px-2.5 py-1 text-xs font-medium text-[var(--rasi-text)] transition-colors hover:border-[var(--rasi-primary)]"
-            >
-              {p.label}
-            </button>
-          ))}
+        <div className="space-y-2 pt-1">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="mr-1 text-xs font-medium text-[var(--rasi-muted)]">
+              {' '}
+              Preset Riset:{' '}
+            </span>
+            {MANDATORY_SCREENER_PRESETS.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                title={p.description}
+                onClick={() => handleApplyPreset(p.filters)}
+                className="rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] px-2.5 py-1 text-xs font-medium text-[var(--rasi-text)] transition-colors hover:border-[var(--rasi-primary)] hover:text-[var(--rasi-primary)]"
+              >
+                {p.title}
+              </button>
+            ))}
+          </div>
+
+          {/* User's saved presets */}
+          {savedScreens.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <span className="mr-1 text-xs font-medium text-[var(--rasi-muted)]">
+                {' '}
+                Preset Anda:{' '}
+              </span>
+              {savedScreens.map((s) => (
+                <div
+                  key={s.id}
+                  className="inline-flex items-center gap-1 rounded-lg border border-[var(--rasi-primary)]/40 bg-[var(--rasi-primary)]/10 px-2 py-0.5 text-xs text-[var(--rasi-primary)]"
+                >
+                  <button
+                    type="button"
+                    onClick={() => handleApplyPreset(s.filters)}
+                    className="font-medium hover:underline"
+                  >
+                    {s.title}
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`Hapus preset ${s.title}`}
+                    onClick={() => handleDeleteScreen(s.id)}
+                    className="text-[var(--rasi-muted)] hover:text-rose-400"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Active Chips */}
@@ -445,6 +601,61 @@ function ScreenerContent() {
         open={previewOpen}
         onClose={() => setPreviewOpen(false)}
       />
+
+      <Dialog
+        open={saveModalOpen}
+        onClose={() => setSaveModalOpen(false)}
+        title="Simpan Kriteria Screener"
+        description="Simpan kombinasi kriteria saat ini untuk digunakan kembali kapan saja."
+        role="form"
+      >
+        <form onSubmit={handleSaveScreen} className="space-y-4">
+          <div>
+            <label
+              htmlFor="save-title"
+              className="block text-xs font-semibold text-[var(--rasi-muted)]"
+            >
+              Nama Kriteria
+            </label>
+            <input
+              id="save-title"
+              type="text"
+              required
+              value={saveTitle}
+              onChange={(e) => setSaveTitle(e.target.value)}
+              placeholder="Contoh: Saham Dividen Murah Q1"
+              className="mt-1.5 min-h-[44px] w-full rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-surface)] px-3 text-sm text-[var(--rasi-text)] outline-none focus:border-[var(--rasi-primary)] focus:ring-2 focus:ring-[var(--rasi-primary)]/20"
+            />
+          </div>
+
+          {saveMessage && (
+            <p
+              className={`text-xs ${saveMessage.includes('berhasil') ? 'text-emerald-500' : 'text-rose-500'}`}
+            >
+              {saveMessage}
+            </p>
+          )}
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              type="button"
+              variant="secondary"
+              size="md"
+              onClick={() => setSaveModalOpen(false)}
+            >
+              Batal
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="md"
+              disabled={saveLoading || !saveTitle.trim()}
+            >
+              {saveLoading ? 'Menyimpan…' : 'Simpan'}
+            </Button>
+          </div>
+        </form>
+      </Dialog>
     </div>
   )
 }

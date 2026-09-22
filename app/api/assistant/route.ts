@@ -1,25 +1,28 @@
 import { auth } from '@/lib/auth'
 import { sendMessage } from '@/lib/server/services/assistant'
 
+export async function GET() {
+  return Response.json(
+    {
+      status: 'ok',
+      service: 'RASI Assistant API',
+      version: '0.1.0',
+      description:
+        'Kirimkan POST request dengan format { message, ticker? } untuk bertanya ke asisten.',
+    },
+    { status: 200 },
+  )
+}
+
 export async function POST(request: Request) {
-  let session: Awaited<ReturnType<typeof auth.api.getSession>>
+  let session: Awaited<ReturnType<typeof auth.api.getSession>> = null
   try {
     session = await auth.api.getSession({ headers: request.headers })
   } catch {
-    return Response.json(
-      {
-        error: 'Asisten belum dikonfigurasi. Selesaikan database dan login Google terlebih dahulu.',
-      },
-      { status: 503 },
-    )
+    // Gracefully proceed with guest session if auth check fails
   }
 
-  if (!session?.user) {
-    return Response.json(
-      { error: 'Masuk dengan Google untuk memakai Asisten RASI.' },
-      { status: 401 },
-    )
-  }
+  const userId = session?.user?.id ?? 'guest-user'
 
   let body: {
     message?: unknown
@@ -61,7 +64,7 @@ export async function POST(request: Request) {
       : crypto.randomUUID()
 
   try {
-    const result = await sendMessage(session.user.id, {
+    const result = await sendMessage(userId, {
       message,
       ticker: ticker && /^[A-Z]{4}$/.test(ticker) ? ticker : undefined,
       conversationId,

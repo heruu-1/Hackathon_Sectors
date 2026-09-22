@@ -28,8 +28,9 @@ function loadCache() {
     crypto,
     process: { env: {} },
     require: (name) => {
-      if (name === '@/db') return { db: {} }
-      if (name === '@/db/schema') return { apiCache: {}, cacheLeases: {} }
+      if (name === '@/db' || name === '../../db/index.ts') return { db: {} }
+      if (name === '@/db/schema' || name === '../../db/schema.ts')
+        return { apiCache: {}, cacheLeases: {} }
       if (name === 'drizzle-orm') return { and() {}, eq() {}, gt() {}, lt() {} }
       throw new Error(`Unexpected dependency: ${name}`)
     },

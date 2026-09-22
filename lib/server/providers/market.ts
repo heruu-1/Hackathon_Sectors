@@ -94,17 +94,11 @@ export async function fetchLiveMarketQuote(ticker: string): Promise<LiveMarketQu
   const sectorsKey = process.env.SECTORS_API_KEY?.trim()
   if (sectorsKey && sectorsKey !== 'your_sectors_api_key_here') {
     try {
+      const { requestSectorsShared } = await import('./transport.ts')
       const endDate = new Date().toISOString().split('T')[0]
       const startDate = new Date(Date.now() - 7 * 86_400_000).toISOString().split('T')[0]
-      const res = await fetch(
-        `https://api.sectors.app/v2/daily/${cleanTicker}/?start=${startDate}&end=${endDate}`,
-        {
-          headers: { Authorization: sectorsKey },
-          signal: AbortSignal.timeout(6000),
-        },
-      )
-      if (res.ok) {
-        const data = (await res.json()) as Array<{
+      const data = await requestSectorsShared<
+        Array<{
           close?: number
           open?: number
           high?: number
@@ -112,28 +106,32 @@ export async function fetchLiveMarketQuote(ticker: string): Promise<LiveMarketQu
           volume?: number
           date?: string
         }>
-        if (Array.isArray(data) && data.length > 0) {
-          const latest = data[data.length - 1]
-          const prev = data.length > 1 ? (data[data.length - 2].close ?? null) : null
-          const price = latest.close ?? null
-          const change = price !== null && prev !== null ? price - prev : null
-          const changePercent =
-            change !== null && prev && prev > 0 ? `${((change / prev) * 100).toFixed(2)}%` : null
+      >(`https://api.sectors.app/v2/daily/${cleanTicker}/?start=${startDate}&end=${endDate}`, {
+        capabilityId: 'daily_price',
+        apiKey: sectorsKey,
+        timeoutMs: 6000,
+      })
+      if (Array.isArray(data) && data.length > 0) {
+        const latest = data[data.length - 1]
+        const prev = data.length > 1 ? (data[data.length - 2].close ?? null) : null
+        const price = latest.close ?? null
+        const change = price !== null && prev !== null ? price - prev : null
+        const changePercent =
+          change !== null && prev && prev > 0 ? `${((change / prev) * 100).toFixed(2)}%` : null
 
-          return {
-            symbol: `${cleanTicker}.JK`,
-            ticker: cleanTicker,
-            price,
-            previousClose: prev,
-            change,
-            changePercent,
-            dayHigh: latest.high ?? null,
-            dayLow: latest.low ?? null,
-            volume: latest.volume ?? null,
-            timestamp: latest.date ?? null,
-            currency: 'IDR',
-            source: 'Sectors Financial API',
-          }
+        return {
+          symbol: `${cleanTicker}.JK`,
+          ticker: cleanTicker,
+          price,
+          previousClose: prev,
+          change,
+          changePercent,
+          dayHigh: latest.high ?? null,
+          dayLow: latest.low ?? null,
+          volume: latest.volume ?? null,
+          timestamp: latest.date ?? null,
+          currency: 'IDR',
+          source: 'Sectors Financial API',
         }
       }
     } catch {

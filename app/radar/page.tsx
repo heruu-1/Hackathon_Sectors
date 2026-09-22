@@ -14,6 +14,7 @@ import {
   Loader2,
   RefreshCw,
   Search,
+  ShieldAlert,
   Sparkles,
   Trash2,
 } from 'lucide-react'
@@ -24,6 +25,7 @@ import {
   getMarketRadarFeed,
   getRadarHistory,
 } from '@/app/actions'
+import { RadarEvidenceCases } from '@/components/RadarEvidenceCases'
 import { StockPreviewDialog } from '@/components/StockPreviewDialog'
 import { Button } from '@/components/ui'
 import { visibleRadarHistory } from '@/domain/radar'
@@ -54,9 +56,9 @@ function formatDate(isoString?: string): string {
 
 export default function RadarPage() {
   const [data, setData] = useState<MarketRadarData | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [activeTab, setActiveTab] = useState<'radar' | 'history'>('radar')
+  const [activeTab, setActiveTab] = useState<'evidence' | 'radar' | 'history'>('evidence')
 
   // History & snapshot state
   const [historyList, setHistoryList] = useState<RadarHistorySnapshot[]>([])
@@ -116,15 +118,18 @@ export default function RadarPage() {
   )
 
   useEffect(() => {
+    if (activeTab === 'evidence') return
     const request = requestId
     const timer = window.setTimeout(() => {
-      void loadFeed()
+      if (!data) {
+        void loadFeed()
+      }
     }, 0)
     return () => {
       window.clearTimeout(timer)
       request.current++
     }
-  }, [loadFeed])
+  }, [activeTab, data, loadFeed])
 
   const handleClearHistory = () => {
     if (
@@ -282,15 +287,32 @@ export default function RadarPage() {
         <div className="flex flex-wrap gap-1 sm:gap-4">
           <button
             type="button"
+            aria-pressed={activeTab === 'evidence'}
+            onClick={() => setActiveTab('evidence')}
+            className={`flex items-center gap-2 border-b-2 px-3 py-2 text-sm font-semibold transition-colors ${
+              activeTab === 'evidence'
+                ? 'border-[var(--rasi-primary)] text-[var(--rasi-primary)]'
+                : 'border-transparent text-[var(--rasi-muted)] hover:text-[var(--rasi-text)]'
+            }`}
+          >
+            <ShieldAlert className="h-4 w-4" /> Radar Bukti (F02)
+          </button>
+          <button
+            type="button"
             aria-pressed={activeTab === 'radar'}
-            onClick={() => setActiveTab('radar')}
+            onClick={() => {
+              setActiveTab('radar')
+              if (!data && !loading) {
+                void loadFeed()
+              }
+            }}
             className={`flex items-center gap-2 border-b-2 px-3 py-2 text-sm font-semibold transition-colors ${
               activeTab === 'radar'
                 ? 'border-[var(--rasi-primary)] text-[var(--rasi-primary)]'
                 : 'border-transparent text-[var(--rasi-muted)] hover:text-[var(--rasi-text)]'
             }`}
           >
-            <Sparkles className="h-4 w-4" /> Hasil terbaru{' '}
+            <Sparkles className="h-4 w-4" /> Hasil berita & insider{' '}
             <span className="rounded-full bg-[var(--rasi-muted-bg)] px-2 py-0.5 text-xs">
               {allSleepingGiants.length + allPendingCatalysts.length + allInsiderAlerts.length}
             </span>
@@ -325,6 +347,9 @@ export default function RadarPage() {
           {error}
         </div>
       )}
+
+      {/* TAB 0: RADAR BUKTI F02 */}
+      {activeTab === 'evidence' && <RadarEvidenceCases />}
 
       {/* TAB 1: RADAR AKTIF */}
       {activeTab === 'radar' && (

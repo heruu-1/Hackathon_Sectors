@@ -14,9 +14,12 @@ const apiKey = process.env.SECTORS_API_KEY
 const today = new Date().toISOString().split('T')[0]
 const ninetyDaysAgo = new Date(Date.now() - 90 * 86400000).toISOString().split('T')[0]
 
-const res = await fetch(`https://api.sectors.app/v2/daily/BBCA/?start=${ninetyDaysAgo}&end=${today}`, {
-  headers: { Authorization: apiKey },
-})
+const res = await fetch(
+  `https://api.sectors.app/v2/daily/BBCA/?start=${ninetyDaysAgo}&end=${today}`,
+  {
+    headers: { Authorization: apiKey },
+  },
+)
 const rows = await res.json()
 
 // Import calculatePriceSma20 logic
@@ -50,7 +53,9 @@ for (const row of tableRows) {
   const originalIndex = sortedRows.findIndex((r) => r.date === row.date)
   const sma = originalIndex >= 0 ? smaValues[originalIndex] : null
   if (sma !== null) filledCount++
-  console.log(`Date: ${row.date} | Close: Rp ${row.close} | SMA-20: ${sma !== null ? 'Rp ' + sma : '—'}`)
+  console.log(
+    `Date: ${row.date} | Close: Rp ${row.close} | SMA-20: ${sma !== null ? 'Rp ' + sma : '—'}`,
+  )
 }
 
 console.log(`\nResult: ${filledCount} of ${tableRows.length} rows have valid SMA-20 values!`)

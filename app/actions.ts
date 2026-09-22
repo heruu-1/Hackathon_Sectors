@@ -328,7 +328,8 @@ let memoryRadarCache: MarketRadarData | null = null
 let memoryRadarHistory: RadarHistorySnapshot[] = []
 
 async function getRadarCacheFromDb(): Promise<MarketRadarData | null> {
-  if (!process.env.DATABASE_URL) return null
+  const { isDbTemporarilyUnavailable, markDbUnavailable } = await import('@/lib/server/cache')
+  if (!process.env.DATABASE_URL || isDbTemporarilyUnavailable()) return null
   try {
     const { db } = await import('@/db')
     const { apiCache } = await import('@/db/schema')
@@ -341,14 +342,20 @@ async function getRadarCacheFromDb(): Promise<MarketRadarData | null> {
     if (rows.length > 0 && rows[0]?.data) {
       return rows[0].data as MarketRadarData
     }
-  } catch {
-    // Ignore cache retrieval errors
+  } catch (err) {
+    if (
+      err instanceof Error &&
+      (err.message.includes('ECONNREFUSED') || err.message.includes('connect'))
+    ) {
+      markDbUnavailable()
+    }
   }
   return null
 }
 
 async function setRadarCacheInDb(data: MarketRadarData): Promise<void> {
-  if (!process.env.DATABASE_URL) return
+  const { isDbTemporarilyUnavailable, markDbUnavailable } = await import('@/lib/server/cache')
+  if (!process.env.DATABASE_URL || isDbTemporarilyUnavailable()) return
   try {
     const { db } = await import('@/db')
     const { apiCache } = await import('@/db/schema')
@@ -369,13 +376,19 @@ async function setRadarCacheInDb(data: MarketRadarData): Promise<void> {
           createdAt: new Date(),
         },
       })
-  } catch {
-    // Ignore cache save errors
+  } catch (err) {
+    if (
+      err instanceof Error &&
+      (err.message.includes('ECONNREFUSED') || err.message.includes('connect'))
+    ) {
+      markDbUnavailable()
+    }
   }
 }
 
 async function getRadarHistoryFromDb(): Promise<RadarHistorySnapshot[]> {
-  if (!process.env.DATABASE_URL) return []
+  const { isDbTemporarilyUnavailable, markDbUnavailable } = await import('@/lib/server/cache')
+  if (!process.env.DATABASE_URL || isDbTemporarilyUnavailable()) return []
   try {
     const { db } = await import('@/db')
     const { apiCache } = await import('@/db/schema')
@@ -388,14 +401,20 @@ async function getRadarHistoryFromDb(): Promise<RadarHistorySnapshot[]> {
     if (rows.length > 0 && Array.isArray(rows[0]?.data)) {
       return rows[0].data as RadarHistorySnapshot[]
     }
-  } catch {
-    // Ignore history retrieval errors
+  } catch (err) {
+    if (
+      err instanceof Error &&
+      (err.message.includes('ECONNREFUSED') || err.message.includes('connect'))
+    ) {
+      markDbUnavailable()
+    }
   }
   return []
 }
 
 async function appendRadarHistoryInDb(snapshot: RadarHistorySnapshot): Promise<void> {
-  if (!process.env.DATABASE_URL) return
+  const { isDbTemporarilyUnavailable, markDbUnavailable } = await import('@/lib/server/cache')
+  if (!process.env.DATABASE_URL || isDbTemporarilyUnavailable()) return
   try {
     const { db } = await import('@/db')
     const { apiCache } = await import('@/db/schema')
@@ -418,8 +437,13 @@ async function appendRadarHistoryInDb(snapshot: RadarHistorySnapshot): Promise<v
           createdAt: new Date(),
         },
       })
-  } catch {
-    // Ignore history append errors
+  } catch (err) {
+    if (
+      err instanceof Error &&
+      (err.message.includes('ECONNREFUSED') || err.message.includes('connect'))
+    ) {
+      markDbUnavailable()
+    }
   }
 }
 
@@ -475,44 +499,58 @@ async function readMarketRadarFeed(options?: { forceRefresh?: boolean }): Promis
     const pendingCatalysts: MarketRadarData['sleepingGiants'] = []
     const seenTickers = new Set<string>()
 
+    interface CandidateNewsItem {
+      detectedTicker: string
+      news: (typeof newsItems)[0]
+      impact: ReturnType<typeof fallbackAnalyzeNews>
+    }
+    const candidateNews: CandidateNewsItem[] = []
+
     for (const news of newsItems.slice(0, 30)) {
       const detectedTicker = extractTickerFromNews(news)
       if (!detectedTicker || seenTickers.has(detectedTicker)) continue
-      const cleanSymbol = detectedTicker
       const impact = fallbackAnalyzeNews(news.title, news.body ?? '')
       if (impact.sentiment !== 'BULLISH' || impact.impactScore < 40) continue
       seenTickers.add(detectedTicker)
-      if (seenTickers.size > 8) break
-
-      // Fetch observed price response for the ticker
-      const daily = await getOrSetCache(`radar:daily:90:${detectedTicker}`, 900_000, () =>
-        fetchDailyTransactions(detectedTicker, apiKey),
-      ).catch(() => [])
-      const priceChangeFraction = getNewsPriceResponse(daily, news.timestamp)
-
-      const newsUrl = news.source?.startsWith('http') ? news.source : ((news as any).url ?? null)
-      const divergence = detectCatalystDivergence(
-        impact,
-        priceChangeFraction,
-        news.timestamp,
-        newsUrl,
-      )
-
-      // A candidate without a measured response must not be called a sleeping giant.
-      if (divergence.status === 'SLEEPING_GIANT' || divergence.status === 'NO_PRICE_RESPONSE') {
-        const target = divergence.status === 'SLEEPING_GIANT' ? sleepingGiants : pendingCatalysts
-        target.push({
-          ticker: cleanSymbol,
-          headline: news.title,
-          impactScore: impact.impactScore,
-          sentiment: impact.sentiment,
-          priceChangePct: divergence.priceChangePct,
-          verdict: divergence.verdict,
-          timestamp: news.timestamp,
-          url: newsUrl,
-        })
-      }
+      candidateNews.push({ detectedTicker, news, impact })
+      if (candidateNews.length >= 8) break
     }
+
+    // Fetch observed price responses concurrently
+    await Promise.all(
+      candidateNews.map(async ({ detectedTicker, news, impact }) => {
+        const cleanSymbol = detectedTicker
+        const daily = await getOrSetCache(`radar:daily:90:${detectedTicker}`, 900_000, () =>
+          fetchDailyTransactions(detectedTicker, apiKey),
+        ).catch(() => [])
+        const priceChangeFraction = getNewsPriceResponse(daily, news.timestamp)
+
+        const newsUrl = news.source?.startsWith('http')
+          ? news.source
+          : (((news as Record<string, unknown>).url as string | null) ?? null)
+        const divergence = detectCatalystDivergence(
+          impact,
+          priceChangeFraction,
+          news.timestamp,
+          newsUrl,
+        )
+
+        // A candidate without a measured response must not be called a sleeping giant.
+        if (divergence.status === 'SLEEPING_GIANT' || divergence.status === 'NO_PRICE_RESPONSE') {
+          const target = divergence.status === 'SLEEPING_GIANT' ? sleepingGiants : pendingCatalysts
+          target.push({
+            ticker: cleanSymbol,
+            headline: news.title,
+            impactScore: impact.impactScore,
+            sentiment: impact.sentiment,
+            priceChangePct: divergence.priceChangePct,
+            verdict: divergence.verdict,
+            timestamp: news.timestamp,
+            url: newsUrl,
+          })
+        }
+      }),
+    )
 
     const insiderAlerts: MarketRadarData['insiderAlerts'] = []
     for (const filing of filings) {
@@ -843,20 +881,15 @@ export async function runScreener(filters: {
       params.set('where', whereClause)
     }
 
-    const raw = await fetch('https://api.sectors.app/v2/companies/?' + params.toString(), {
-      headers: { Authorization: key },
-      signal: AbortSignal.timeout(10_000),
-      cache: 'no-store',
-    })
-    if (!raw.ok)
-      return {
-        success: false,
-        error: 'Screener belum dapat memuat data (HTTP ' + raw.status + ').',
-      }
-    const payload = (await raw.json()) as {
+    const { requestSectorsShared } = await import('@/lib/server/providers/transport')
+    const payload = await requestSectorsShared<{
       results?: ScreenerResult[]
       pagination?: { total_count?: number }
-    }
+    }>('https://api.sectors.app/v2/companies/?' + params.toString(), {
+      capabilityId: 'companies_screener',
+      apiKey: key,
+      timeoutMs: 10_000,
+    })
 
     if (filters.query?.trim() && payload.results && payload.results.length > 0) {
       const symbols = payload.results.map((r) => r.symbol).filter(Boolean)
@@ -871,30 +904,24 @@ export async function runScreener(filters: {
             include_query_values: 'true',
             where: enrichWhere,
           })
-          const enrichRes = await fetch(
-            'https://api.sectors.app/v2/companies/?' + enrichParams.toString(),
-            {
-              headers: { Authorization: key },
-              signal: AbortSignal.timeout(10_000),
-              cache: 'no-store',
-            },
-          )
-          if (enrichRes.ok) {
-            const enrichPayload = (await enrichRes.json()) as {
-              results?: Array<{ symbol?: string; query_values?: Record<string, unknown> }>
+          const enrichPayload = await requestSectorsShared<{
+            results?: Array<{ symbol?: string; query_values?: Record<string, unknown> }>
+          }>('https://api.sectors.app/v2/companies/?' + enrichParams.toString(), {
+            capabilityId: 'companies_screener',
+            apiKey: key,
+            timeoutMs: 10_000,
+          })
+          const map = new Map<string, Record<string, unknown>>()
+          for (const item of enrichPayload.results ?? []) {
+            if (item.symbol && item.query_values) {
+              map.set(item.symbol, item.query_values)
             }
-            const map = new Map<string, Record<string, unknown>>()
-            for (const item of enrichPayload.results ?? []) {
-              if (item.symbol && item.query_values) {
-                map.set(item.symbol, item.query_values)
-              }
-            }
-            for (const r of payload.results) {
-              const qv = map.get(r.symbol)
-              if (qv) {
-                const rawItem = r as ScreenerResult & { query_values?: Record<string, unknown> }
-                rawItem.query_values = { ...qv, ...rawItem.query_values }
-              }
+          }
+          for (const r of payload.results) {
+            const qv = map.get(r.symbol)
+            if (qv) {
+              const rawItem = r as ScreenerResult & { query_values?: Record<string, unknown> }
+              rawItem.query_values = { ...qv, ...rawItem.query_values }
             }
           }
         } catch {
@@ -981,4 +1008,347 @@ export async function deleteConversationAction(conversationId: string) {
   const result = await deleteConversationById(userId, conversationId)
   if (!result.ok) return { success: false, error: result.error.message }
   return { success: true }
+}
+
+/**
+ * Market Intelligence Actions (Category 3)
+ */
+export async function getMarketOverviewAction(options?: {
+  cutoffDate?: string
+  forceRefresh?: boolean
+}) {
+  const { getMarketOverviewService } = await import('@/lib/server/services/market-overview')
+  const result = await getMarketOverviewService(options)
+  if (!result.ok) {
+    return { success: false, error: result.error.message }
+  }
+  return { success: true, data: result.data }
+}
+
+export async function runMarketScanAction(options?: {
+  cutoffDate?: string
+  forceRefresh?: boolean
+}) {
+  const { runMarketScanService } = await import('@/lib/server/services/market-scan')
+  const result = await runMarketScanService(options)
+  if (!result.ok) {
+    return { success: false, error: result.error.message }
+  }
+  return { success: true, data: result.data }
+}
+
+export async function getResearchSnapshotAction(options: { ticker?: string; snapshotId?: string }) {
+  const { getResearchSnapshotById, getLatestResearchSnapshotForTicker } =
+    await import('@/lib/server/repositories/research-snapshots')
+
+  if (options.snapshotId) {
+    const row = await getResearchSnapshotById(options.snapshotId)
+    return { success: true, data: row }
+  }
+
+  if (options.ticker) {
+    const row = await getLatestResearchSnapshotForTicker(options.ticker.toUpperCase())
+    return { success: true, data: row }
+  }
+
+  return { success: false, error: 'Ticker atau snapshotId harus disediakan.' }
+}
+
+export async function getBrokerListAction() {
+  try {
+    const { getBrokersRegistryList } = await import('@/lib/server/services/broker-activity')
+    const list = await getBrokersRegistryList()
+    return { success: true, data: list }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Gagal memuat daftar broker.',
+    }
+  }
+}
+
+export async function getBrokerActivityAction(
+  brokerCode: string,
+  startDate?: string,
+  endDate?: string,
+  options?: { forceRefresh?: boolean },
+) {
+  try {
+    const { getBrokerActivityService } = await import('@/lib/server/services/broker-activity')
+    const data = await getBrokerActivityService(brokerCode, startDate, endDate, options)
+    return { success: true, data }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Gagal memuat aktivitas broker.',
+    }
+  }
+}
+
+export async function compareBrokersAction(
+  codeA: string,
+  codeB: string,
+  startDate?: string,
+  endDate?: string,
+  options?: { forceRefresh?: boolean },
+) {
+  try {
+    const { compareTwoBrokersService } = await import('@/lib/server/services/broker-activity')
+    const data = await compareTwoBrokersService(codeA, codeB, startDate, endDate, options)
+    return { success: true, data }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Gagal membandingkan aktivitas broker.',
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Saved Screens Actions (F10)
+// ---------------------------------------------------------------------------
+
+export async function saveScreenAction(
+  title: string,
+  filters: Record<string, unknown>,
+  presetId?: string,
+) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return { success: false, error: 'AUTH_REQUIRED: Masuk dengan Google untuk menyimpan preset.' }
+  }
+
+  try {
+    const { createSavedScreen } = await import('@/lib/server/repositories/saved-screens')
+    const row = await createSavedScreen(userId, title, filters, presetId)
+    return { success: true, data: row }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Gagal menyimpan preset filter.',
+    }
+  }
+}
+
+export async function getSavedScreensAction() {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return {
+      success: false,
+      error: 'AUTH_REQUIRED: Masuk dengan Google untuk melihat preset tersimpan.',
+    }
+  }
+
+  try {
+    const { getSavedScreensByUserId } = await import('@/lib/server/repositories/saved-screens')
+    const list = await getSavedScreensByUserId(userId)
+    return { success: true, data: list }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Gagal memuat preset tersimpan.',
+    }
+  }
+}
+
+export async function deleteSavedScreenAction(id: number) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return { success: false, error: 'AUTH_REQUIRED: Masuk dengan Google untuk menghapus preset.' }
+  }
+
+  try {
+    const { deleteSavedScreen } = await import('@/lib/server/repositories/saved-screens')
+    const ok = await deleteSavedScreen(id, userId)
+    return { success: ok }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Gagal menghapus preset.',
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Research Notes Actions (F12)
+// ---------------------------------------------------------------------------
+
+export async function saveResearchNoteAction(
+  ticker: string,
+  snapshotId: string,
+  thesis: string,
+  invalidationTriggers?: string,
+  watchMetrics?: Record<string, unknown>,
+) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return {
+      success: false,
+      error: 'AUTH_REQUIRED: Masuk dengan Google untuk menyimpan tesis riset.',
+    }
+  }
+
+  try {
+    const { createOrUpdateResearchNote } = await import('@/lib/server/repositories/research-notes')
+    const row = await createOrUpdateResearchNote(
+      userId,
+      ticker,
+      snapshotId,
+      thesis,
+      invalidationTriggers,
+      watchMetrics,
+    )
+    return { success: true, data: row }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Gagal menyimpan tesis riset.',
+    }
+  }
+}
+
+export async function getResearchNotesForTickerAction(ticker: string) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return {
+      success: false,
+      error: 'AUTH_REQUIRED: Masuk dengan Google untuk melihat catatan riset.',
+    }
+  }
+
+  try {
+    const { getResearchNotesByTicker } = await import('@/lib/server/repositories/research-notes')
+    const list = await getResearchNotesByTicker(userId, ticker)
+    return { success: true, data: list }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Gagal memuat catatan riset.',
+    }
+  }
+}
+
+export async function getUserResearchNotesAction() {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return {
+      success: false,
+      error: 'AUTH_REQUIRED: Masuk dengan Google untuk melihat catatan riset.',
+    }
+  }
+
+  try {
+    const { getUserResearchNotes } = await import('@/lib/server/repositories/research-notes')
+    const list = await getUserResearchNotes(userId)
+    return { success: true, data: list }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Gagal memuat catatan riset.',
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Snapshot Diff Action (F12)
+// ---------------------------------------------------------------------------
+
+export async function diffSnapshotsAction(snapshotIdA: string, snapshotIdB: string) {
+  try {
+    const { getResearchSnapshotById } = await import('@/lib/server/repositories/research-snapshots')
+    const { diffSnapshots } = await import('@/domain/snapshot-diff')
+
+    const [snapA, snapB] = await Promise.all([
+      getResearchSnapshotById(snapshotIdA),
+      getResearchSnapshotById(snapshotIdB),
+    ])
+
+    if (!snapA || !snapB) {
+      return { success: false, error: 'Salah satu atau kedua snapshot tidak ditemukan.' }
+    }
+
+    const diff = diffSnapshots(
+      snapA.payload as Parameters<typeof diffSnapshots>[0],
+      snapB.payload as Parameters<typeof diffSnapshots>[1],
+    )
+    return { success: true, data: diff }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Gagal membandingkan snapshot.',
+    }
+  }
+}
+
+export async function getSnapshotsForTickerAction(ticker: string) {
+  try {
+    const { getResearchSnapshotsForTicker } =
+      await import('@/lib/server/repositories/research-snapshots')
+    const list = await getResearchSnapshotsForTicker(ticker)
+    return { success: true, data: list }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Gagal memuat daftar snapshot.',
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Signal Outcomes Actions (E01, E02)
+// ---------------------------------------------------------------------------
+
+export async function getSignalOutcomesAction(ticker: string) {
+  try {
+    const { getSignalOutcomesForTicker } = await import('@/lib/server/repositories/signal-outcomes')
+    const list = await getSignalOutcomesForTicker(ticker)
+    return { success: true, data: list }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Gagal memuat evaluasi sinyal.',
+    }
+  }
+}
+
+export async function evaluateSignalOutcomesAction(
+  ticker: string,
+  snapshotId: string,
+  ruleId: string,
+  signalDate: string,
+  initialPrice: number | null,
+) {
+  try {
+    const { fetchDailyPrices } = await import('@/lib/server/providers/sectors')
+    const { evaluateSignalOutcomes } = await import('@/domain/signal-outcomes')
+    const { upsertSignalOutcome, getSignalOutcomesForTicker } =
+      await import('@/lib/server/repositories/signal-outcomes')
+
+    const dailyEnvelope = await fetchDailyPrices(ticker, undefined, 30)
+    const dailyRows = dailyEnvelope.data ?? []
+    // Sort chronological: oldest first
+    const sortedPrices = [...dailyRows].sort((a, b) => a.date.localeCompare(b.date))
+
+    const evaluations = evaluateSignalOutcomes(
+      snapshotId,
+      ticker,
+      ruleId,
+      'rasi-mi-v2',
+      signalDate,
+      initialPrice,
+      sortedPrices,
+    )
+
+    for (const ev of evaluations) {
+      await upsertSignalOutcome(ev)
+    }
+
+    const updated = await getSignalOutcomesForTicker(ticker)
+    return { success: true, data: updated }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Gagal mengevaluasi outcome sinyal.',
+    }
+  }
 }

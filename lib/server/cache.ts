@@ -1,7 +1,7 @@
 import { and, eq, gt, lt } from 'drizzle-orm'
 
-import { db } from '@/db'
-import { apiCache, cacheLeases } from '@/db/schema'
+import { db } from '../../db/index.ts'
+import { apiCache, cacheLeases } from '../../db/schema.ts'
 
 // In-memory cache capped at 500 entries
 interface MemoryEntry {
@@ -22,6 +22,16 @@ function setMemory(key: string, data: unknown, expiresAt: number) {
   memoryCache.set(key, { data, expiresAt })
 }
 
+let dbUnavailableUntil = 0
+
+export function isDbTemporarilyUnavailable(): boolean {
+  return Date.now() < dbUnavailableUntil
+}
+
+export function markDbUnavailable(): void {
+  dbUnavailableUntil = Date.now() + 60_000 // 60s cooldown before retrying DB
+}
+
 /**
  * Attempts to acquire an atomic cache lease across serverless instances.
  * Returns true if lease was acquired, false if another instance holds an active lease.
@@ -31,6 +41,9 @@ export async function acquireCacheLease(
   holderId: string,
   ttlSeconds = 60,
 ): Promise<boolean> {
+  if (!process.env.DATABASE_URL || isDbTemporarilyUnavailable()) {
+    return true
+  }
   const now = new Date()
   const expiresAt = new Date(now.getTime() + ttlSeconds * 1000)
 
@@ -48,19 +61,34 @@ export async function acquireCacheLease(
       expiresAt,
     })
     return true
-  } catch {
+  } catch (error) {
+    const isConnErr =
+      error instanceof Error &&
+      (error.message.includes('ECONNREFUSED') || error.message.includes('connect'))
+    if (isConnErr) {
+      markDbUnavailable()
+      return true
+    }
     // Another instance holds active lease
     return false
   }
 }
 
 export async function releaseCacheLease(cacheKey: string, holderId: string): Promise<void> {
+  if (!process.env.DATABASE_URL || isDbTemporarilyUnavailable()) {
+    return
+  }
   try {
     await db
       .delete(cacheLeases)
       .where(and(eq(cacheLeases.cacheKey, cacheKey), eq(cacheLeases.holder, holderId)))
-  } catch {
-    // Ignore lease release errors
+  } catch (error) {
+    const isConnErr =
+      error instanceof Error &&
+      (error.message.includes('ECONNREFUSED') || error.message.includes('connect'))
+    if (isConnErr) {
+      markDbUnavailable()
+    }
   }
 }
 
@@ -100,7 +128,7 @@ async function readOrRefreshCache<T>(
   }
 
   // 2. Check persistent database cache
-  if (process.env.DATABASE_URL) {
+  if (process.env.DATABASE_URL && !isDbTemporarilyUnavailable()) {
     try {
       const rows = await db
         .select()
@@ -113,14 +141,49 @@ async function readOrRefreshCache<T>(
         setMemory(key, item.data, item.expiresAt.getTime())
         return item.data as T
       }
-    } catch {
-      // Database cache read failure fallback
+    } catch (err) {
+      if (
+        err instanceof Error &&
+        (err.message.includes('ECONNREFUSED') || err.message.includes('connect'))
+      ) {
+        markDbUnavailable()
+      }
     }
   }
 
   // 3. Acquire lease to prevent duplicate upstream calls across instances
   const holderId = crypto.randomUUID()
-  const hasLease = await acquireCacheLease(key, holderId, Math.max(10, Math.ceil(ttlMs / 1000)))
+  const leaseTtlSeconds = Math.max(10, Math.min(60, Math.ceil(ttlMs / 1000)))
+  const hasLease = await acquireCacheLease(key, holderId, leaseTtlSeconds)
+
+  if (!hasLease) {
+    // Another instance is currently fetching. Wait briefly for it to populate the cache.
+    for (let attempt = 0; attempt < 5; attempt++) {
+      if (typeof setTimeout !== 'undefined') {
+        await new Promise((resolve) => setTimeout(resolve, 250))
+      } else if (typeof globalThis !== 'undefined' && globalThis.setTimeout) {
+        await new Promise((resolve) => globalThis.setTimeout(resolve, 250))
+      }
+      const mem = memoryCache.get(key)
+      if (mem && mem.expiresAt > Date.now()) return mem.data as T
+
+      if (process.env.DATABASE_URL && !isDbTemporarilyUnavailable()) {
+        try {
+          const rows = await db.select().from(apiCache).where(eq(apiCache.cacheKey, key)).limit(1)
+          if (rows.length > 0 && rows[0].expiresAt.getTime() > Date.now()) {
+            setMemory(key, rows[0].data, rows[0].expiresAt.getTime())
+            return rows[0].data as T
+          }
+        } catch {
+          // ignore DB error
+        }
+      }
+    }
+    // If still not populated, return stale in-memory data if available rather than thundering upstream
+    if (inMem) {
+      return inMem.data as T
+    }
+  }
 
   try {
     const fresh = await fetcher()
@@ -128,7 +191,7 @@ async function readOrRefreshCache<T>(
 
     setMemory(key, fresh, expiresAtDate.getTime())
 
-    if (process.env.DATABASE_URL) {
+    if (process.env.DATABASE_URL && !isDbTemporarilyUnavailable()) {
       try {
         await db
           .insert(apiCache)
@@ -146,8 +209,13 @@ async function readOrRefreshCache<T>(
               createdAt: new Date(),
             },
           })
-      } catch {
-        // Fall back to memory
+      } catch (err) {
+        if (
+          err instanceof Error &&
+          (err.message.includes('ECONNREFUSED') || err.message.includes('connect'))
+        ) {
+          markDbUnavailable()
+        }
       }
     }
 

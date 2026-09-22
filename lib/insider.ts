@@ -1,26 +1,6 @@
-export interface InsiderFilingRow {
-  title?: string
-  body?: string
-  source?: string
-  timestamp?: string
-  sector?: string
-  sub_sector?: string
-  tags?: string[]
-  symbol?: string
-  transaction_type?: 'buy' | 'sell' | string
-  holder_type?: string
-  holder_name?: string
-  holding_before?: number
-  holding_after?: number
-  amount_transaction?: number
-  price?: number
-  transaction_value?: number
-  share_percentage_before?: number
-  share_percentage_after?: number
-  share_percentage_transaction?: number
-  idx_investor_slug?: string
-  idx_conglomerates_group_slug?: string
-}
+import type { InsiderFilingRow } from './contracts/market.ts'
+
+export type { InsiderFilingRow }
 
 export interface InsiderMovementAnalysis {
   hasInsiderActivity: boolean

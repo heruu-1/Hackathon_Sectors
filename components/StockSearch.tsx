@@ -65,16 +65,20 @@ export function StockSearch() {
 
     // Immediately provide local instant suggestions (0ms delay)
     const local = searchLocalStocks(trimmed, 8)
-    if (local.length > 0) {
-      setSuggestions(local)
-      setStatus('found')
-    }
+    const localTimer = window.setTimeout(() => {
+      if (local.length > 0) {
+        setSuggestions(local)
+        setStatus('found')
+      }
+      if (!trimmed) {
+        setStatus('idle')
+        setErrorMessage('')
+      }
+    }, 0)
 
     if (!trimmed) {
       if (activeRequestRef.current) activeRequestRef.current.abort()
-      setStatus('idle')
-      setErrorMessage('')
-      return
+      return () => window.clearTimeout(localTimer)
     }
 
     const currentRequestId = ++requestIdRef.current

@@ -8,6 +8,7 @@ import { usePathname } from 'next/navigation'
 
 import {
   Bookmark,
+  Building2,
   ChevronLeft,
   ChevronRight,
   GraduationCap,
@@ -36,6 +37,12 @@ const navLinks = [
     label: 'Radar',
     icon: Radar,
     isActive: (pathname: string) => pathname.startsWith('/radar'),
+  },
+  {
+    href: '/broker',
+    label: 'Broker',
+    icon: Building2,
+    isActive: (pathname: string) => pathname.startsWith('/broker'),
   },
   {
     href: '/watchlist',
@@ -86,7 +93,10 @@ export function ResearchShell({ children }: { children: ReactNode }) {
   return (
     <div className="rasi-app relative min-h-screen bg-[var(--rasi-bg)] text-[var(--rasi-text)]">
       {/* Constellation ("Rasi Bintang") Background — Deep Space Pattern */}
-      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden opacity-[0.18] dark:opacity-[0.32]" aria-hidden="true">
+      <div
+        className="pointer-events-none fixed inset-0 z-0 overflow-hidden opacity-[0.18] dark:opacity-[0.32]"
+        aria-hidden="true"
+      >
         <svg className="h-full w-full" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <pattern
@@ -113,12 +123,16 @@ export function ResearchShell({ children }: { children: ReactNode }) {
                 strokeOpacity="0.20"
                 strokeDasharray="1.5 2"
               />
-              <circle cx="32" cy="10" r="2.2" fill="#ffffff" fillOpacity="0.95" />   {/* Alpha Crucis */}
-              <circle cx="32" cy="62" r="1.6" fill="#ffffff" fillOpacity="0.85" />   {/* Beta Crucis */}
-              <circle cx="10" cy="36" r="1.5" fill="#ffffff" fillOpacity="0.80" />   {/* Gamma Crucis */}
-              <circle cx="54" cy="36" r="2.0" fill="#ffffff" fillOpacity="0.90" />   {/* Delta Crucis */}
-              <circle cx="48" cy="50" r="1.0" fill="#ffffff" fillOpacity="0.70" />   {/* Epsilon Crucis */}
-
+              <circle cx="32" cy="10" r="2.2" fill="#ffffff" fillOpacity="0.95" />{' '}
+              {/* Alpha Crucis */}
+              <circle cx="32" cy="62" r="1.6" fill="#ffffff" fillOpacity="0.85" />{' '}
+              {/* Beta Crucis */}
+              <circle cx="10" cy="36" r="1.5" fill="#ffffff" fillOpacity="0.80" />{' '}
+              {/* Gamma Crucis */}
+              <circle cx="54" cy="36" r="2.0" fill="#ffffff" fillOpacity="0.90" />{' '}
+              {/* Delta Crucis */}
+              <circle cx="48" cy="50" r="1.0" fill="#ffffff" fillOpacity="0.70" />{' '}
+              {/* Epsilon Crucis */}
               {/* ── Constellation 2: Orion's Belt + Shoulders (center-left) ── */}
               {/* Belt: 3 collinear stars */}
               <path
@@ -138,11 +152,13 @@ export function ResearchShell({ children }: { children: ReactNode }) {
                 strokeDasharray="2 2.5"
               />
               <circle cx="88" cy="100" r="2.0" fill="#ffffff" fillOpacity="0.90" /> {/* Alnitak */}
-              <circle cx="112" cy="92" r="2.4" fill="#ffffff" fillOpacity="1.0" />  {/* Alnilam — brightest */}
-              <circle cx="136" cy="100" r="1.8" fill="#ffffff" fillOpacity="0.85" />{/* Mintaka */}
-              <circle cx="75" cy="72" r="1.8" fill="#ffffff" fillOpacity="0.85" />  {/* Betelgeuse */}
+              <circle cx="112" cy="92" r="2.4" fill="#ffffff" fillOpacity="1.0" />{' '}
+              {/* Alnilam — brightest */}
+              <circle cx="136" cy="100" r="1.8" fill="#ffffff" fillOpacity="0.85" />
+              {/* Mintaka */}
+              <circle cx="75" cy="72" r="1.8" fill="#ffffff" fillOpacity="0.85" />{' '}
+              {/* Betelgeuse */}
               <circle cx="128" cy="68" r="1.7" fill="#ffffff" fillOpacity="0.85" /> {/* Rigel */}
-
               {/* ── Constellation 3: Cassiopeia W-shape (top-right) ── */}
               <path
                 d="M 162 18 L 177 38 L 194 16 L 212 36 L 228 16"
@@ -153,10 +169,10 @@ export function ResearchShell({ children }: { children: ReactNode }) {
               />
               <circle cx="162" cy="18" r="1.6" fill="#ffffff" fillOpacity="0.80" />
               <circle cx="177" cy="38" r="1.3" fill="#ffffff" fillOpacity="0.75" />
-              <circle cx="194" cy="16" r="2.2" fill="#ffffff" fillOpacity="0.95" /> {/* Alpha Cas — brightest */}
+              <circle cx="194" cy="16" r="2.2" fill="#ffffff" fillOpacity="0.95" />{' '}
+              {/* Alpha Cas — brightest */}
               <circle cx="212" cy="36" r="1.5" fill="#ffffff" fillOpacity="0.80" />
               <circle cx="228" cy="16" r="1.4" fill="#ffffff" fillOpacity="0.75" />
-
               {/* ── Constellation 4: Navigation Arc (bottom-left) ── */}
               <path
                 d="M 14 158 L 44 178 L 76 165 L 104 182"
@@ -169,7 +185,6 @@ export function ResearchShell({ children }: { children: ReactNode }) {
               <circle cx="44" cy="178" r="2.0" fill="#ffffff" fillOpacity="0.90" />
               <circle cx="76" cy="165" r="1.4" fill="#ffffff" fillOpacity="0.75" />
               <circle cx="104" cy="182" r="1.7" fill="#ffffff" fillOpacity="0.82" />
-
               {/* ── Constellation 5: Lyra / Vega Diamond (bottom-right) ── */}
               <path
                 d="M 178 138 L 208 152 L 192 188 L 162 172 Z M 178 138 L 192 188"
@@ -178,11 +193,11 @@ export function ResearchShell({ children }: { children: ReactNode }) {
                 strokeWidth="0.65"
                 strokeOpacity="0.30"
               />
-              <circle cx="178" cy="138" r="2.5" fill="#ffffff" fillOpacity="0.98" /> {/* Vega — very bright */}
+              <circle cx="178" cy="138" r="2.5" fill="#ffffff" fillOpacity="0.98" />{' '}
+              {/* Vega — very bright */}
               <circle cx="208" cy="152" r="1.5" fill="#ffffff" fillOpacity="0.80" />
               <circle cx="192" cy="188" r="1.7" fill="#ffffff" fillOpacity="0.82" />
               <circle cx="162" cy="172" r="1.3" fill="#ffffff" fillOpacity="0.75" />
-
               {/* ── Tile boundary seamless connectors ── */}
               <path
                 d="M 0 100 L 14 106 M 226 100 L 240 106"
@@ -200,7 +215,6 @@ export function ResearchShell({ children }: { children: ReactNode }) {
                 strokeOpacity="0.18"
                 strokeDasharray="1.5 2"
               />
-
               {/* ── Subtle celestial grid cross (tile center reference) ── */}
               <path
                 d="M 117 120 H 123 M 120 117 V 123"
@@ -208,27 +222,26 @@ export function ResearchShell({ children }: { children: ReactNode }) {
                 strokeWidth="0.45"
                 strokeOpacity="0.15"
               />
-
               {/* ── Scattered micro-stars (white starlight depth) ── */}
-              <circle cx="62" cy="8"   r="0.9" fill="#ffffff" fillOpacity="0.60" />
-              <circle cx="95" cy="28"  r="0.7" fill="#ffffff" fillOpacity="0.50" />
+              <circle cx="62" cy="8" r="0.9" fill="#ffffff" fillOpacity="0.60" />
+              <circle cx="95" cy="28" r="0.7" fill="#ffffff" fillOpacity="0.50" />
               <circle cx="148" cy="46" r="1.1" fill="#ffffff" fillOpacity="0.60" />
-              <circle cx="18"  cy="75" r="0.8" fill="#ffffff" fillOpacity="0.50" />
+              <circle cx="18" cy="75" r="0.8" fill="#ffffff" fillOpacity="0.50" />
               <circle cx="220" cy="65" r="1.0" fill="#ffffff" fillOpacity="0.60" />
-              <circle cx="68"  cy="118" r="0.9" fill="#ffffff" fillOpacity="0.50" />
+              <circle cx="68" cy="118" r="0.9" fill="#ffffff" fillOpacity="0.50" />
               <circle cx="158" cy="108" r="1.2" fill="#ffffff" fillOpacity="0.65" />
               <circle cx="132" cy="132" r="0.8" fill="#ffffff" fillOpacity="0.50" />
-              <circle cx="48"  cy="138" r="1.0" fill="#ffffff" fillOpacity="0.55" />
+              <circle cx="48" cy="138" r="1.0" fill="#ffffff" fillOpacity="0.55" />
               <circle cx="232" cy="120" r="0.9" fill="#ffffff" fillOpacity="0.55" />
               <circle cx="116" cy="212" r="1.0" fill="#ffffff" fillOpacity="0.60" />
               <circle cx="148" cy="224" r="0.8" fill="#ffffff" fillOpacity="0.50" />
               <circle cx="222" cy="208" r="1.1" fill="#ffffff" fillOpacity="0.55" />
-              <circle cx="6"   cy="196" r="0.9" fill="#ffffff" fillOpacity="0.50" />
+              <circle cx="6" cy="196" r="0.9" fill="#ffffff" fillOpacity="0.50" />
               <circle cx="236" cy="178" r="1.0" fill="#ffffff" fillOpacity="0.60" />
-              <circle cx="142" cy="72"  r="0.8" fill="#ffffff" fillOpacity="0.50" />
-              <circle cx="22"  cy="116" r="0.7" fill="#ffffff" fillOpacity="0.45" />
-              <circle cx="186" cy="82"  r="1.0" fill="#ffffff" fillOpacity="0.55" />
-              <circle cx="56"  cy="56"  r="0.8" fill="#ffffff" fillOpacity="0.45" />
+              <circle cx="142" cy="72" r="0.8" fill="#ffffff" fillOpacity="0.50" />
+              <circle cx="22" cy="116" r="0.7" fill="#ffffff" fillOpacity="0.45" />
+              <circle cx="186" cy="82" r="1.0" fill="#ffffff" fillOpacity="0.55" />
+              <circle cx="56" cy="56" r="0.8" fill="#ffffff" fillOpacity="0.45" />
               <circle cx="106" cy="148" r="0.9" fill="#ffffff" fillOpacity="0.50" />
             </pattern>
           </defs>

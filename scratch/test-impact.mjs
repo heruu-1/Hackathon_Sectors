@@ -1,6 +1,8 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
+import { analyzeNewsImpact, fallbackAnalyzeNews } from '../lib/server/providers/gemini.ts'
+
 // Read .env.local
 const envContent = fs.readFileSync(path.resolve('.env.local'), 'utf8')
 for (const line of envContent.split('\n')) {
@@ -10,12 +12,15 @@ for (const line of envContent.split('\n')) {
   }
 }
 
-console.log('GEMINI_API_KEY present:', !!process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'your_gemini_api_key_here')
+console.log(
+  'GEMINI_API_KEY present:',
+  !!process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'your_gemini_api_key_here',
+)
 
-import { analyzeNewsImpact, fallbackAnalyzeNews } from '../lib/server/providers/gemini.ts'
-
-const testTitle = 'PT Siloam International Hospitals Tbk (SILO) to add Rp8.88 trillion debt for acquisition of 14 hospitals'
-const testBody = 'PT Siloam International Hospitals Tbk (SILO) announced a plan to acquire 14 hospital assets from First REIT.'
+const testTitle =
+  'PT Siloam International Hospitals Tbk (SILO) to add Rp8.88 trillion debt for acquisition of 14 hospitals'
+const testBody =
+  'PT Siloam International Hospitals Tbk (SILO) announced a plan to acquire 14 hospital assets from First REIT.'
 
 console.log('\n--- Testing fallbackAnalyzeNews ---')
 const fallbackResult = fallbackAnalyzeNews(testTitle, testBody)

@@ -14,12 +14,33 @@ import {
 
 export class SectorsError extends Error {}
 
-function validateKey(apiKey: string | undefined): string {
+export function validateKey(apiKey: string | undefined): string {
   const key = apiKey?.trim()
   if (!key || key === 'your_sectors_api_key_here') {
     throw new SectorsError('SECTORS_API_KEY belum diisi pada konfigurasi server.')
   }
   return key
+}
+
+function detectCapabilityId(url: string): {
+  capabilityId: string
+  params?: Record<string, unknown>
+} {
+  if (url.includes('/company/report/')) {
+    const urlObj = new URL(url)
+    const sections = urlObj.searchParams.get('sections')?.split(',').filter(Boolean) || [
+      'valuation',
+    ]
+    return { capabilityId: 'company_report', params: { sections } }
+  }
+  if (url.includes('/daily/')) return { capabilityId: 'daily_price' }
+  if (url.includes('/broker-summary/')) return { capabilityId: 'broker_summary' }
+  if (url.includes('/broker-activity/')) return { capabilityId: 'broker_activity' }
+  if (url.includes('/brokers/')) return { capabilityId: 'brokers_registry' }
+  if (url.includes('/news/')) return { capabilityId: 'market_news' }
+  if (url.includes('/filings/')) return { capabilityId: 'filings' }
+  if (url.includes('/companies/')) return { capabilityId: 'companies_screener' }
+  return { capabilityId: 'daily_price' }
 }
 
 async function executeSectorsRequest(
@@ -29,34 +50,20 @@ async function executeSectorsRequest(
   timeoutMs: number = 10_000,
 ) {
   try {
-    const response = await request(url, {
-      headers: { Authorization: key },
-      signal: AbortSignal.timeout(timeoutMs),
-      cache: 'no-store',
-      redirect: 'error',
+    const { requestSectorsShared, SectorsProviderError } =
+      await import('./server/providers/transport.ts')
+    const { capabilityId, params } = detectCapabilityId(url)
+    return await requestSectorsShared(url, {
+      capabilityId,
+      params,
+      apiKey: key,
+      fetchFn: request,
+      timeoutMs,
     })
-    if (!response.ok) {
-      const messages: Record<number, string> = {
-        400: 'Kode saham tidak valid.',
-        401: 'API key Sectors tidak valid atau sudah kedaluwarsa.',
-        403: 'API key tidak memiliki akses ke data ini. Periksa paket Sectors Anda.',
-        404: 'Kode saham tidak ditemukan atau datanya belum tersedia.',
-        429: 'Batas permintaan Sectors tercapai. Tunggu sebentar lalu coba lagi.',
-      }
-      throw new SectorsError(
-        messages[response.status] ??
-          `Sectors sedang bermasalah (HTTP ${response.status}). Coba lagi nanti.`,
-      )
-    }
-    return (await response.json()) as unknown
   } catch (error) {
     if (error instanceof SectorsError) throw error
-    if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
-      throw new SectorsError('Sectors belum merespons dalam 10 detik. Silakan coba lagi.')
-    }
-    throw new SectorsError(
-      'Tidak dapat menghubungi Sectors atau membaca responsnya. Silakan coba lagi.',
-    )
+    const message = error instanceof Error ? error.message : 'Layanan data pasar bermasalah.'
+    throw new SectorsError(message)
   }
 }
 

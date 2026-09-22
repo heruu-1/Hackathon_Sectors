@@ -11,76 +11,9 @@ import {
   createEnvelope,
   createErrorEnvelope,
 } from '../../contracts/market.ts'
+import { SectorsProviderError, requestSectorsShared } from './transport.ts'
 
-export class SectorsProviderError extends Error {
-  statusCode?: number
-  code: string
-
-  constructor(message: string, code = 'PROVIDER_ERROR', statusCode?: number) {
-    super(message)
-    this.name = 'SectorsProviderError'
-    this.code = code
-    this.statusCode = statusCode
-  }
-}
-
-function validateKey(apiKey?: string): string {
-  const key = apiKey?.trim() || process.env.SECTORS_API_KEY?.trim()
-  if (!key || key === 'your_sectors_api_key_here') {
-    throw new SectorsProviderError(
-      'SECTORS_API_KEY belum diisi pada konfigurasi server.',
-      'CONFIG_UNAVAILABLE',
-      503,
-    )
-  }
-  return key
-}
-
-async function requestSectors(
-  url: string,
-  key: string,
-  fetchFn: typeof fetch = fetch,
-  timeoutMs = 10_000,
-): Promise<unknown> {
-  try {
-    const response = await fetchFn(url, {
-      headers: { Authorization: key },
-      signal: AbortSignal.timeout(timeoutMs),
-      cache: 'no-store',
-      redirect: 'error',
-    })
-
-    if (!response.ok) {
-      const messages: Record<number, string> = {
-        400: 'Kode saham atau parameter tidak valid.',
-        401: 'API key Sectors tidak valid atau sudah kedaluwarsa.',
-        403: 'API key tidak memiliki akses ke data ini. Periksa paket langganan Sectors Anda.',
-        404: 'Data tidak ditemukan untuk kode saham ini.',
-        429: 'Batas kuota Sectors tercapai. Tunggu beberapa saat.',
-      }
-      const message =
-        messages[response.status] ??
-        `Layanan data pasar bermasalah (HTTP ${response.status}). Coba lagi nanti.`
-      throw new SectorsProviderError(message, 'PROVIDER_UNAVAILABLE', response.status)
-    }
-
-    return (await response.json()) as unknown
-  } catch (err) {
-    if (err instanceof SectorsProviderError) throw err
-    if (err instanceof Error && (err.name === 'TimeoutError' || err.name === 'AbortError')) {
-      throw new SectorsProviderError(
-        'Sectors belum merespons dalam 10 detik.',
-        'PROVIDER_TIMEOUT',
-        504,
-      )
-    }
-    throw new SectorsProviderError(
-      'Tidak dapat terhubung ke penyedia data pasar atau membaca responsnya.',
-      'PROVIDER_UNAVAILABLE',
-      503,
-    )
-  }
-}
+export { SectorsProviderError }
 
 export async function fetchCompanyValuation(
   ticker: string,
@@ -89,12 +22,15 @@ export async function fetchCompanyValuation(
 ): Promise<DataEnvelope<CompanyValuation>> {
   const cleanTicker = normalizeTicker(ticker)
   try {
-    const key = validateKey(apiKey)
-    const raw = (await requestSectors(
+    const raw = await requestSectorsShared<Record<string, unknown>>(
       `https://api.sectors.app/v2/company/report/${cleanTicker}/?sections=valuation`,
-      key,
-      fetchFn,
-    )) as Record<string, unknown>
+      {
+        capabilityId: 'company_report',
+        params: { sections: ['valuation'] },
+        apiKey,
+        fetchFn,
+      },
+    )
 
     if (!raw || typeof raw !== 'object') {
       return createErrorEnvelope('SECTORS', 'Respons data valuasi rusak.')
@@ -146,15 +82,17 @@ export async function fetchDailyPrices(
 ): Promise<DataEnvelope<DailyPriceRow[]>> {
   const cleanTicker = normalizeTicker(ticker)
   try {
-    const key = validateKey(apiKey)
     const endDate = new Date().toISOString().split('T')[0]
     const startDate = new Date(Date.now() - daysBack * 86_400_000).toISOString().split('T')[0]
 
-    const raw = (await requestSectors(
+    const raw = await requestSectorsShared<unknown>(
       `https://api.sectors.app/v2/daily/${cleanTicker}/?start=${startDate}&end=${endDate}`,
-      key,
-      fetchFn,
-    )) as unknown
+      {
+        capabilityId: 'daily_price',
+        apiKey,
+        fetchFn,
+      },
+    )
 
     if (!Array.isArray(raw)) {
       return createEmptyEnvelope('SECTORS', endDate, 'Tidak ada data harga harian.')
@@ -199,15 +137,17 @@ export async function fetchBrokerSummary(
 ): Promise<DataEnvelope<BrokerSummaryData>> {
   const cleanTicker = normalizeTicker(ticker)
   try {
-    const key = validateKey(apiKey)
     const endDate = new Date().toISOString().split('T')[0]
     const startDate = new Date(Date.now() - daysBack * 86_400_000).toISOString().split('T')[0]
 
-    const raw = (await requestSectors(
+    const raw = await requestSectorsShared<Record<string, unknown>>(
       `https://api.sectors.app/v2/broker-summary/${cleanTicker}/?start=${startDate}&end=${endDate}`,
-      key,
-      fetchFn,
-    )) as Record<string, unknown>
+      {
+        capabilityId: 'broker_summary',
+        apiKey,
+        fetchFn,
+      },
+    )
 
     if (!raw || !Array.isArray(raw.data)) {
       return createEmptyEnvelope('SECTORS', endDate, 'Data broker summary kosong.')
@@ -236,12 +176,11 @@ export async function fetchBrokersRegistry(
   fetchFn: typeof fetch = fetch,
 ): Promise<DataEnvelope<Record<string, BrokerRegistryEntry>>> {
   try {
-    const key = validateKey(apiKey)
-    const raw = (await requestSectors(
-      'https://api.sectors.app/v2/brokers/',
-      key,
+    const raw = await requestSectorsShared<unknown>('https://api.sectors.app/v2/brokers/', {
+      capabilityId: 'brokers_registry',
+      apiKey,
       fetchFn,
-    )) as unknown
+    })
 
     if (!Array.isArray(raw)) {
       return createEmptyEnvelope('SECTORS', null, 'Registry broker kosong.')
@@ -278,17 +217,19 @@ export async function fetchMarketNews(
   fetchFn: typeof fetch = fetch,
 ): Promise<DataEnvelope<MarketNewsItem[]>> {
   try {
-    const key = validateKey(apiKey)
     const cleanTicker = ticker ? normalizeTicker(ticker) : undefined
     const param = cleanTicker
       ? `symbols=${cleanTicker}&limit=${limit}`
       : `extension=idx&limit=${limit}`
 
-    const raw = (await requestSectors(
+    const raw = await requestSectorsShared<{ results?: MarketNewsItem[] }>(
       `https://api.sectors.app/v2/news/?${param}`,
-      key,
-      fetchFn,
-    )) as { results?: MarketNewsItem[] }
+      {
+        capabilityId: 'market_news',
+        apiKey,
+        fetchFn,
+      },
+    )
 
     const results = raw?.results ?? []
     if (results.length === 0) {
@@ -314,15 +255,17 @@ export async function fetchInsiderFilings(
   fetchFn: typeof fetch = fetch,
 ): Promise<DataEnvelope<InsiderFilingRow[]>> {
   try {
-    const key = validateKey(apiKey)
     const cleanTicker = ticker ? normalizeTicker(ticker) : undefined
     const param = cleanTicker ? `symbol=${cleanTicker}&limit=${limit}` : `limit=${limit}`
 
-    const raw = (await requestSectors(
+    const raw = await requestSectorsShared<{ results?: InsiderFilingRow[] }>(
       `https://api.sectors.app/v2/filings/?${param}`,
-      key,
-      fetchFn,
-    )) as { results?: InsiderFilingRow[] }
+      {
+        capabilityId: 'filings',
+        apiKey,
+        fetchFn,
+      },
+    )
 
     const results = raw?.results ?? []
     if (results.length === 0) {
@@ -340,3 +283,155 @@ export async function fetchInsiderFilings(
     return createErrorEnvelope('SECTORS', message)
   }
 }
+
+export interface CompanyShareholdersData {
+  symbol: string
+  companyName: string
+  topShareholders: Array<{
+    name: string
+    shares: number | null
+    percentage: number | null
+    isController?: boolean
+  }>
+  monthlyReports: Array<{
+    period: string
+    totalShareholders: number | null
+    totalShares: number | null
+    scriptlessShares: number | null
+    freeFloatPct: number | null
+    localPct: number | null
+    foreignPct: number | null
+    categories?: Array<{
+      code: string
+      name: string
+      localShares: number | null
+      localPct: number | null
+      foreignShares: number | null
+      foreignPct: number | null
+      totalPct: number | null
+    }>
+  }>
+}
+
+export async function fetchCompanyShareholders(
+  ticker: string,
+  apiKey?: string,
+  fetchFn: typeof fetch = fetch,
+): Promise<DataEnvelope<CompanyShareholdersData>> {
+  const cleanTicker = normalizeTicker(ticker)
+  try {
+    const raw = await requestSectorsShared<Record<string, unknown>>(
+      `https://api.sectors.app/v2/company/report/${cleanTicker}/?sections=shareholders`,
+      {
+        capabilityId: 'shareholders_composition',
+        apiKey,
+        fetchFn,
+      },
+    )
+
+    if (!raw || typeof raw !== 'object') {
+      return createEmptyEnvelope('SECTORS', null, 'Data pemegang saham tidak tersedia.')
+    }
+
+    const sh = (raw.shareholders as Record<string, unknown>) ?? {}
+    const topRaw = Array.isArray(sh.top) ? (sh.top as Array<Record<string, unknown>>) : []
+    const monthlyRaw = Array.isArray(sh.monthly)
+      ? (sh.monthly as Array<Record<string, unknown>>)
+      : []
+
+    const topShareholders = topRaw.map((item) => ({
+      name: String(item.name ?? item.shareholder_name ?? 'Pemegang Saham'),
+      shares: typeof item.shares === 'number' ? item.shares : null,
+      percentage: typeof item.percentage === 'number' ? item.percentage : null,
+      isController: Boolean(item.is_controller || item.is_controlling),
+    }))
+
+    const monthlyReports = monthlyRaw.map((m) => ({
+      period: String(m.period ?? m.month ?? ''),
+      totalShareholders: typeof m.total_shareholders === 'number' ? m.total_shareholders : null,
+      totalShares: typeof m.total_shares === 'number' ? m.total_shares : null,
+      scriptlessShares: typeof m.scriptless_shares === 'number' ? m.scriptless_shares : null,
+      freeFloatPct:
+        typeof m.free_float === 'number'
+          ? m.free_float
+          : typeof m.free_float_pct === 'number'
+            ? m.free_float_pct
+            : null,
+      localPct:
+        typeof m.local === 'number'
+          ? m.local
+          : typeof m.local_pct === 'number'
+            ? m.local_pct
+            : null,
+      foreignPct:
+        typeof m.foreign === 'number'
+          ? m.foreign
+          : typeof m.foreign_pct === 'number'
+            ? m.foreign_pct
+            : null,
+      categories: Array.isArray(m.categories) ? m.categories : [],
+    }))
+
+    const data: CompanyShareholdersData = {
+      symbol: cleanTicker,
+      companyName: typeof raw.company_name === 'string' ? raw.company_name : cleanTicker,
+      topShareholders,
+      monthlyReports,
+    }
+
+    return createEnvelope({
+      state: topShareholders.length > 0 || monthlyReports.length > 0 ? 'ready' : 'empty',
+      data,
+      source: 'SECTORS',
+    })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Gagal memuat data pemegang saham.'
+    return createErrorEnvelope('SECTORS', message)
+  }
+}
+
+export interface UniverseCompanyRaw {
+  symbol?: string
+  company_name?: string
+  sector?: string
+  sub_sector?: string
+  market_cap?: number
+  last_close_price?: number
+  daily_close_change?: number
+  date?: string
+  pe?: number
+  pb?: number
+  roe?: number
+  dividend_yield?: number
+  net_income_growth_yoy?: number
+  revenue_growth_yoy?: number
+  [key: string]: unknown
+}
+
+export async function fetchUniverseCompanies(
+  limit = 200,
+  options?: { forceRefresh?: boolean },
+): Promise<UniverseCompanyRaw[]> {
+  const { getOrSetCache } = await import('../cache.ts')
+  const cacheKey = `sectors:universe:companies:${limit}`
+  const data = await getOrSetCache<{ results?: UniverseCompanyRaw[] } | UniverseCompanyRaw[]>(
+    cacheKey,
+    24 * 60 * 60 * 1000,
+    async () => {
+      return await requestSectorsShared<{ results?: UniverseCompanyRaw[] }>(
+        `https://api.sectors.app/v2/companies/?limit=${limit}&order_by=-market_cap`,
+        {
+          capabilityId: 'companies_screener',
+          params: { limit, order_by: '-market_cap' },
+        },
+      )
+    },
+    options,
+  )
+
+  if (Array.isArray(data)) {
+    return data
+  }
+  return data?.results ?? []
+}
+
