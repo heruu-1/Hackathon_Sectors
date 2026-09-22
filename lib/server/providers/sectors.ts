@@ -320,69 +320,295 @@ export async function fetchCompanyShareholders(
 ): Promise<DataEnvelope<CompanyShareholdersData>> {
   const cleanTicker = normalizeTicker(ticker)
   try {
-    const raw = await requestSectorsShared<Record<string, unknown>>(
-      `https://api.sectors.app/v2/company/report/${cleanTicker}/?sections=shareholders`,
-      {
+    const [rawComp, rawReport] = await Promise.all([
+      requestSectorsShared<{
+        symbol?: string
+        year?: number
+        data?: Array<Record<string, unknown>>
+      }>(`https://api.sectors.app/v2/company/shareholders-composition/${cleanTicker}/`, {
         capabilityId: 'shareholders_composition',
         apiKey,
         fetchFn,
-      },
-    )
+      }).catch(() => null),
+      requestSectorsShared<Record<string, unknown>>(
+        `https://api.sectors.app/v2/company/report/${cleanTicker}/?sections=ownership`,
+        {
+          capabilityId: 'company_report',
+          params: { sections: ['ownership'] },
+          apiKey,
+          fetchFn,
+        },
+      ).catch(() => null),
+    ])
 
-    if (!raw || typeof raw !== 'object') {
+    if (!rawComp && !rawReport) {
       return createEmptyEnvelope('SECTORS', null, 'Data pemegang saham tidak tersedia.')
     }
 
-    const sh = (raw.shareholders as Record<string, unknown>) ?? {}
-    const topRaw = Array.isArray(sh.top) ? (sh.top as Array<Record<string, unknown>>) : []
-    const monthlyRaw = Array.isArray(sh.monthly)
-      ? (sh.monthly as Array<Record<string, unknown>>)
+    // Extract top shareholders and public free float from ownership section
+    const ownershipData = (rawReport?.ownership as Record<string, unknown>) ?? {}
+    const majorShareholders = Array.isArray(ownershipData.major_shareholders)
+      ? ownershipData.major_shareholders
       : []
 
-    const topShareholders = topRaw.map((item) => ({
-      name: String(item.name ?? item.shareholder_name ?? 'Pemegang Saham'),
-      shares: typeof item.shares === 'number' ? item.shares : null,
-      percentage: typeof item.percentage === 'number' ? item.percentage : null,
-      isController: Boolean(item.is_controller || item.is_controlling),
-    }))
+    let publicFloatPct: number | null = null
+    let publicFloatShares: number | null = null
+    const topShareholders: CompanyShareholdersData['topShareholders'] = []
 
-    const monthlyReports = monthlyRaw.map((m) => ({
-      period: String(m.period ?? m.month ?? ''),
-      totalShareholders: typeof m.total_shareholders === 'number' ? m.total_shareholders : null,
-      totalShares: typeof m.total_shares === 'number' ? m.total_shares : null,
-      scriptlessShares: typeof m.scriptless_shares === 'number' ? m.scriptless_shares : null,
-      freeFloatPct:
-        typeof m.free_float === 'number'
-          ? m.free_float
-          : typeof m.free_float_pct === 'number'
-            ? m.free_float_pct
-            : null,
-      localPct:
-        typeof m.local === 'number'
-          ? m.local
-          : typeof m.local_pct === 'number'
-            ? m.local_pct
-            : null,
-      foreignPct:
-        typeof m.foreign === 'number'
-          ? m.foreign
-          : typeof m.foreign_pct === 'number'
-            ? m.foreign_pct
-            : null,
-      categories: Array.isArray(m.categories) ? m.categories : [],
-    }))
+    for (const sh of majorShareholders) {
+      if (!sh || typeof sh !== 'object') continue
+      const name = String(sh.name ?? '')
+      const shares = Number(sh.share_amount) || null
+      const pctNum = Number(sh.share_percentage)
+      const percentage = Number.isFinite(pctNum) ? Number((pctNum * 100).toFixed(2)) : null
+
+      if (name.toLowerCase() === 'public') {
+        publicFloatPct = percentage
+        publicFloatShares = shares
+      }
+
+      const isController =
+        name.toLowerCase() !== 'public' &&
+        name.toLowerCase() !== 'treasury stock' &&
+        percentage !== null &&
+        percentage >= 5
+
+      topShareholders.push({
+        name,
+        shares,
+        percentage,
+        isController,
+      })
+    }
+
+    const rows = Array.isArray(rawComp?.data) ? rawComp.data : []
+    const monthlyReports = rows.map((m, idx) => {
+      const sharesTotal = typeof m.shares_number === 'number' ? m.shares_number : null
+      const totalL = typeof m.total_l === 'number' ? m.total_l : 0
+      const totalF = typeof m.total_f === 'number' ? m.total_f : 0
+      const localPct = sharesTotal && sharesTotal > 0 ? (totalL / sharesTotal) * 100 : null
+      const foreignPct = sharesTotal && sharesTotal > 0 ? (totalF / sharesTotal) * 100 : null
+
+      const categories = [
+        {
+          code: 'ID',
+          name: 'Individu',
+          localShares: typeof m.individual_l === 'number' ? m.individual_l : null,
+          localPct:
+            sharesTotal && typeof m.individual_l === 'number'
+              ? (m.individual_l / sharesTotal) * 100
+              : null,
+          foreignShares: typeof m.individual_f === 'number' ? m.individual_f : null,
+          foreignPct:
+            sharesTotal && typeof m.individual_f === 'number'
+              ? (m.individual_f / sharesTotal) * 100
+              : null,
+          totalPct:
+            sharesTotal && (typeof m.individual_l === 'number' || typeof m.individual_f === 'number')
+              ? (((m.individual_l as number) || 0) + ((m.individual_f as number) || 0)) /
+                sharesTotal *
+                100
+              : null,
+        },
+        {
+          code: 'CP',
+          name: 'Korporasi',
+          localShares: typeof m.corporate_l === 'number' ? m.corporate_l : null,
+          localPct:
+            sharesTotal && typeof m.corporate_l === 'number'
+              ? (m.corporate_l / sharesTotal) * 100
+              : null,
+          foreignShares: typeof m.corporate_f === 'number' ? m.corporate_f : null,
+          foreignPct:
+            sharesTotal && typeof m.corporate_f === 'number'
+              ? (m.corporate_f / sharesTotal) * 100
+              : null,
+          totalPct:
+            sharesTotal && (typeof m.corporate_l === 'number' || typeof m.corporate_f === 'number')
+              ? (((m.corporate_l as number) || 0) + ((m.corporate_f as number) || 0)) /
+                sharesTotal *
+                100
+              : null,
+        },
+        {
+          code: 'MF',
+          name: 'Reksa Dana',
+          localShares: typeof m.mutual_fund_l === 'number' ? m.mutual_fund_l : null,
+          localPct:
+            sharesTotal && typeof m.mutual_fund_l === 'number'
+              ? (m.mutual_fund_l / sharesTotal) * 100
+              : null,
+          foreignShares: typeof m.mutual_fund_f === 'number' ? m.mutual_fund_f : null,
+          foreignPct:
+            sharesTotal && typeof m.mutual_fund_f === 'number'
+              ? (m.mutual_fund_f / sharesTotal) * 100
+              : null,
+          totalPct:
+            sharesTotal && (typeof m.mutual_fund_l === 'number' || typeof m.mutual_fund_f === 'number')
+              ? (((m.mutual_fund_l as number) || 0) + ((m.mutual_fund_f as number) || 0)) /
+                sharesTotal *
+                100
+              : null,
+        },
+        {
+          code: 'IS',
+          name: 'Asuransi',
+          localShares: typeof m.insurance_l === 'number' ? m.insurance_l : null,
+          localPct:
+            sharesTotal && typeof m.insurance_l === 'number'
+              ? (m.insurance_l / sharesTotal) * 100
+              : null,
+          foreignShares: typeof m.insurance_f === 'number' ? m.insurance_f : null,
+          foreignPct:
+            sharesTotal && typeof m.insurance_f === 'number'
+              ? (m.insurance_f / sharesTotal) * 100
+              : null,
+          totalPct:
+            sharesTotal && (typeof m.insurance_l === 'number' || typeof m.insurance_f === 'number')
+              ? (((m.insurance_l as number) || 0) + ((m.insurance_f as number) || 0)) /
+                sharesTotal *
+                100
+              : null,
+        },
+        {
+          code: 'PF',
+          name: 'Dana Pensiun',
+          localShares: typeof m.pension_fund_l === 'number' ? m.pension_fund_l : null,
+          localPct:
+            sharesTotal && typeof m.pension_fund_l === 'number'
+              ? (m.pension_fund_l / sharesTotal) * 100
+              : null,
+          foreignShares: typeof m.pension_fund_f === 'number' ? m.pension_fund_f : null,
+          foreignPct:
+            sharesTotal && typeof m.pension_fund_f === 'number'
+              ? (m.pension_fund_f / sharesTotal) * 100
+              : null,
+          totalPct:
+            sharesTotal && (typeof m.pension_fund_l === 'number' || typeof m.pension_fund_f === 'number')
+              ? (((m.pension_fund_l as number) || 0) + ((m.pension_fund_f as number) || 0)) /
+                sharesTotal *
+                100
+              : null,
+        },
+        {
+          code: 'IB',
+          name: 'Lembaga Keuangan',
+          localShares:
+            typeof m.financial_institutions_l === 'number' ? m.financial_institutions_l : null,
+          localPct:
+            sharesTotal && typeof m.financial_institutions_l === 'number'
+              ? (m.financial_institutions_l / sharesTotal) * 100
+              : null,
+          foreignShares:
+            typeof m.financial_institutions_f === 'number' ? m.financial_institutions_f : null,
+          foreignPct:
+            sharesTotal && typeof m.financial_institutions_f === 'number'
+              ? (m.financial_institutions_f / sharesTotal) * 100
+              : null,
+          totalPct:
+            sharesTotal &&
+            (typeof m.financial_institutions_l === 'number' ||
+              typeof m.financial_institutions_f === 'number')
+              ? (((m.financial_institutions_l as number) || 0) +
+                  ((m.financial_institutions_f as number) || 0)) /
+                sharesTotal *
+                100
+              : null,
+        },
+        {
+          code: 'SC',
+          name: 'Perusahaan Sekuritas',
+          localShares:
+            typeof m.securities_companies_l === 'number' ? m.securities_companies_l : null,
+          localPct:
+            sharesTotal && typeof m.securities_companies_l === 'number'
+              ? (m.securities_companies_l / sharesTotal) * 100
+              : null,
+          foreignShares:
+            typeof m.securities_companies_f === 'number' ? m.securities_companies_f : null,
+          foreignPct:
+            sharesTotal && typeof m.securities_companies_f === 'number'
+              ? (m.securities_companies_f / sharesTotal) * 100
+              : null,
+          totalPct:
+            sharesTotal &&
+            (typeof m.securities_companies_l === 'number' ||
+              typeof m.securities_companies_f === 'number')
+              ? (((m.securities_companies_l as number) || 0) +
+                  ((m.securities_companies_f as number) || 0)) /
+                sharesTotal *
+                100
+              : null,
+        },
+        {
+          code: 'FD',
+          name: 'Yayasan',
+          localShares: typeof m.foundation_l === 'number' ? m.foundation_l : null,
+          localPct:
+            sharesTotal && typeof m.foundation_l === 'number'
+              ? (m.foundation_l / sharesTotal) * 100
+              : null,
+          foreignShares: typeof m.foundation_f === 'number' ? m.foundation_f : null,
+          foreignPct:
+            sharesTotal && typeof m.foundation_f === 'number'
+              ? (m.foundation_f / sharesTotal) * 100
+              : null,
+          totalPct:
+            sharesTotal &&
+            (typeof m.foundation_l === 'number' || typeof m.foundation_f === 'number')
+              ? (((m.foundation_l as number) || 0) + ((m.foundation_f as number) || 0)) /
+                sharesTotal *
+                100
+              : null,
+        },
+        {
+          code: 'OT',
+          name: 'Lainnya',
+          localShares: typeof m.other_l === 'number' ? m.other_l : null,
+          localPct:
+            sharesTotal && typeof m.other_l === 'number'
+              ? (m.other_l / sharesTotal) * 100
+              : null,
+          foreignShares: typeof m.other_f === 'number' ? m.other_f : null,
+          foreignPct:
+            sharesTotal && typeof m.other_f === 'number'
+              ? (m.other_f / sharesTotal) * 100
+              : null,
+          totalPct:
+            sharesTotal &&
+            (typeof m.other_l === 'number' || typeof m.other_f === 'number')
+              ? (((m.other_l as number) || 0) + ((m.other_f as number) || 0)) /
+                sharesTotal *
+                100
+              : null,
+        },
+      ]
+
+      return {
+        period: String(m.date ?? ''),
+        totalShareholders:
+          typeof m.numbers_of_shareholders === 'number' ? m.numbers_of_shareholders : null,
+        totalShares: sharesTotal,
+        scriptlessShares: idx === 0 ? publicFloatShares : null,
+        freeFloatPct: idx === 0 ? publicFloatPct : null,
+        localPct: localPct !== null ? Number(localPct.toFixed(2)) : null,
+        foreignPct: foreignPct !== null ? Number(foreignPct.toFixed(2)) : null,
+        categories,
+      }
+    })
 
     const data: CompanyShareholdersData = {
       symbol: cleanTicker,
-      companyName: typeof raw.company_name === 'string' ? raw.company_name : cleanTicker,
+      companyName: typeof rawReport?.company_name === 'string' ? rawReport.company_name : cleanTicker,
       topShareholders,
       monthlyReports,
     }
 
     return createEnvelope({
-      state: topShareholders.length > 0 || monthlyReports.length > 0 ? 'ready' : 'empty',
+      state: monthlyReports.length > 0 || topShareholders.length > 0 ? 'ready' : 'empty',
       data,
       source: 'SECTORS',
+      sourceDate: monthlyReports[0]?.period ?? null,
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Gagal memuat data pemegang saham.'
@@ -414,24 +640,80 @@ export async function fetchUniverseCompanies(
 ): Promise<UniverseCompanyRaw[]> {
   const { getOrSetCache } = await import('../cache.ts')
   const cacheKey = `sectors:universe:companies:${limit}`
-  const data = await getOrSetCache<{ results?: UniverseCompanyRaw[] } | UniverseCompanyRaw[]>(
+  const data = await getOrSetCache<UniverseCompanyRaw[]>(
     cacheKey,
     24 * 60 * 60 * 1000,
     async () => {
-      return await requestSectorsShared<{ results?: UniverseCompanyRaw[] }>(
-        `https://api.sectors.app/v2/companies/?limit=${limit}&order_by=-market_cap`,
-        {
-          capabilityId: 'companies_screener',
-          params: { limit, order_by: '-market_cap' },
-        },
-      )
+      const BASE_COLUMNS_WHERE = [
+        '(sector is not null or sector is null)',
+        '(sub_sector is not null or sub_sector is null)',
+        '(last_close_price is not null or last_close_price is null)',
+        '(market_cap is not null or market_cap is null)',
+        '(daily_close_change is not null or daily_close_change is null)',
+        '(pe_ttm is not null or pe_ttm is null)',
+        '(pb_mrq is not null or pb_mrq is null)',
+        '(yield_ttm is not null or yield_ttm is null)',
+        '(roe_ttm is not null or roe_ttm is null)',
+        '(yoy_quarter_earnings_growth is not null or yoy_quarter_earnings_growth is null)',
+        '(yoy_quarter_revenue_growth is not null or yoy_quarter_revenue_growth is null)',
+      ].join(' and ')
+
+      const params = new URLSearchParams({
+        limit: String(limit),
+        order_by: '-market_cap',
+        include_query_values: 'true',
+        where: BASE_COLUMNS_WHERE,
+      })
+
+      const raw = await requestSectorsShared<{
+        results?: Array<{
+          symbol?: string
+          company_name?: string
+          query_values?: Record<string, unknown>
+          [key: string]: unknown
+        }>
+      }>(`https://api.sectors.app/v2/companies/?${params.toString()}`, {
+        capabilityId: 'companies_screener',
+        params: { limit, order_by: '-market_cap' },
+      })
+
+      const items = raw?.results ?? []
+      return items.map((r) => {
+        const qv = r.query_values ?? {}
+        return {
+          symbol: r.symbol,
+          company_name: r.company_name,
+          sector: (qv.sector as string) ?? (r.sector as string),
+          sub_sector: (qv.sub_sector as string) ?? (r.sub_sector as string),
+          market_cap: typeof qv.market_cap === 'number' ? qv.market_cap : (r.market_cap as number),
+          last_close_price:
+            typeof qv.last_close_price === 'number'
+              ? qv.last_close_price
+              : (r.last_close_price as number),
+          daily_close_change:
+            typeof qv.daily_close_change === 'number'
+              ? qv.daily_close_change
+              : (r.daily_close_change as number),
+          pe: typeof qv.pe_ttm === 'number' ? qv.pe_ttm : (r.pe as number),
+          pb: typeof qv.pb_mrq === 'number' ? qv.pb_mrq : (r.pb as number),
+          roe: typeof qv.roe_ttm === 'number' ? qv.roe_ttm : (r.roe as number),
+          dividend_yield:
+            typeof qv.yield_ttm === 'number' ? qv.yield_ttm : (r.dividend_yield as number),
+          net_income_growth_yoy:
+            typeof qv.yoy_quarter_earnings_growth === 'number'
+              ? qv.yoy_quarter_earnings_growth
+              : (r.net_income_growth_yoy as number),
+          revenue_growth_yoy:
+            typeof qv.yoy_quarter_revenue_growth === 'number'
+              ? qv.yoy_quarter_revenue_growth
+              : (r.revenue_growth_yoy as number),
+          date: (qv.date as string) ?? (r.date as string),
+        }
+      })
     },
     options,
   )
 
-  if (Array.isArray(data)) {
-    return data
-  }
-  return data?.results ?? []
+  return Array.isArray(data) ? data : []
 }
 

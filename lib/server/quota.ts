@@ -1,9 +1,9 @@
 import { sql } from 'drizzle-orm'
 
-import { db } from '@/db'
-import { quotaBuckets } from '@/db/schema'
-import type { Result } from '@/lib/contracts/result'
-import { errorResult, successResult } from '@/lib/contracts/result'
+import { db } from '../../db/index.ts'
+import { quotaBuckets } from '../../db/schema.ts'
+import type { Result } from '../contracts/result.ts'
+import { errorResult, successResult } from '../contracts/result.ts'
 
 export interface QuotaConfig {
   perMinute: number

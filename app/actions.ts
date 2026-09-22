@@ -328,7 +328,8 @@ let memoryRadarCache: MarketRadarData | null = null
 let memoryRadarHistory: RadarHistorySnapshot[] = []
 
 async function getRadarCacheFromDb(): Promise<MarketRadarData | null> {
-  const { isDbTemporarilyUnavailable, markDbUnavailable } = await import('@/lib/server/cache')
+  const { isDbConnectionError, isDbTemporarilyUnavailable, markDbUnavailable } =
+    await import('@/lib/server/cache')
   if (!process.env.DATABASE_URL || isDbTemporarilyUnavailable()) return null
   try {
     const { db } = await import('@/db')
@@ -343,10 +344,7 @@ async function getRadarCacheFromDb(): Promise<MarketRadarData | null> {
       return rows[0].data as MarketRadarData
     }
   } catch (err) {
-    if (
-      err instanceof Error &&
-      (err.message.includes('ECONNREFUSED') || err.message.includes('connect'))
-    ) {
+    if (isDbConnectionError(err)) {
       markDbUnavailable()
     }
   }
@@ -354,7 +352,8 @@ async function getRadarCacheFromDb(): Promise<MarketRadarData | null> {
 }
 
 async function setRadarCacheInDb(data: MarketRadarData): Promise<void> {
-  const { isDbTemporarilyUnavailable, markDbUnavailable } = await import('@/lib/server/cache')
+  const { isDbConnectionError, isDbTemporarilyUnavailable, markDbUnavailable } =
+    await import('@/lib/server/cache')
   if (!process.env.DATABASE_URL || isDbTemporarilyUnavailable()) return
   try {
     const { db } = await import('@/db')
@@ -377,17 +376,15 @@ async function setRadarCacheInDb(data: MarketRadarData): Promise<void> {
         },
       })
   } catch (err) {
-    if (
-      err instanceof Error &&
-      (err.message.includes('ECONNREFUSED') || err.message.includes('connect'))
-    ) {
+    if (isDbConnectionError(err)) {
       markDbUnavailable()
     }
   }
 }
 
 async function getRadarHistoryFromDb(): Promise<RadarHistorySnapshot[]> {
-  const { isDbTemporarilyUnavailable, markDbUnavailable } = await import('@/lib/server/cache')
+  const { isDbConnectionError, isDbTemporarilyUnavailable, markDbUnavailable } =
+    await import('@/lib/server/cache')
   if (!process.env.DATABASE_URL || isDbTemporarilyUnavailable()) return []
   try {
     const { db } = await import('@/db')
@@ -402,10 +399,7 @@ async function getRadarHistoryFromDb(): Promise<RadarHistorySnapshot[]> {
       return rows[0].data as RadarHistorySnapshot[]
     }
   } catch (err) {
-    if (
-      err instanceof Error &&
-      (err.message.includes('ECONNREFUSED') || err.message.includes('connect'))
-    ) {
+    if (isDbConnectionError(err)) {
       markDbUnavailable()
     }
   }
@@ -413,7 +407,8 @@ async function getRadarHistoryFromDb(): Promise<RadarHistorySnapshot[]> {
 }
 
 async function appendRadarHistoryInDb(snapshot: RadarHistorySnapshot): Promise<void> {
-  const { isDbTemporarilyUnavailable, markDbUnavailable } = await import('@/lib/server/cache')
+  const { isDbConnectionError, isDbTemporarilyUnavailable, markDbUnavailable } =
+    await import('@/lib/server/cache')
   if (!process.env.DATABASE_URL || isDbTemporarilyUnavailable()) return
   try {
     const { db } = await import('@/db')
@@ -438,10 +433,7 @@ async function appendRadarHistoryInDb(snapshot: RadarHistorySnapshot): Promise<v
         },
       })
   } catch (err) {
-    if (
-      err instanceof Error &&
-      (err.message.includes('ECONNREFUSED') || err.message.includes('connect'))
-    ) {
+    if (isDbConnectionError(err)) {
       markDbUnavailable()
     }
   }

@@ -45,9 +45,10 @@ import type { StockDataResult } from '@/lib/server/services/analysis'
 
 export interface StockDetailProps {
   ticker: string
+  initialData?: StockDataResult
 }
 
-export default function StockDetail({ ticker }: StockDetailProps) {
+export default function StockDetail({ ticker, initialData }: StockDetailProps) {
   const symbol = ticker.trim().toUpperCase().replace(/\.JK$/i, '')
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -62,14 +63,22 @@ export default function StockDetail({ ticker }: StockDetailProps) {
     'research',
   ].includes(searchParams.get('tab') ?? '')
     ? (searchParams.get('tab') as
-        'fundamental' | 'valuation' | 'ownership' | 'broker' | 'news' | 'insider' | 'research')
+        | 'fundamental'
+        | 'valuation'
+        | 'ownership'
+        | 'broker'
+        | 'news'
+        | 'insider'
+        | 'research')
     : 'fundamental'
 
   const { mode, setMode } = useThemePreference()
 
   // Data states
-  const [data, setData] = useState<StockDataResult | null>(null)
-  const [loadState, setLoadState] = useState<'loading' | 'ready' | 'empty' | 'error'>('loading')
+  const [data, setData] = useState<StockDataResult | null>(initialData ?? null)
+  const [loadState, setLoadState] = useState<'loading' | 'ready' | 'empty' | 'error'>(
+    initialData ? 'ready' : 'loading',
+  )
   const [loadError, setLoadError] = useState('')
 
   // Watchlist save states
@@ -120,6 +129,7 @@ export default function StockDetail({ ticker }: StockDetailProps) {
   )
 
   useEffect(() => {
+    if (initialData) return
     let isMounted = true
     const timer = window.setTimeout(() => {
       if (!isMounted) return
@@ -129,7 +139,7 @@ export default function StockDetail({ ticker }: StockDetailProps) {
       isMounted = false
       window.clearTimeout(timer)
     }
-  }, [loadData])
+  }, [loadData, initialData])
 
   // 2. Check Watchlist status
   useEffect(() => {

@@ -36,10 +36,10 @@ export async function fetchQuarterlyFinancials(
 
   try {
     const raw = await requestSectorsShared<unknown>(
-      `https://api.sectors.app/v2/financials/quarterly/${cleanTicker}/`,
+      `https://api.sectors.app/v2/financials/quarterly/${cleanTicker}/?n_quarters=${quartersToRequest}`,
       {
         capabilityId: 'financials_quarterly',
-        params: { quarters: quartersToRequest },
+        params: { n_quarters: quartersToRequest },
         apiKey,
         fetchFn,
       },
@@ -52,25 +52,73 @@ export async function fetchQuarterlyFinancials(
     const rows: RawQuarterlyFinancial[] = raw
       .slice(0, quartersToRequest)
       .map((item: Record<string, unknown>): RawQuarterlyFinancial => {
-        const q = String(item.quarter ?? item.period ?? '')
+        let q = String(item.quarter ?? item.period ?? '')
+        if (!q && typeof item.date === 'string' && item.date.length >= 7) {
+          const [year, month] = item.date.split('-')
+          const m = parseInt(month, 10)
+          const quarterNum = Math.ceil(m / 3)
+          q = `${year}-Q${quarterNum}`
+        }
+
         const basis: RawQuarterlyFinancial['basis'] =
           item.basis === 'standalone' || item.basis === 'YTD' ? item.basis : 'unknown'
+
+        const sectorMetrics =
+          item.financials_sector_metrics && typeof item.financials_sector_metrics === 'object'
+            ? (item.financials_sector_metrics as Record<string, unknown>)
+            : undefined
+
+        const netIncome =
+          typeof item.net_income === 'number'
+            ? item.net_income
+            : typeof item.earnings === 'number'
+              ? item.earnings
+              : null
+
+        const operatingProfit =
+          typeof item.operating_profit === 'number'
+            ? item.operating_profit
+            : typeof item.operating_pnl === 'number'
+              ? item.operating_pnl
+              : null
+
+        const netInterestIncome =
+          typeof sectorMetrics?.net_interest_income === 'number'
+            ? sectorMetrics.net_interest_income
+            : typeof item.net_interest_income === 'number'
+              ? item.net_interest_income
+              : null
+
+        const loans =
+          typeof sectorMetrics?.gross_loan === 'number'
+            ? sectorMetrics.gross_loan
+            : typeof sectorMetrics?.net_loan === 'number'
+              ? sectorMetrics.net_loan
+              : typeof item.loans === 'number'
+                ? item.loans
+                : null
+
+        const deposits =
+          typeof sectorMetrics?.total_deposit === 'number'
+            ? sectorMetrics.total_deposit
+            : typeof item.deposits === 'number'
+              ? item.deposits
+              : null
+
         return {
           quarter: q,
           revenue: typeof item.revenue === 'number' ? item.revenue : null,
-          net_income: typeof item.net_income === 'number' ? item.net_income : null,
-          operating_profit:
-            typeof item.operating_profit === 'number' ? item.operating_profit : null,
+          net_income: netIncome,
+          operating_profit: operatingProfit,
           operating_cash_flow:
             typeof item.operating_cash_flow === 'number' ? item.operating_cash_flow : null,
           total_assets: typeof item.total_assets === 'number' ? item.total_assets : null,
           total_liabilities:
             typeof item.total_liabilities === 'number' ? item.total_liabilities : null,
           total_equity: typeof item.total_equity === 'number' ? item.total_equity : null,
-          net_interest_income:
-            typeof item.net_interest_income === 'number' ? item.net_interest_income : null,
-          loans: typeof item.loans === 'number' ? item.loans : null,
-          deposits: typeof item.deposits === 'number' ? item.deposits : null,
+          net_interest_income: netInterestIncome,
+          loans,
+          deposits,
           basis,
         }
       })

@@ -31,45 +31,50 @@ export async function fetchCompanySegments(
   const cleanTicker = normalizeTicker(ticker)
 
   try {
-    const raw = await requestSectorsShared<Record<string, unknown>>(
-      `https://api.sectors.app/v2/company/report/${cleanTicker}/?sections=segments`,
-      {
-        capabilityId: 'company_report',
-        params: { sections: ['segments'] },
-        apiKey,
-        fetchFn,
-      },
-    )
+    const raw = await requestSectorsShared<{
+      symbol?: string
+      financial_year?: number
+      revenue_breakdown?: Array<{
+        value?: number
+        source?: string
+        target?: string
+      }>
+      [key: string]: unknown
+    }>(`https://api.sectors.app/v2/company/get-segments/${cleanTicker}/`, {
+      capabilityId: 'company_segments',
+      apiKey,
+      fetchFn,
+    })
 
     if (!raw || typeof raw !== 'object') {
       return createEmptyEnvelope('SECTORS', null, 'Data segmen bisnis tidak tersedia.')
     }
 
-    const seg = (raw.segments as Record<string, unknown>) ?? {}
-    const rawList = Array.isArray(seg.revenue)
-      ? (seg.revenue as Array<Record<string, unknown>>)
-      : Array.isArray(seg)
-        ? (seg as Array<Record<string, unknown>>)
-        : Array.isArray(raw.segments_revenue)
-          ? (raw.segments_revenue as Array<Record<string, unknown>>)
-          : []
+    const breakdown = Array.isArray(raw.revenue_breakdown) ? raw.revenue_breakdown : []
+    const totalVal = breakdown.reduce(
+      (sum, item) => sum + (typeof item.value === 'number' ? item.value : 0),
+      0,
+    )
 
-    const revenueSegments: RawSegmentItem[] = rawList
-      .map((item) => ({
-        name: String(item.name ?? item.segment ?? item.title ?? 'Segmen'),
-        value: typeof item.value === 'number' ? item.value : null,
-        percentage:
-          typeof item.percentage === 'number'
-            ? item.percentage
-            : typeof item.pct === 'number'
-              ? item.pct
-              : null,
-      }))
-      .filter((s: RawSegmentItem) => s.name)
+    const revenueSegments: RawSegmentItem[] = breakdown
+      .map((item) => {
+        const val = typeof item.value === 'number' ? item.value : null
+        const pct = totalVal > 0 && val !== null ? (val / totalVal) * 100 : null
+        const name =
+          item.source && item.target
+            ? `${item.source} (${item.target})`
+            : item.source || item.target || 'Segmen'
+        return {
+          name,
+          value: val,
+          percentage: pct !== null ? Number(pct.toFixed(2)) : null,
+        }
+      })
+      .filter((s) => s.name)
 
     const data: CompanySegmentsData = {
       symbol: cleanTicker,
-      companyName: typeof raw.company_name === 'string' ? raw.company_name : cleanTicker,
+      companyName: cleanTicker,
       revenueSegments,
     }
 

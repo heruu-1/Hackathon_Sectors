@@ -1,9 +1,15 @@
 import { Suspense } from 'react'
 
+import { getMarketOverviewAction } from '@/app/actions'
 import { MarketOverview } from '@/components/MarketOverview'
 import { StockSearch } from '@/components/StockSearch'
 
-export default function HomePage() {
+export default async function HomePage() {
+  const marketData = await getMarketOverviewAction().catch(() => ({
+    success: false,
+    data: undefined,
+  }))
+
   return (
     <div className="space-y-8">
       <Suspense
@@ -23,7 +29,7 @@ export default function HomePage() {
           </div>
         }
       >
-        <MarketOverview />
+        <MarketOverview initialData={marketData.data} />
       </Suspense>
     </div>
   )

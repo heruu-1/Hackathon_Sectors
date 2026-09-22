@@ -25,13 +25,13 @@ export function validateApiKey(apiKey?: string): string {
   return key
 }
 
-// Global concurrency queue: max 4 concurrent upstream requests
+// Global concurrency queue: max 8 concurrent upstream requests
 class ConcurrencyLimiter {
   private activeCount = 0
   private queue: (() => void)[] = []
   private readonly maxConcurrent: number
 
-  constructor(maxConcurrent = 4) {
+  constructor(maxConcurrent = 8) {
     this.maxConcurrent = maxConcurrent
   }
 
@@ -55,7 +55,7 @@ class ConcurrencyLimiter {
   }
 }
 
-export const upstreamLimiter = new ConcurrencyLimiter(4)
+export const upstreamLimiter = new ConcurrencyLimiter(8)
 
 export interface RequestSectorsOptions {
   capabilityId: string

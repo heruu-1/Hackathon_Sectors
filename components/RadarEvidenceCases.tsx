@@ -140,7 +140,7 @@ export function RadarEvidenceCases() {
             onClick={() => setSelectedFilter(f.id)}
             className={`rounded-full px-3 py-1 text-xs font-semibold transition-all ${
               selectedFilter === f.id
-                ? 'bg-[var(--rasi-primary)] text-white shadow-sm'
+                ? 'bg-[var(--rasi-primary)] text-[var(--rasi-primary-text)] shadow-sm'
                 : 'border border-[var(--rasi-border)] bg-[var(--rasi-card)] text-[var(--rasi-muted)] hover:border-[var(--rasi-text)]'
             }`}
           >

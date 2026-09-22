@@ -2,7 +2,7 @@ import { desc, eq } from 'drizzle-orm'
 
 import { db } from '../../../db/index.ts'
 import { type ResearchSnapshotRow, researchSnapshots } from '../../../db/schema.ts'
-import { isDbTemporarilyUnavailable, markDbUnavailable } from '../cache.ts'
+import { isDbConnectionError, isDbTemporarilyUnavailable, markDbUnavailable } from '../cache.ts'
 
 export async function insertResearchSnapshot(snapshot: {
   id?: string
@@ -33,10 +33,7 @@ export async function insertResearchSnapshot(snapshot: {
 
       if (inserted) return inserted
     } catch (err) {
-      if (
-        err instanceof Error &&
-        (err.message.includes('ECONNREFUSED') || err.message.includes('connect'))
-      ) {
+      if (isDbConnectionError(err)) {
         markDbUnavailable()
       }
       // Fallback to memory
@@ -67,10 +64,7 @@ export async function getResearchSnapshotById(id: string): Promise<ResearchSnaps
 
       return row ?? null
     } catch (err) {
-      if (
-        err instanceof Error &&
-        (err.message.includes('ECONNREFUSED') || err.message.includes('connect'))
-      ) {
+      if (isDbConnectionError(err)) {
         markDbUnavailable()
       }
       // Fallback
@@ -93,10 +87,7 @@ export async function getLatestResearchSnapshotForTicker(
 
       return row ?? null
     } catch (err) {
-      if (
-        err instanceof Error &&
-        (err.message.includes('ECONNREFUSED') || err.message.includes('connect'))
-      ) {
+      if (isDbConnectionError(err)) {
         markDbUnavailable()
       }
       // Fallback
@@ -120,10 +111,7 @@ export async function getResearchSnapshotsForTicker(
 
       return rows
     } catch (err) {
-      if (
-        err instanceof Error &&
-        (err.message.includes('ECONNREFUSED') || err.message.includes('connect'))
-      ) {
+      if (isDbConnectionError(err)) {
         markDbUnavailable()
       }
       // Fallback

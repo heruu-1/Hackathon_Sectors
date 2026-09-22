@@ -29,7 +29,36 @@ export function isDbTemporarilyUnavailable(): boolean {
 }
 
 export function markDbUnavailable(): void {
-  dbUnavailableUntil = Date.now() + 60_000 // 60s cooldown before retrying DB
+  dbUnavailableUntil = Date.now() + 300_000 // 5-minute cooldown before retrying DB
+}
+
+export function isDbConnectionError(err: unknown): boolean {
+  if (!err) return false
+  const message = (err instanceof Error ? err.message : String(err)).toLowerCase()
+  const cause = (err as { cause?: { message?: string; code?: string } })?.cause
+  const causeMessage = (cause?.message || '').toLowerCase()
+  const causeCode = (cause?.code || '').toLowerCase()
+  const code = ((err as { code?: string })?.code || '').toLowerCase()
+
+  return (
+    message.includes('econnrefused') ||
+    message.includes('connect') ||
+    message.includes('connection') ||
+    message.includes('enotfound') ||
+    message.includes('etimedout') ||
+    message.includes('failed query') ||
+    causeMessage.includes('econnrefused') ||
+    causeMessage.includes('connect') ||
+    causeMessage.includes('connection') ||
+    causeMessage.includes('enotfound') ||
+    causeMessage.includes('etimedout') ||
+    causeCode === 'econnrefused' ||
+    causeCode === 'enotfound' ||
+    causeCode === 'etimedout' ||
+    code === 'econnrefused' ||
+    code === 'enotfound' ||
+    code === 'etimedout'
+  )
 }
 
 /**
@@ -62,15 +91,16 @@ export async function acquireCacheLease(
     })
     return true
   } catch (error) {
-    const isConnErr =
-      error instanceof Error &&
-      (error.message.includes('ECONNREFUSED') || error.message.includes('connect'))
-    if (isConnErr) {
-      markDbUnavailable()
-      return true
+    const isUniqueViolation =
+      (error as { cause?: { code?: string } })?.cause?.code === '23505' ||
+      (error as { code?: string })?.code === '23505'
+    if (isUniqueViolation) {
+      // Another instance legitimately holds active lease
+      return false
     }
-    // Another instance holds active lease
-    return false
+    // Any other error (DB offline, connection refused, query failed, etc.): mark DB unavailable and proceed
+    markDbUnavailable()
+    return true
   }
 }
 
@@ -83,10 +113,7 @@ export async function releaseCacheLease(cacheKey: string, holderId: string): Pro
       .delete(cacheLeases)
       .where(and(eq(cacheLeases.cacheKey, cacheKey), eq(cacheLeases.holder, holderId)))
   } catch (error) {
-    const isConnErr =
-      error instanceof Error &&
-      (error.message.includes('ECONNREFUSED') || error.message.includes('connect'))
-    if (isConnErr) {
+    if (isDbConnectionError(error)) {
       markDbUnavailable()
     }
   }
@@ -142,10 +169,7 @@ async function readOrRefreshCache<T>(
         return item.data as T
       }
     } catch (err) {
-      if (
-        err instanceof Error &&
-        (err.message.includes('ECONNREFUSED') || err.message.includes('connect'))
-      ) {
+      if (isDbConnectionError(err)) {
         markDbUnavailable()
       }
     }
@@ -174,8 +198,11 @@ async function readOrRefreshCache<T>(
             setMemory(key, rows[0].data, rows[0].expiresAt.getTime())
             return rows[0].data as T
           }
-        } catch {
-          // ignore DB error
+        } catch (err) {
+          if (isDbConnectionError(err)) {
+            markDbUnavailable()
+            break
+          }
         }
       }
     }
@@ -210,10 +237,7 @@ async function readOrRefreshCache<T>(
             },
           })
       } catch (err) {
-        if (
-          err instanceof Error &&
-          (err.message.includes('ECONNREFUSED') || err.message.includes('connect'))
-        ) {
+        if (isDbConnectionError(err)) {
           markDbUnavailable()
         }
       }

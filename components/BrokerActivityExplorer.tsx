@@ -10,26 +10,39 @@ import { compareBrokersAction, getBrokerActivityAction, getBrokerListAction } fr
 import type { BrokerActivitySummary, DualBrokerComparison } from '@/domain/broker-activity'
 import type { BrokerRegistryEntry } from '@/lib/contracts/market'
 
-export function BrokerActivityExplorer() {
-  const [registry, setRegistry] = useState<Record<string, BrokerRegistryEntry>>({})
+interface BrokerActivityExplorerProps {
+  initialRegistry?: Record<string, BrokerRegistryEntry>
+  initialSummary?: BrokerActivitySummary | null
+}
+
+export function BrokerActivityExplorer({
+  initialRegistry,
+  initialSummary,
+}: BrokerActivityExplorerProps = {}) {
+  const [registry, setRegistry] = useState<Record<string, BrokerRegistryEntry>>(
+    initialRegistry || {},
+  )
   const [selectedBrokerA, setSelectedBrokerA] = useState('YP') // Default Mirae
   const [selectedBrokerB, setSelectedBrokerB] = useState('CC') // Default Mandiri
   const [isComparing, setIsComparing] = useState(false)
   const [rangeDays, setRangeDays] = useState<'1' | '5' | '14'>('5')
 
   const [loading, setLoading] = useState(false)
-  const [summaryA, setSummaryA] = useState<BrokerActivitySummary | null>(null)
+  const [summaryA, setSummaryA] = useState<BrokerActivitySummary | null>(
+    initialSummary || null,
+  )
   const [comparison, setComparison] = useState<DualBrokerComparison | null>(null)
   const [error, setError] = useState('')
 
-  // Load registry once
+  // Load registry once if not supplied
   useEffect(() => {
+    if (Object.keys(registry).length > 0) return
     getBrokerListAction().then((res) => {
       if (res.success && res.data) {
         setRegistry(res.data)
       }
     })
-  }, [])
+  }, [registry])
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -62,7 +75,14 @@ export function BrokerActivityExplorer() {
     }
   }, [selectedBrokerA, selectedBrokerB, isComparing, rangeDays])
 
+  // Skip the first fetch if initialSummary is already provided
+  const [skipInitialFetch, setSkipInitialFetch] = useState(() => Boolean(initialSummary))
+
   useEffect(() => {
+    if (skipInitialFetch) {
+      setSkipInitialFetch(false)
+      return
+    }
     let isMounted = true
     const timer = window.setTimeout(() => {
       if (!isMounted) return
@@ -72,7 +92,7 @@ export function BrokerActivityExplorer() {
       isMounted = false
       window.clearTimeout(timer)
     }
-  }, [fetchData])
+  }, [fetchData, skipInitialFetch])
 
   const brokerList = Object.values(registry).sort((a, b) => a.code.localeCompare(b.code))
 
@@ -141,7 +161,7 @@ export function BrokerActivityExplorer() {
                 onClick={() => setRangeDays(d)}
                 className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-colors ${
                   rangeDays === d
-                    ? 'bg-[var(--rasi-primary)] text-white'
+                    ? 'bg-[var(--rasi-primary)] text-[var(--rasi-primary-text)]'
                     : 'bg-[var(--rasi-muted-bg)] text-[var(--rasi-muted)] hover:text-[var(--rasi-text)]'
                 }`}
               >
@@ -323,7 +343,7 @@ export function BrokerActivityExplorer() {
                 <button
                   type="button"
                   onClick={() => setRangeDays('5')}
-                  className="rounded-lg bg-[var(--rasi-primary)] px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:opacity-90"
+                  className="rounded-lg bg-[var(--rasi-primary)] px-3 py-1.5 text-xs font-semibold text-[var(--rasi-primary-text)] shadow-sm hover:opacity-90"
                 >
                   Pilih Periode 5 Sesi
                 </button>

@@ -36,7 +36,7 @@ export default function SettingsPage() {
                 aria-pressed={theme === val}
                 className={`min-h-[44px] rounded-lg border px-4 py-2 text-sm font-bold transition-colors ${
                   theme === val
-                    ? 'border-white bg-white text-[#02050c] shadow-md'
+                    ? 'border-[var(--rasi-primary)] bg-[var(--rasi-primary)] text-[var(--rasi-primary-text)] shadow-md'
                     : 'border-[var(--border-subtle)] bg-[var(--surface-card)] text-[var(--rasi-text)] hover:bg-[var(--rasi-muted-bg)]'
                 }`}
               >
@@ -61,7 +61,7 @@ export default function SettingsPage() {
               aria-pressed={mode === 'beginner'}
               className={`min-h-[44px] rounded-lg border px-4 py-2 text-sm font-bold transition-colors ${
                 mode === 'beginner'
-                  ? 'border-white bg-white text-[#02050c] shadow-md'
+                  ? 'border-[var(--rasi-primary)] bg-[var(--rasi-primary)] text-[var(--rasi-primary-text)] shadow-md'
                   : 'border-[var(--border-subtle)] bg-[var(--surface-card)] text-[var(--rasi-text)] hover:bg-[var(--rasi-muted-bg)]'
               }`}
             >
@@ -74,7 +74,7 @@ export default function SettingsPage() {
               aria-pressed={mode === 'detail'}
               className={`min-h-[44px] rounded-lg border px-4 py-2 text-sm font-bold transition-colors ${
                 mode === 'detail'
-                  ? 'border-white bg-white text-[#02050c] shadow-md'
+                  ? 'border-[var(--rasi-primary)] bg-[var(--rasi-primary)] text-[var(--rasi-primary-text)] shadow-md'
                   : 'border-[var(--border-subtle)] bg-[var(--surface-card)] text-[var(--rasi-text)] hover:bg-[var(--rasi-muted-bg)]'
               }`}
             >

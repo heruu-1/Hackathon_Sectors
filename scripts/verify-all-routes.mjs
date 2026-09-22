@@ -1,5 +1,20 @@
 import { spawn } from 'node:child_process'
+import fs from 'node:fs'
 import http from 'node:http'
+
+if (fs.existsSync('.env.local')) {
+  const envContent = fs.readFileSync('.env.local', 'utf8')
+  for (const line of envContent.split('\n')) {
+    const m = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/)
+    if (m) {
+      const key = m[1]
+      let val = m[2] || ''
+      if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1)
+      if (val.startsWith("'") && val.endsWith("'")) val = val.slice(1, -1)
+      process.env[key] = val
+    }
+  }
+}
 
 const PORT = 3088
 const BASE_URL = `http://127.0.0.1:${PORT}`

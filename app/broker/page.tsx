@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 
+import { getBrokerActivityAction, getBrokerListAction } from '@/app/actions'
 import { BrokerActivityExplorer } from '@/components/BrokerActivityExplorer'
 
 export const metadata: Metadata = {
@@ -8,7 +9,15 @@ export const metadata: Metadata = {
     'Telusuri aktivitas transaksi broker, peringkat saham akumulasi dan distribusi, serta perbandingan arah transaksi antara dua broker.',
 }
 
-export default function BrokerPage() {
+export default async function BrokerPage() {
+  const endDate = new Date().toISOString().split('T')[0]
+  const startDate = new Date(Date.now() - 4 * 86_400_000).toISOString().split('T')[0]
+
+  const [registryRes, summaryRes] = await Promise.all([
+    getBrokerListAction().catch(() => ({ success: false, data: undefined })),
+    getBrokerActivityAction('YP', startDate, endDate).catch(() => ({ success: false, data: undefined })),
+  ])
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-6 space-y-2">
@@ -22,7 +31,10 @@ export default function BrokerPage() {
         </p>
       </div>
 
-      <BrokerActivityExplorer />
+      <BrokerActivityExplorer
+        initialRegistry={registryRes.data}
+        initialSummary={summaryRes.data}
+      />
     </div>
   )
 }

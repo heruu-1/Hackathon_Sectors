@@ -20,9 +20,13 @@ import { Button } from '@/components/ui'
 import type { MarketOverviewData } from '@/domain/market-overview'
 import type { SectorSummary, UniverseCompany } from '@/domain/universe'
 
-export function MarketOverview() {
-  const [data, setData] = useState<MarketOverviewData | null>(null)
-  const [loading, setLoading] = useState(true)
+export interface MarketOverviewProps {
+  initialData?: MarketOverviewData
+}
+
+export function MarketOverview({ initialData }: MarketOverviewProps = {}) {
+  const [data, setData] = useState<MarketOverviewData | null>(initialData ?? null)
+  const [loading, setLoading] = useState(!initialData)
   const [error, setError] = useState<string | null>(null)
   const [selectedSector, setSelectedSector] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
@@ -48,6 +52,7 @@ export function MarketOverview() {
   }
 
   useEffect(() => {
+    if (initialData) return
     let isMounted = true
     const timer = window.setTimeout(() => {
       if (!isMounted) return
@@ -57,7 +62,7 @@ export function MarketOverview() {
       isMounted = false
       window.clearTimeout(timer)
     }
-  }, [])
+  }, [initialData])
 
   if (loading) {
     return (

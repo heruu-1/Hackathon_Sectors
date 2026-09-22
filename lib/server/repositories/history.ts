@@ -1,7 +1,7 @@
 import { and, desc, eq, sql } from 'drizzle-orm'
 
-import { db } from '@/db'
-import { analysisHistory, analysisSnapshots } from '@/db/schema'
+import { db } from '../../../db/index.ts'
+import { analysisHistory, analysisSnapshots } from '../../../db/schema.ts'
 import type { AnalysisSnapshot } from '@/lib/contracts/analysis'
 
 export interface HistoryItemDTO {

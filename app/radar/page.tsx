@@ -376,7 +376,7 @@ export default function RadarPage() {
                   onClick={() => setFilterType('all')}
                   className={`rounded-lg border px-3 py-1.5 font-bold transition-colors ${
                     filterType === 'all'
-                      ? 'border-white bg-white text-[#02050c] shadow-sm'
+                      ? 'border-[var(--rasi-primary)] bg-[var(--rasi-primary)] text-[var(--rasi-primary-text)] shadow-sm'
                       : 'border-[var(--border-subtle)] bg-[var(--surface-card)] text-[var(--rasi-muted)] hover:text-[var(--rasi-text)]'
                   }`}
                 >
@@ -389,7 +389,7 @@ export default function RadarPage() {
                   onClick={() => setFilterType('sleeping')}
                   className={`rounded-lg border px-3 py-1.5 font-bold transition-colors ${
                     filterType === 'sleeping'
-                      ? 'border-white bg-white text-[#02050c] shadow-sm'
+                      ? 'border-[var(--rasi-primary)] bg-[var(--rasi-primary)] text-[var(--rasi-primary-text)] shadow-sm'
                       : 'border-[var(--border-subtle)] bg-[var(--surface-card)] text-[var(--rasi-muted)] hover:text-[var(--rasi-text)]'
                   }`}
                 >
@@ -402,7 +402,7 @@ export default function RadarPage() {
                   onClick={() => setFilterType('insider')}
                   className={`rounded-lg border px-3 py-1.5 font-bold transition-colors ${
                     filterType === 'insider'
-                      ? 'border-white bg-white text-[#02050c] shadow-sm'
+                      ? 'border-[var(--rasi-primary)] bg-[var(--rasi-primary)] text-[var(--rasi-primary-text)] shadow-sm'
                       : 'border-[var(--border-subtle)] bg-[var(--surface-card)] text-[var(--rasi-muted)] hover:text-[var(--rasi-text)]'
                   }`}
                 >
@@ -422,8 +422,8 @@ export default function RadarPage() {
                     onClick={() => setSearchQuery(t === searchQuery ? '' : t)}
                     className={`rounded-md border px-2 py-0.5 font-mono text-[11px] font-bold transition-colors ${
                       searchQuery.toUpperCase() === t
-                        ? 'border-white bg-white text-[#02050c] shadow-sm'
-                        : 'border-[var(--border-subtle)] bg-[var(--surface-card)] text-[var(--rasi-text)] hover:border-white hover:text-white'
+                        ? 'border-[var(--rasi-primary)] bg-[var(--rasi-primary)] text-[var(--rasi-primary-text)] shadow-sm'
+                        : 'border-[var(--border-subtle)] bg-[var(--surface-card)] text-[var(--rasi-text)] hover:border-[var(--rasi-primary)] hover:text-[var(--rasi-primary)]'
                     }`}
                   >
                     {t}

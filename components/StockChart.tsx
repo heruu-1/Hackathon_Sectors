@@ -226,7 +226,7 @@ export function StockChart({ dailyRows, symbol }: StockChartProps) {
             onClick={() => setViewSource('tradingview')}
             className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all ${
               viewSource === 'tradingview'
-                ? 'bg-white text-[#02050c] shadow-sm'
+                ? 'bg-[var(--rasi-primary)] text-[var(--rasi-primary-text)] shadow-sm'
                 : 'text-[var(--rasi-muted)] hover:text-[var(--rasi-text)]'
             }`}
           >
@@ -239,7 +239,7 @@ export function StockChart({ dailyRows, symbol }: StockChartProps) {
             onClick={() => setViewSource('rasi')}
             className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all ${
               viewSource === 'rasi'
-                ? 'bg-white text-[#02050c] shadow-sm'
+                ? 'bg-[var(--rasi-primary)] text-[var(--rasi-primary-text)] shadow-sm'
                 : 'text-[var(--rasi-muted)] hover:text-[var(--rasi-text)]'
             }`}
           >

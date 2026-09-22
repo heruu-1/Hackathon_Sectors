@@ -230,6 +230,32 @@ export const CAPABILITIES: Record<string, ApiCapability> = {
     accessStatus: 'UNVERIFIED',
     lastVerifiedAt: null,
   },
+  shareholders_composition: {
+    capabilityId: 'shareholders_composition',
+    documentationUrl:
+      'https://docs.sectors.app/api-references/v2/indonesia/company/shareholders-composition',
+    verifiedApiPath: 'https://api.sectors.app/v2/company/shareholders-composition/{symbol}/',
+    costRule: {
+      type: 'FIXED',
+      baseCredits: 1,
+      calculateCost: () => 1,
+    },
+    accessStatus: 'AVAILABLE',
+    lastVerifiedAt: '2026-09-22T00:00:00Z',
+  },
+  company_segments: {
+    capabilityId: 'company_segments',
+    documentationUrl:
+      'https://docs.sectors.app/api-references/v2/indonesia/report/company-segments',
+    verifiedApiPath: 'https://api.sectors.app/v2/company/get-segments/{symbol}/',
+    costRule: {
+      type: 'FIXED',
+      baseCredits: 1,
+      calculateCost: () => 1,
+    },
+    accessStatus: 'AVAILABLE',
+    lastVerifiedAt: '2026-09-22T00:00:00Z',
+  },
 }
 
 export function getCapability(id: string): ApiCapability | undefined {

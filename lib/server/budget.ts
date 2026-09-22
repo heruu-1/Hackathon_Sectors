@@ -2,7 +2,7 @@ import { and, eq, sql } from 'drizzle-orm'
 
 import { db } from '../../db/index.ts'
 import { apiBudgets, apiUsage } from '../../db/schema.ts'
-import { isDbTemporarilyUnavailable, markDbUnavailable } from './cache.ts'
+import { isDbConnectionError, isDbTemporarilyUnavailable, markDbUnavailable } from './cache.ts'
 
 export const DEFAULT_CAMPAIGN = 'hackathon_category_3'
 export const DEFAULT_BUDGET_LIMIT = 500
@@ -52,10 +52,7 @@ async function ensureBudgetTables() {
     `)
     tableEnsured = true
   } catch (err) {
-    if (
-      err instanceof Error &&
-      (err.message.includes('ECONNREFUSED') || err.message.includes('connect'))
-    ) {
+    if (isDbConnectionError(err)) {
       markDbUnavailable()
     }
   }
@@ -102,10 +99,7 @@ export async function getBudgetStatus(campaign = DEFAULT_CAMPAIGN): Promise<{
         }
       }
     } catch (err) {
-      if (
-        err instanceof Error &&
-        (err.message.includes('ECONNREFUSED') || err.message.includes('connect'))
-      ) {
+      if (isDbConnectionError(err)) {
         markDbUnavailable()
       }
       // Fallback to in-memory on DB error
@@ -180,10 +174,7 @@ export async function reserveCredits(
 
       return { ok: true, requestId }
     } catch (err) {
-      if (
-        err instanceof Error &&
-        (err.message.includes('ECONNREFUSED') || err.message.includes('connect'))
-      ) {
+      if (isDbConnectionError(err)) {
         markDbUnavailable()
       }
       // Fallback gracefully to in-memory reservation if database table or connection fails
@@ -253,10 +244,7 @@ export async function commitCredits(
 
       return
     } catch (err) {
-      if (
-        err instanceof Error &&
-        (err.message.includes('ECONNREFUSED') || err.message.includes('connect'))
-      ) {
+      if (isDbConnectionError(err)) {
         markDbUnavailable()
       }
       // Fallback
@@ -309,10 +297,7 @@ export async function releaseCredits(
 
       return
     } catch (err) {
-      if (
-        err instanceof Error &&
-        (err.message.includes('ECONNREFUSED') || err.message.includes('connect'))
-      ) {
+      if (isDbConnectionError(err)) {
         markDbUnavailable()
       }
       // Fallback
