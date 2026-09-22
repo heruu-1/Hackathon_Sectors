@@ -199,7 +199,7 @@ function ScreenerContent() {
       </div>
 
       {/* Toolbar: Filter Button, Presets, and Active Chips */}
-      <div className="space-y-3 rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-4">
+      <div className="relative space-y-3 overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-5 shadow-xl shadow-black/40">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <Button
@@ -236,7 +236,7 @@ function ScreenerContent() {
               key={p.id}
               type="button"
               onClick={() => handleApplyPreset(p.filters)}
-              className="rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/50 px-2.5 py-1 text-xs font-medium text-[var(--rasi-text)] transition-colors hover:bg-[var(--rasi-muted-bg)]"
+              className="rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] px-2.5 py-1 text-xs font-medium text-[var(--rasi-text)] transition-colors hover:border-[var(--rasi-primary)]"
             >
               {p.label}
             </button>
@@ -297,14 +297,14 @@ function ScreenerContent() {
       {error && (
         <div
           role="alert"
-          className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/20 dark:text-rose-200"
+          className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-900 dark:bg-[#1a080a] dark:text-rose-200"
         >
           {error}
         </div>
       )}
 
       {/* Results Table */}
-      <div className="overflow-hidden rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)]">
+      <div className="overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] shadow-2xl shadow-black/40">
         {loading ? (
           <div className="flex min-h-[240px] items-center justify-center p-12 text-sm text-[var(--rasi-muted)]">
             <Loader2 className="mr-2 h-5 w-5 animate-spin text-[var(--rasi-primary)]" /> Mencari
@@ -318,7 +318,7 @@ function ScreenerContent() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="border-b border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/50 font-semibold text-[var(--rasi-muted)]">
+              <thead className="border-b border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] font-semibold text-[var(--rasi-muted)]">
                 <tr>
                   <th scope="col" className="px-4 py-3">
                     Kode

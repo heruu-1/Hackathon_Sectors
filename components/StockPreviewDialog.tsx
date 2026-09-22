@@ -89,7 +89,7 @@ export function StockPreviewDialog({ ticker, open, onClose }: StockPreviewDialog
       )}
 
       {!loading && error && (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/20 dark:text-rose-200">
+        <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-900 dark:bg-[#1a080a] dark:text-rose-200">
           <p>{error}</p>
           <div className="mt-4">
             <ButtonLink href={`/saham/${ticker}`} variant="primary" size="sm">
@@ -144,7 +144,7 @@ export function StockPreviewDialog({ ticker, open, onClose }: StockPreviewDialog
 
           {/* Indicators grid */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <div className="rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/40 p-3">
+            <div className="rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-3">
               <span className="block text-[11px] text-[var(--rasi-muted)]">
                 {' '}
                 Harga dibanding laba (P/E){' '}
@@ -155,13 +155,13 @@ export function StockPreviewDialog({ ticker, open, onClose }: StockPreviewDialog
                   : 'Data belum cukup'}
               </span>
             </div>
-            <div className="rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/40 p-3">
+            <div className="rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-3">
               <span className="block text-[11px] text-[var(--rasi-muted)]"> Transaksi broker </span>
               <span className="mt-1 block text-sm font-bold">
                 {getStatusLabel(data.indicators.bandarmology.status).label}
               </span>
             </div>
-            <div className="rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/40 p-3">
+            <div className="rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-3">
               <span className="block text-[11px] text-[var(--rasi-muted)]">
                 {' '}
                 Lonjakan jumlah transaksi{' '}
@@ -170,7 +170,7 @@ export function StockPreviewDialog({ ticker, open, onClose }: StockPreviewDialog
                 {data.indicators.volume.formattedRatio}
               </span>
             </div>
-            <div className="rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/40 p-3">
+            <div className="rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-3">
               <span className="block text-[11px] text-[var(--rasi-muted)]">
                 {' '}
                 Transaksi pengurus dan pemegang saham besar{' '}

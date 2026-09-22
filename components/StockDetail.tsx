@@ -218,7 +218,7 @@ export default function StockDetail({ ticker }: StockDetailProps) {
       <div className="mx-auto max-w-xl space-y-4 py-10">
         <div
           role="alert"
-          className="rounded-xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/20 dark:text-rose-200"
+          className="rounded-xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-800 dark:border-rose-900 dark:bg-[#1a080a] dark:text-rose-200"
         >
           <h2 className="text-base font-bold">Gagal memuat data saham {symbol}</h2>
           <p className="mt-2 text-xs leading-relaxed">{loadError}</p>
@@ -306,7 +306,7 @@ export default function StockDetail({ ticker }: StockDetailProps) {
       </div>
 
       {/* 2. Price, Change, Summary, and Primary Actions */}
-      <div className="space-y-5 rounded-2xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-5 sm:p-6">
+      <div className="relative overflow-hidden space-y-5 rounded-2xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-5 sm:p-8 shadow-2xl shadow-black/40">
         <div className="flex flex-col justify-between gap-4 border-b border-[var(--rasi-border)] pb-5 sm:flex-row sm:items-baseline">
           <div className="flex items-baseline gap-4">
             <span className="font-mono text-3xl font-extrabold text-[var(--rasi-text)] tabular-nums sm:text-4xl">
@@ -348,7 +348,7 @@ export default function StockDetail({ ticker }: StockDetailProps) {
         {saveError && (
           <p
             role="alert"
-            className="rounded-lg border border-rose-200 bg-rose-50 p-2.5 text-xs text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/20 dark:text-rose-200"
+            className="rounded-lg border border-rose-200 bg-rose-50 p-2.5 text-xs text-rose-800 dark:border-rose-900 dark:bg-[#1a080a] dark:text-rose-200"
           >
             {saveError}
           </p>
@@ -399,8 +399,8 @@ export default function StockDetail({ ticker }: StockDetailProps) {
           <p
             className={`rounded-lg border p-2.5 text-xs ${
               analysisState === 'done'
-                ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-200'
-                : 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/20 dark:text-rose-200'
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-[#072418] dark:text-emerald-200'
+                : 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-900 dark:bg-[#1a080a] dark:text-rose-200'
             }`}
           >
             {analysisMessage}
@@ -453,12 +453,12 @@ export default function StockDetail({ ticker }: StockDetailProps) {
         </div>
 
         {/* TAB CONTENT */}
-        <div className="rounded-2xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-5 sm:p-6">
+        <div className="relative overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-5 shadow-2xl shadow-black/40 sm:p-6">
           {/* TAB: FUNDAMENTAL */}
           {currentTab === 'fundamental' && (
             <div className="space-y-6">
               {mode === 'beginner' && (
-                <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-4 text-xs leading-relaxed text-blue-950 dark:border-blue-900/50 dark:bg-blue-950/20 dark:text-blue-200">
+                <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-xs leading-relaxed text-blue-950 dark:border-blue-900 dark:bg-[#071328] dark:text-blue-200">
                   <strong> Cara membaca angka ini: </strong> P/E membandingkan harga saham dengan
                   laba per saham. P/B membandingkannya dengan aset bersih per saham. Angka rendah
                   belum tentu murah; lihat juga kondisi perusahaan dan perusahaan sejenis.{' '}
@@ -477,7 +477,7 @@ export default function StockDetail({ ticker }: StockDetailProps) {
               </div>
 
               <div className="grid gap-4 sm:grid-cols-3">
-                <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/40 p-4">
+                <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-4">
                   <div className="flex items-center justify-between text-xs text-[var(--rasi-muted)]">
                     <span> Harga dibanding laba (P/E) </span>
                     <details className="cursor-pointer">
@@ -502,7 +502,7 @@ export default function StockDetail({ ticker }: StockDetailProps) {
                   </span>
                 </div>
 
-                <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/40 p-4">
+                <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-4">
                   <div className="flex items-center justify-between text-xs text-[var(--rasi-muted)]">
                     <span> Harga dibanding aset bersih (P/B) </span>
                     <details className="cursor-pointer">
@@ -526,7 +526,7 @@ export default function StockDetail({ ticker }: StockDetailProps) {
                   </span>
                 </div>
 
-                <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/40 p-4">
+                <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-4">
                   <span className="block text-xs text-[var(--rasi-muted)]">
                     {' '}
                     Hasil pemeriksaan keuangan{' '}
@@ -558,7 +558,7 @@ export default function StockDetail({ ticker }: StockDetailProps) {
               </div>
 
               <div className="grid gap-4 sm:grid-cols-3">
-                <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/40 p-4">
+                <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-4">
                   <span className="block text-xs text-[var(--rasi-muted)]">
                     {' '}
                     Pola pembelian dan penjualan{' '}
@@ -571,7 +571,7 @@ export default function StockDetail({ ticker }: StockDetailProps) {
                   </span>
                 </div>
 
-                <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/40 p-4">
+                <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-4">
                   <span className="block text-xs text-[var(--rasi-muted)]">
                     {' '}
                     Porsi beli 3 broker terbesar{' '}
@@ -586,7 +586,7 @@ export default function StockDetail({ ticker }: StockDetailProps) {
                   </span>
                 </div>
 
-                <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/40 p-4">
+                <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-4">
                   <span className="block text-xs text-[var(--rasi-muted)]">
                     Transaksi investor asing
                   </span>
@@ -682,7 +682,7 @@ export default function StockDetail({ ticker }: StockDetailProps) {
                     )}
 
                     {divergence.verdict && (
-                      <div className="rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/40 p-3.5">
+                      <div className="rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-3.5">
                         <span className="text-[11px] font-bold tracking-wider text-[var(--rasi-muted)] uppercase">
                           Hasil Analisis RASI
                         </span>
@@ -726,7 +726,7 @@ export default function StockDetail({ ticker }: StockDetailProps) {
                           return (
                             <article
                               key={idx}
-                              className="p-4 transition-colors hover:bg-[var(--rasi-muted-bg)]/30"
+                              className="p-4 transition-colors hover:bg-[var(--rasi-muted-bg)]"
                             >
                               <a
                                 href={articleUrl}
@@ -775,7 +775,7 @@ export default function StockDetail({ ticker }: StockDetailProps) {
               </div>
 
               {insider.latestFiling ? (
-                <div className="space-y-3 rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/40 p-5">
+                <div className="space-y-3 rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-5">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-bold text-[var(--rasi-text)]">
                       {insider.latestFiling.holderName}
@@ -822,7 +822,7 @@ export default function StockDetail({ ticker }: StockDetailProps) {
                   </p>
                 </div>
               ) : (
-                <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/20 p-8 text-center text-xs text-[var(--rasi-muted)]">
+                <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-8 text-center text-xs text-[var(--rasi-muted)]">
                   Belum ada laporan jual beli saham dari pengurus perusahaan untuk saham ini.
                 </div>
               )}

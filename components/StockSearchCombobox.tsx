@@ -273,7 +273,7 @@ export function StockSearchCombobox({
                   <button
                     type="button"
                     tabIndex={-1}
-                    className="shrink-0 rounded-md bg-[var(--rasi-primary)]/10 px-2 py-1 text-[11px] font-semibold text-[var(--rasi-primary)] hover:bg-[var(--rasi-primary)]/20 focus:outline-none"
+                    className="shrink-0 rounded-md border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] px-2 py-1 text-[11px] font-semibold text-[var(--rasi-text)] hover:border-[var(--rasi-primary)] focus:outline-none"
                   >
                     Pilih
                   </button>

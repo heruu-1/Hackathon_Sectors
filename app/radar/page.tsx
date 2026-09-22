@@ -257,7 +257,7 @@ export default function RadarPage() {
 
       {/* Snapshot Viewing Notice Banner */}
       {selectedSnapshot && (
-        <div className="flex flex-col justify-between gap-3 rounded-xl border border-amber-300/50 bg-amber-50/80 p-4 text-sm text-amber-900 sm:flex-row sm:items-center dark:border-amber-700/50 dark:bg-amber-950/30 dark:text-amber-200">
+        <div className="flex flex-col justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 sm:flex-row sm:items-center dark:border-amber-800 dark:bg-[#181102] dark:text-amber-200">
           <div className="flex items-center gap-2">
             <History className="h-5 w-5 text-amber-600 dark:text-amber-400" />
             <div>
@@ -320,7 +320,7 @@ export default function RadarPage() {
       {error && (
         <div
           role="alert"
-          className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/20 dark:text-rose-200"
+          className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-900 dark:bg-[#1a080a] dark:text-rose-200"
         >
           {error}
         </div>
@@ -328,7 +328,7 @@ export default function RadarPage() {
 
       {/* TAB 1: RADAR AKTIF */}
       {activeTab === 'radar' && (
-        <div className="space-y-8">
+        <div className="min-h-[500px] space-y-8">
           {/* Controls: Search & Filter */}
           <div className="space-y-2">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -349,10 +349,10 @@ export default function RadarPage() {
                   type="button"
                   aria-pressed={filterType === 'all'}
                   onClick={() => setFilterType('all')}
-                  className={`rounded-lg px-3 py-1.5 font-medium transition-colors ${
+                  className={`rounded-lg border px-3 py-1.5 font-bold transition-colors ${
                     filterType === 'all'
-                      ? 'bg-[var(--rasi-primary)] text-white'
-                      : 'border border-[var(--rasi-border)] bg-[var(--rasi-surface)] text-[var(--rasi-muted)] hover:text-[var(--rasi-text)]'
+                      ? 'border-white bg-white text-[#02050c] shadow-sm'
+                      : 'border-[var(--border-subtle)] bg-[var(--surface-card)] text-[var(--rasi-muted)] hover:text-[var(--rasi-text)]'
                   }`}
                 >
                   Semua (
@@ -362,10 +362,10 @@ export default function RadarPage() {
                   type="button"
                   aria-pressed={filterType === 'sleeping'}
                   onClick={() => setFilterType('sleeping')}
-                  className={`rounded-lg px-3 py-1.5 font-medium transition-colors ${
+                  className={`rounded-lg border px-3 py-1.5 font-bold transition-colors ${
                     filterType === 'sleeping'
-                      ? 'bg-[var(--rasi-primary)] text-white'
-                      : 'border border-[var(--rasi-border)] bg-[var(--rasi-surface)] text-[var(--rasi-muted)] hover:text-[var(--rasi-text)]'
+                      ? 'border-white bg-white text-[#02050c] shadow-sm'
+                      : 'border-[var(--border-subtle)] bg-[var(--surface-card)] text-[var(--rasi-muted)] hover:text-[var(--rasi-text)]'
                   }`}
                 >
                   {' '}
@@ -375,10 +375,10 @@ export default function RadarPage() {
                   type="button"
                   aria-pressed={filterType === 'insider'}
                   onClick={() => setFilterType('insider')}
-                  className={`rounded-lg px-3 py-1.5 font-medium transition-colors ${
+                  className={`rounded-lg border px-3 py-1.5 font-bold transition-colors ${
                     filterType === 'insider'
-                      ? 'bg-[var(--rasi-primary)] text-white'
-                      : 'border border-[var(--rasi-border)] bg-[var(--rasi-surface)] text-[var(--rasi-muted)] hover:text-[var(--rasi-text)]'
+                      ? 'border-white bg-white text-[#02050c] shadow-sm'
+                      : 'border-[var(--border-subtle)] bg-[var(--surface-card)] text-[var(--rasi-muted)] hover:text-[var(--rasi-text)]'
                   }`}
                 >
                   {' '}
@@ -395,10 +395,10 @@ export default function RadarPage() {
                     key={t}
                     type="button"
                     onClick={() => setSearchQuery(t === searchQuery ? '' : t)}
-                    className={`rounded-md border px-2 py-0.5 font-mono text-[11px] font-semibold transition-colors ${
+                    className={`rounded-md border px-2 py-0.5 font-mono text-[11px] font-bold transition-colors ${
                       searchQuery.toUpperCase() === t
-                        ? 'border-[var(--rasi-primary)] bg-[var(--rasi-primary)] text-white'
-                        : 'border-[var(--rasi-border)] bg-[var(--rasi-surface)] text-[var(--rasi-text)] hover:border-[var(--rasi-primary)] hover:text-[var(--rasi-primary)]'
+                        ? 'border-white bg-white text-[#02050c] shadow-sm'
+                        : 'border-[var(--border-subtle)] bg-[var(--surface-card)] text-[var(--rasi-text)] hover:border-white hover:text-white'
                     }`}
                   >
                     {t}
@@ -439,7 +439,7 @@ export default function RadarPage() {
               </p>
 
               {pendingCatalysts.length > 0 && (
-                <div className="space-y-3 rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-4">
+                <div className="relative space-y-3 overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-6 shadow-2xl shadow-black/40">
                   <h3 className="flex items-center gap-2 text-sm font-semibold">
                     <Clock className="h-4 w-4" aria-hidden="true" />
                     {pendingCatalysts.length} saham belum bisa dibandingkan harganya{' '}
@@ -488,12 +488,12 @@ export default function RadarPage() {
               )}
 
               {loading && !data ? (
-                <div className="flex min-h-[160px] items-center justify-center rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-8 text-sm text-[var(--rasi-muted)]">
+                <div className="flex min-h-[160px] items-center justify-center rounded-xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-8 text-sm text-[var(--rasi-muted)] shadow-xl shadow-black/40">
                   <Loader2 className="mr-2 h-4 w-4 animate-spin text-[var(--rasi-primary)]" />{' '}
                   Memeriksa berita terbaru…{' '}
                 </div>
               ) : filteredSleepingGiants.length === 0 ? (
-                <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-8 text-center text-sm text-[var(--rasi-muted)]">
+                <div className="rounded-xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-8 text-center text-sm text-[var(--rasi-muted)] shadow-xl shadow-black/40">
                   {searchQuery
                     ? 'Tidak ada saham yang cocok dengan pencarian Anda.'
                     : pendingCatalysts.length > 0
@@ -509,7 +509,7 @@ export default function RadarPage() {
                     return (
                       <article
                         key={`${item.ticker}-${idx}`}
-                        className="flex flex-col justify-between rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-5 transition-colors hover:border-[var(--rasi-primary)]/40"
+                        className="relative flex flex-col justify-between overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-6 shadow-2xl shadow-black/40 transition-colors hover:border-[var(--rasi-primary)]"
                       >
                         <div>
                           <div className="flex items-center justify-between gap-3">
@@ -520,7 +520,7 @@ export default function RadarPage() {
                               {item.ticker}
                             </Link>
                             <div className="flex items-center gap-1.5">
-                              <span className="rounded-md border border-emerald-300/40 bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                              <span className="rounded-md border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-[#072418] dark:text-emerald-300">
                                 Skor: +{item.impactScore}
                               </span>
                               <span className="rounded-md border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] px-2 py-0.5 text-xs font-semibold text-[var(--rasi-text)]">
@@ -591,12 +591,12 @@ export default function RadarPage() {
               </p>
 
               {loading && !data ? (
-                <div className="flex min-h-[160px] items-center justify-center rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-8 text-sm text-[var(--rasi-muted)]">
+                <div className="flex min-h-[160px] items-center justify-center rounded-xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-8 text-sm text-[var(--rasi-muted)] shadow-xl shadow-black/40">
                   <Loader2 className="mr-2 h-4 w-4 animate-spin text-[var(--rasi-primary)]" />{' '}
                   Memeriksa laporan jual beli saham…{' '}
                 </div>
               ) : filteredInsiderAlerts.length === 0 ? (
-                <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-8 text-center text-sm text-[var(--rasi-muted)]">
+                <div className="rounded-xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-8 text-center text-sm text-[var(--rasi-muted)] shadow-xl shadow-black/40">
                   {searchQuery
                     ? 'Tidak ada laporan jual beli yang cocok dengan pencarian Anda.'
                     : 'Belum ada laporan jual beli dari direksi, komisaris, atau pemegang saham besar dalam data yang diperiksa.'}
@@ -606,7 +606,7 @@ export default function RadarPage() {
                   {filteredInsiderAlerts.map((item, idx) => (
                     <article
                       key={`${item.ticker}-${idx}`}
-                      className="flex flex-col justify-between rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-5 transition-colors hover:border-[var(--rasi-primary)]/40"
+                      className="relative flex flex-col justify-between overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-6 shadow-2xl shadow-black/40 transition-colors hover:border-[var(--rasi-primary)]"
                     >
                       <div>
                         <div className="flex items-center justify-between gap-3">
@@ -619,8 +619,8 @@ export default function RadarPage() {
                           <span
                             className={`rounded-md px-2 py-0.5 text-xs font-semibold ${
                               item.action === 'BUY'
-                                ? 'border border-emerald-300/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
-                                : 'border border-rose-300/40 bg-rose-500/10 text-rose-700 dark:text-rose-300'
+                                ? 'border border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-[#072418] dark:text-emerald-300'
+                                : 'border border-rose-300 bg-rose-50 text-rose-800 dark:border-rose-900 dark:bg-[#25080c] dark:text-rose-300'
                             }`}
                           >
                             {item.action === 'BUY' ? 'Pembelian' : 'Penjualan'}
@@ -693,12 +693,12 @@ export default function RadarPage() {
           </div>
 
           {loadingHistory ? (
-            <div className="flex min-h-[160px] items-center justify-center rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-8 text-sm text-[var(--rasi-muted)]">
+            <div className="flex min-h-[160px] items-center justify-center rounded-xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-8 text-sm text-[var(--rasi-muted)] shadow-xl shadow-black/40">
               <Loader2 className="mr-2 h-4 w-4 animate-spin text-[var(--rasi-primary)]" />
               Memuat riwayat radar…
             </div>
           ) : historyList.length === 0 ? (
-            <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-12 text-center">
+            <div className="rounded-xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-12 text-center shadow-xl shadow-black/40">
               <History className="mx-auto h-8 w-8 text-[var(--rasi-muted)]" />
               <p className="mt-3 text-sm font-semibold text-[var(--rasi-text)]">
                 {' '}
@@ -738,10 +738,10 @@ export default function RadarPage() {
                 return (
                   <div
                     key={snapshot.id}
-                    className={`flex flex-col justify-between gap-4 rounded-xl border p-4 transition-colors sm:flex-row sm:items-center ${
+                    className={`relative flex flex-col justify-between gap-4 overflow-hidden rounded-xl border p-5 shadow-xl shadow-black/40 transition-colors sm:flex-row sm:items-center ${
                       isSelected
-                        ? 'border-[var(--rasi-primary)] bg-[var(--rasi-primary)]/5'
-                        : 'border-[var(--rasi-border)] bg-[var(--rasi-surface)] hover:border-[var(--rasi-border)]/80'
+                        ? 'border-[var(--rasi-primary)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)]'
+                        : 'border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] hover:border-[var(--rasi-primary)]'
                     }`}
                   >
                     <div className="space-y-1.5">
@@ -751,7 +751,7 @@ export default function RadarPage() {
                           {formatDate(snapshot.scannedAt)}
                         </span>
                         {isSelected && (
-                          <span className="rounded-full bg-[var(--rasi-primary)]/20 px-2 py-0.5 text-[10px] font-bold text-[var(--rasi-primary)]">
+                          <span className="rounded-full border border-[var(--rasi-border)] bg-[var(--rasi-surface)] px-2 py-0.5 text-[10px] font-bold text-[var(--rasi-primary)]">
                             {' '}
                             Sedang dibuka{' '}
                           </span>

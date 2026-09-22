@@ -213,7 +213,7 @@ export function StockSearch() {
                 if (suggestions.length > 0 || status === 'empty' || !query.trim()) setIsOpen(true)
               }}
               placeholder="Cari kode atau nama perusahaan (contoh: TLKM, BBCA, atau Telkom)"
-              className="min-h-[44px] w-full rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-surface)] px-4 py-2 text-sm text-[var(--rasi-text)] transition-colors outline-none placeholder:text-[var(--rasi-muted)]/70 focus:border-[var(--rasi-primary)] focus:ring-2 focus:ring-[var(--rasi-primary)]/20"
+              className="min-h-[44px] w-full rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-surface)] px-4 py-2 text-sm text-[var(--rasi-text)] transition-colors outline-none placeholder:text-[var(--rasi-muted)] focus:border-[var(--rasi-primary)] focus:ring-2 focus:ring-[var(--rasi-primary)]"
             />
           </div>
           <Button type="submit" variant="primary" size="md" icon={Search} disabled={!query.trim()}>
@@ -228,7 +228,7 @@ export function StockSearch() {
             id="stock-search-listbox"
             role="listbox"
             aria-label="Hasil pencarian saham"
-            className="absolute top-full right-16 left-0 z-30 mt-2 max-h-80 overflow-y-auto rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] shadow-xl"
+            className="absolute top-full right-16 left-0 z-30 mt-2 max-h-80 overflow-y-auto rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] shadow-2xl shadow-black/50"
           >
             <div className="flex items-center justify-between border-b border-[var(--rasi-border)] px-4 py-2 text-[11px] font-semibold text-[var(--rasi-muted)]">
               <span className="flex items-center gap-1">
@@ -318,7 +318,7 @@ export function StockSearch() {
             <Link
               key={example.symbol}
               href={`/saham/${example.symbol}`}
-              className="group flex flex-col justify-between rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-4 transition-all hover:border-[var(--rasi-primary)]/50 hover:shadow-xs focus-visible:outline-none"
+              className="group relative flex flex-col justify-between overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-5 shadow-xl shadow-black/40 transition-all hover:border-[var(--rasi-primary)] focus-visible:outline-none"
             >
               <div>
                 <div className="flex items-center justify-between">

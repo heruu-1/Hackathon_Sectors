@@ -2,100 +2,187 @@
 
 @custom-variant dark (&:where([data-rasi-theme="dark"], [data-rasi-theme="dark"] *));
 
+/* ──────────────────────────────────────────────────────────────────
+   LIGHT MODE: Putih Bersih & Biru Sangat Gelap
+   ────────────────────────────────────────────────────────────────── */
 :root {
-  --background: #f6f8fb;
-  --foreground: #172033;
-  --rasi-bg: #f6f8fb;
-  --rasi-surface: #ffffff;
-  --rasi-text: #172033;
+  --background: #ffffff;
+  --foreground: #080f1d;
+  --rasi-bg: #ffffff;
+  --rasi-surface: #f8fafc;
+  --rasi-surface-2: #f1f5f9;
+  --rasi-text: #080f1d;
   --rasi-muted: #475569;
-  --rasi-muted-bg: #eef2f7;
-  --rasi-border: #dfe5ee;
-  --rasi-primary: #1d4ed8;
+  --rasi-muted-bg: #f1f5f9;
+  --rasi-border: #e2e8f0;
+  --rasi-primary: #080f1d;
   --rasi-primary-text: #ffffff;
-  --rasi-primary-hover: #1e40af;
-  --rasi-active-bg: #eff6ff;
-  --rasi-success: #166534;
-  --rasi-danger: #b91c1c;
-  --rasi-warning: #92400e;
-  --rasi-focus: #1d4ed8;
+  --rasi-primary-hover: #16243b;
+  --rasi-active-bg: #e2e8f0;
+  --rasi-success: #15803d;
+  --rasi-danger: #dc2626;
+  --rasi-warning: #d97706;
+  --rasi-focus: #080f1d;
+  --rasi-navy: #080f1d;
+  --rasi-ocean: #16243b;
+  --rasi-cyan: #38bdf8;
+  --rasi-mint: #34d399;
+  --rasi-accent-violet: #818cf8;
+  --rasi-accent-cyan: #38bdf8;
+  --rasi-accent-mint: #34d399;
+
+  /* Card Gradient & Typography Aliases */
+  --border-subtle: #e2e8f0;
+  --bg-main: #f8fafc;
+  --surface-card: #ffffff;
+  --text-primary: #080f1d;
+  --text-secondary: #64748b;
+  --accent-cyan: #0284c7;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: Arial, Helvetica, sans-serif;
-  --font-mono: 'Cascadia Mono', Consolas, monospace;
+  --color-rasi-navy: var(--rasi-navy);
+  --color-rasi-ocean: var(--rasi-ocean);
+  --color-rasi-cyan: var(--rasi-cyan);
+  --color-rasi-mint: var(--rasi-mint);
+  --color-rasi-accent-violet: var(--rasi-accent-violet);
+  --font-sans: var(--font-roboto), Arial, Helvetica, sans-serif;
+  --font-mono: var(--font-roboto-mono), 'Cascadia Mono', Consolas, monospace;
 }
 
+/* ──────────────────────────────────────────────────────────────────
+   DARK MODE (Tema Utama): Biru Sangat Gelap Cenderung Hitam & Putih
+   Background: Deep Midnight Navy mendekati hitam (#040813 / #02050c)
+   Warna Kontras / Teks / Aksen Utama: Putih (#ffffff / #f8fafc)
+   ────────────────────────────────────────────────────────────────── */
 @media (prefers-color-scheme: dark) {
   :root:not([data-rasi-theme='light']) {
-    --background: #0b1220;
-    --foreground: #e7edf7;
-    --rasi-bg: #0b1220;
-    --rasi-surface: #111a2b;
-    --rasi-text: #e7edf7;
-    --rasi-muted: #a8b3c7;
-    --rasi-muted-bg: #1b2940;
-    --rasi-border: #263650;
-    --rasi-primary: #60a5fa;
-    --rasi-primary-text: #0b1220;
-    --rasi-primary-hover: #93c5fd;
-    --rasi-active-bg: #172b4d;
-    --rasi-success: #86efac;
-    --rasi-danger: #fca5a5;
-    --rasi-warning: #fcd34d;
-    --rasi-focus: #60a5fa;
+    --background: #02050c;
+    --foreground: #ffffff;
+    --rasi-bg: #02050c;
+    --rasi-surface: #050a14;
+    --rasi-surface-2: #0b1322;
+    --rasi-text: #ffffff;
+    --rasi-muted: #94a3b8;
+    --rasi-muted-bg: #0b1322;
+    --rasi-border: #1a273e;
+    --rasi-primary: #ffffff;
+    --rasi-primary-text: #02050c;
+    --rasi-primary-hover: #e2e8f0;
+    --rasi-active-bg: #0f1a2e;
+    --rasi-success: #34d399;
+    --rasi-danger: #f87171;
+    --rasi-warning: #fbbf24;
+    --rasi-focus: #ffffff;
+    --rasi-navy: #080f1e;
+    --rasi-ocean: #0f1a2e;
+    --rasi-cyan: #ffffff;
+    --rasi-mint: #ffffff;
+    --rasi-accent-violet: #cbd5e1;
+    --rasi-accent-cyan: #e2e8f0;
+    --rasi-accent-mint: #f8fafc;
+
+    /* Card Gradient & Typography Aliases (Dark Mode) */
+    --border-subtle: #1a273e;
+    --bg-main: #02050c;
+    --surface-card: #070e1b;
+    --text-primary: #ffffff;
+    --text-secondary: #94a3b8;
+    --accent-cyan: #38bdf8;
   }
 }
 
 :root[data-rasi-theme='light'] {
-  --background: #f6f8fb;
-  --foreground: #172033;
-  --rasi-bg: #f6f8fb;
+  --background: #ffffff;
+  --foreground: #080f1d;
+  --rasi-bg: #ffffff;
   --rasi-surface: #ffffff;
-  --rasi-text: #172033;
+  --rasi-surface-2: #f8fafc;
+  --rasi-text: #080f1d;
   --rasi-muted: #475569;
-  --rasi-muted-bg: #eef2f7;
-  --rasi-border: #dfe5ee;
-  --rasi-primary: #1d4ed8;
+  --rasi-muted-bg: #f1f5f9;
+  --rasi-border: #e2e8f0;
+  --rasi-primary: #080f1d;
   --rasi-primary-text: #ffffff;
-  --rasi-primary-hover: #1e40af;
-  --rasi-active-bg: #eff6ff;
-  --rasi-success: #166534;
-  --rasi-danger: #b91c1c;
-  --rasi-warning: #92400e;
-  --rasi-focus: #1d4ed8;
+  --rasi-primary-hover: #16243b;
+  --rasi-active-bg: #e2e8f0;
+  --rasi-success: #15803d;
+  --rasi-danger: #dc2626;
+  --rasi-warning: #d97706;
+  --rasi-focus: #080f1d;
+  --rasi-navy: #080f1d;
+  --rasi-ocean: #16243b;
+  --rasi-cyan: #38bdf8;
+  --rasi-mint: #34d399;
+  --rasi-accent-violet: #818cf8;
+  --rasi-accent-cyan: #38bdf8;
+  --rasi-accent-mint: #34d399;
 }
 
 :root[data-rasi-theme='dark'] {
-  --background: #0b1220;
-  --foreground: #e7edf7;
-  --rasi-bg: #0b1220;
-  --rasi-surface: #111a2b;
-  --rasi-text: #e7edf7;
-  --rasi-muted: #a8b3c7;
-  --rasi-muted-bg: #1b2940;
-  --rasi-border: #263650;
-  --rasi-primary: #60a5fa;
-  --rasi-primary-text: #0b1220;
-  --rasi-primary-hover: #93c5fd;
-  --rasi-active-bg: #172b4d;
-  --rasi-success: #86efac;
-  --rasi-danger: #fca5a5;
-  --rasi-warning: #fcd34d;
-  --rasi-focus: #60a5fa;
+  --background: #02050c;
+  --foreground: #ffffff;
+  --rasi-bg: #02050c;
+  --rasi-surface: #050a14;
+  --rasi-surface-2: #0b1322;
+  --rasi-text: #ffffff;
+  --rasi-muted: #94a3b8;
+  --rasi-muted-bg: #0b1322;
+  --rasi-border: #1a273e;
+  --rasi-primary: #ffffff;
+  --rasi-primary-text: #02050c;
+  --rasi-primary-hover: #e2e8f0;
+  --rasi-active-bg: #0f1a2e;
+  --rasi-success: #34d399;
+  --rasi-danger: #f87171;
+  --rasi-warning: #fbbf24;
+  --rasi-focus: #ffffff;
+  --rasi-navy: #080f1e;
+  --rasi-ocean: #0f1a2e;
+  --rasi-cyan: #ffffff;
+  --rasi-mint: #ffffff;
+  --rasi-accent-violet: #cbd5e1;
+  --rasi-accent-cyan: #e2e8f0;
+  --rasi-accent-mint: #f8fafc;
+
+  /* Card Gradient & Typography Aliases (Dark Mode Explicit) */
+  --border-subtle: #1a273e;
+  --bg-main: #02050c;
+  --surface-card: #070e1b;
+  --text-primary: #ffffff;
+  --text-secondary: #94a3b8;
+  --accent-cyan: #38bdf8;
+}
+
+html {
+  scrollbar-gutter: stable;
 }
 
 body {
   background: var(--rasi-bg);
   color: var(--rasi-text);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-roboto), Arial, Helvetica, sans-serif;
   margin: 0;
   padding: 0;
 }
 
+/* Ensure all form controls inherit the unified Roboto font instead of OS default sans */
+input,
+button,
+textarea,
+select,
+dialog {
+  font-family: inherit;
+}
+
 .tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.font-mono {
+  font-family: var(--font-roboto-mono), monospace;
   font-variant-numeric: tabular-nums;
 }
 

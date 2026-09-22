@@ -90,7 +90,7 @@ export function ActionMenu({
         <div
           role="menu"
           aria-label={ariaLabel}
-          className="absolute right-0 z-40 mt-1 min-w-[180px] overflow-hidden rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-surface)] py-1 shadow-lg"
+          className="absolute right-0 z-40 mt-1 min-w-[180px] overflow-hidden rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] py-1 shadow-xl shadow-black/40"
         >
           {items.map((item, index) => {
             const Icon = item.icon
@@ -111,7 +111,7 @@ export function ActionMenu({
                 }}
                 className={`flex min-h-[40px] w-full items-center gap-2 px-4 py-2 text-left text-xs font-medium transition-colors select-none focus:outline-none ${
                   isDestructive
-                    ? 'text-[var(--rasi-danger)] hover:bg-red-50 dark:hover:bg-red-950/30'
+                    ? 'text-[var(--rasi-danger)] hover:bg-red-50 dark:hover:bg-[#25080c]'
                     : 'text-[var(--rasi-text)] hover:bg-[var(--rasi-muted-bg)]'
                 } disabled:cursor-not-allowed disabled:opacity-40`}
               >

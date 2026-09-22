@@ -62,7 +62,7 @@ export function WatchlistDeleteDialog({
         {error && (
           <p
             role="alert"
-            className="rounded-lg border border-rose-200 bg-rose-50 p-2.5 text-xs text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/20 dark:text-rose-200"
+            className="rounded-lg border border-rose-200 bg-rose-50 p-2.5 text-xs text-rose-800 dark:border-rose-900 dark:bg-[#1a080a] dark:text-rose-200"
           >
             {error}
           </p>

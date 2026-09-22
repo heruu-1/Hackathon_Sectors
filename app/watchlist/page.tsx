@@ -222,7 +222,7 @@ function WatchlistContent({ initialTab = 'watchlist' }: { initialTab?: 'watchlis
 
       {/* Guest notice if not logged in */}
       {!sessionLoading && !session?.user && (
-        <div className="flex flex-col items-start justify-between gap-4 rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/60 p-4 sm:flex-row sm:items-center">
+        <div className="flex flex-col items-start justify-between gap-4 rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-4 sm:flex-row sm:items-center">
           <div>
             <p className="text-sm font-semibold text-[var(--rasi-text)]">
               Simpan pantauan ke akun Anda
@@ -243,30 +243,28 @@ function WatchlistContent({ initialTab = 'watchlist' }: { initialTab?: 'watchlis
           {/* Quick Add Form */}
           <form
             onSubmit={handleQuickAdd}
-            className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-3"
+            className="relative flex flex-wrap items-center gap-2 overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-4 shadow-xl shadow-black/40"
           >
             <label htmlFor="quick-add-ticker" className="sr-only">
               Kode saham
             </label>
-            <StockSearchCombobox
-              id="quick-add-ticker"
-              value={newTicker}
-              onChange={(val) => setNewTicker(val.toUpperCase())}
-              onSelect={(sym) => {
-                setNewTicker(sym)
-              }}
-              placeholder="Tambah kode saham (contoh: TLKM, BBCA)"
-              size="md"
-              className="min-w-[240px] flex-1"
-              aria-label="Kode saham untuk ditambahkan ke pantauan"
-            />
+            <div className="relative min-w-[200px] flex-1">
+              <input
+                id="quick-add-ticker"
+                type="text"
+                placeholder="Tambah kode saham (contoh: BBCA, TLKM)…"
+                value={newTicker}
+                onChange={(e) => setNewTicker(e.target.value.toUpperCase())}
+                className="w-full rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-surface)] px-3 py-2 font-mono text-sm uppercase text-[var(--rasi-text)] placeholder:font-sans placeholder:normal-case placeholder:text-[var(--rasi-muted)] focus:border-[var(--rasi-primary)] focus:outline-none"
+              />
+            </div>
             <Button
               type="submit"
               variant="primary"
               size="md"
-              pending={addingTicker}
-              pendingText="Menambahkan…"
               icon={Plus}
+              pending={addingTicker}
+              pendingText="Menyimpan…"
               disabled={!newTicker.trim()}
             >
               Simpan ke pantauan
@@ -276,7 +274,7 @@ function WatchlistContent({ initialTab = 'watchlist' }: { initialTab?: 'watchlis
           {addError && (
             <p
               role="alert"
-              className="rounded-lg border border-rose-200 bg-rose-50 p-2.5 text-xs text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/20 dark:text-rose-200"
+              className="rounded-lg border border-rose-200 bg-rose-50 p-2.5 text-xs text-rose-800 dark:border-rose-900 dark:bg-[#1a080a] dark:text-rose-200"
             >
               {addError}
             </p>
@@ -284,24 +282,25 @@ function WatchlistContent({ initialTab = 'watchlist' }: { initialTab?: 'watchlis
 
           {/* Watchlist Items */}
           {loadingWatchlist ? (
-            <div className="flex min-h-[180px] items-center justify-center rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-8 text-sm text-[var(--rasi-muted)]">
+            <div className="flex min-h-[180px] items-center justify-center rounded-xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-8 text-sm text-[var(--rasi-muted)] shadow-xl shadow-black/40">
               <Loader2 className="mr-2 h-4 w-4 animate-spin text-[var(--rasi-primary)]" />
               Memuat daftar pantauan…
             </div>
           ) : watchlistError ? (
             <div
               role="alert"
-              className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/20 dark:text-rose-200"
+              className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-900 dark:bg-[#1a080a] dark:text-rose-200"
             >
               {watchlistError}
             </div>
           ) : watchlist.length === 0 ? (
-            <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-12 text-center text-sm text-[var(--rasi-muted)]">
+            <div className="rounded-xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-12 text-center text-sm text-[var(--rasi-muted)] shadow-xl shadow-black/40">
               <Star className="mx-auto mb-2 h-8 w-8 text-[var(--rasi-muted)]" aria-hidden="true" />
-              <p className="font-semibold text-[var(--rasi-text)]">Belum ada saham di pantauan</p>
+              <p className="font-semibold text-[var(--rasi-text)]">
+                Belum ada saham dalam pantauan
+              </p>
               <p className="mt-1 text-xs">
-                Tambahkan kode saham di atas atau klik tombol &quot;Simpan ke pantauan&quot; di
-                halaman detail saham.
+                Ketik kode saham di atas atau buka halaman saham lalu klik “Tambah ke Pantauan”.
               </p>
             </div>
           ) : (
@@ -309,7 +308,7 @@ function WatchlistContent({ initialTab = 'watchlist' }: { initialTab?: 'watchlis
               {watchlist.map((item) => (
                 <div
                   key={item.id}
-                  className="flex flex-col justify-between gap-4 rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-4 transition-colors hover:border-[var(--rasi-primary)]/40 sm:flex-row sm:items-center"
+                  className="relative flex flex-col justify-between gap-4 overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-5 shadow-xl shadow-black/40 transition-colors hover:border-[var(--rasi-primary)] sm:flex-row sm:items-center"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-3">
@@ -404,12 +403,12 @@ function WatchlistContent({ initialTab = 'watchlist' }: { initialTab?: 'watchlis
           ) : historyError ? (
             <div
               role="alert"
-              className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/20 dark:text-rose-200"
+              className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-900 dark:bg-[#1a080a] dark:text-rose-200"
             >
               {historyError}
             </div>
           ) : history.length === 0 ? (
-            <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-12 text-center text-sm text-[var(--rasi-muted)]">
+            <div className="rounded-xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-12 text-center text-sm text-[var(--rasi-muted)] shadow-xl shadow-black/40">
               <History
                 className="mx-auto mb-2 h-8 w-8 text-[var(--rasi-muted)]"
                 aria-hidden="true"
@@ -426,7 +425,7 @@ function WatchlistContent({ initialTab = 'watchlist' }: { initialTab?: 'watchlis
               {history.map((row) => (
                 <div
                   key={row.id}
-                  className="flex flex-col justify-between gap-3 rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-4 transition-colors hover:border-[var(--rasi-primary)]/40 sm:flex-row sm:items-center"
+                  className="relative flex flex-col justify-between gap-3 overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-5 shadow-xl shadow-black/40 transition-colors hover:border-[var(--rasi-primary)] sm:flex-row sm:items-center"
                 >
                   <div>
                     <div className="flex items-center gap-3">

@@ -42,7 +42,7 @@ export default function LearnPage() {
         {lessons.map(([title, text]) => (
           <article
             key={title}
-            className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-5"
+            className="relative overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-5 shadow-2xl shadow-black/40"
           >
             <div className="flex items-center gap-2">
               <BookOpen className="h-4 w-4 text-[var(--rasi-primary)]" />

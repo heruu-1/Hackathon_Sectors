@@ -34,10 +34,10 @@ export default function SettingsPage() {
                 type="button"
                 onClick={() => setTheme(val)}
                 aria-pressed={theme === val}
-                className={`min-h-[44px] rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
+                className={`min-h-[44px] rounded-lg border px-4 py-2 text-sm font-bold transition-colors ${
                   theme === val
-                    ? 'border-[var(--rasi-primary)] bg-[var(--rasi-primary)] text-[var(--rasi-primary-text)] shadow-xs'
-                    : 'border-[var(--rasi-border)] bg-[var(--rasi-surface)] text-[var(--rasi-text)] hover:bg-[var(--rasi-muted-bg)]'
+                    ? 'border-white bg-white text-[#02050c] shadow-md'
+                    : 'border-[var(--border-subtle)] bg-[var(--surface-card)] text-[var(--rasi-text)] hover:bg-[var(--rasi-muted-bg)]'
                 }`}
               >
                 {val === 'system' ? 'Sistem' : val === 'light' ? 'Terang' : 'Gelap'}
@@ -47,7 +47,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Mode Settings: Pemula vs Detail */}
-        <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-5">
+        <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-5 shadow-xl shadow-black/40">
           <h2 className="font-semibold text-[var(--rasi-text)]"> Pilihan penjelasan </h2>
           <p className="mt-1 text-xs text-[var(--rasi-muted)]">
             {' '}
@@ -59,10 +59,10 @@ export default function SettingsPage() {
               type="button"
               onClick={() => setMode('beginner')}
               aria-pressed={mode === 'beginner'}
-              className={`min-h-[44px] rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
+              className={`min-h-[44px] rounded-lg border px-4 py-2 text-sm font-bold transition-colors ${
                 mode === 'beginner'
-                  ? 'border-[var(--rasi-primary)] bg-[var(--rasi-primary)] text-[var(--rasi-primary-text)] shadow-xs'
-                  : 'border-[var(--rasi-border)] bg-[var(--rasi-surface)] text-[var(--rasi-text)] hover:bg-[var(--rasi-muted-bg)]'
+                  ? 'border-white bg-white text-[#02050c] shadow-md'
+                  : 'border-[var(--border-subtle)] bg-[var(--surface-card)] text-[var(--rasi-text)] hover:bg-[var(--rasi-muted-bg)]'
               }`}
             >
               {' '}
@@ -72,10 +72,10 @@ export default function SettingsPage() {
               type="button"
               onClick={() => setMode('detail')}
               aria-pressed={mode === 'detail'}
-              className={`min-h-[44px] rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
+              className={`min-h-[44px] rounded-lg border px-4 py-2 text-sm font-bold transition-colors ${
                 mode === 'detail'
-                  ? 'border-[var(--rasi-primary)] bg-[var(--rasi-primary)] text-[var(--rasi-primary-text)] shadow-xs'
-                  : 'border-[var(--rasi-border)] bg-[var(--rasi-surface)] text-[var(--rasi-text)] hover:bg-[var(--rasi-muted-bg)]'
+                  ? 'border-white bg-white text-[#02050c] shadow-md'
+                  : 'border-[var(--border-subtle)] bg-[var(--surface-card)] text-[var(--rasi-text)] hover:bg-[var(--rasi-muted-bg)]'
               }`}
             >
               {' '}
@@ -85,7 +85,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Account Privacy & Security Notice */}
-        <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/40 p-5 text-xs leading-relaxed text-[var(--rasi-muted)]">
+        <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-5 text-xs leading-relaxed text-[var(--rasi-muted)]">
           <strong className="text-[var(--rasi-text)]"> Data akun Anda: </strong> Daftar pantauan,
           catatan, dan percakapan Anda tersimpan di akun Google yang digunakan untuk masuk. Data
           saham bisa dilihat tanpa masuk. RASI tidak meminta kata sandi akun sekuritas Anda.{' '}

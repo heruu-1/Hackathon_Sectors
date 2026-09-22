@@ -224,9 +224,9 @@ export function StockChart({ dailyRows, symbol }: StockChartProps) {
             type="button"
             aria-pressed={viewSource === 'tradingview'}
             onClick={() => setViewSource('tradingview')}
-            className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all ${
+            className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all ${
               viewSource === 'tradingview'
-                ? 'bg-[var(--rasi-primary)] text-white shadow-xs'
+                ? 'bg-white text-[#02050c] shadow-sm'
                 : 'text-[var(--rasi-muted)] hover:text-[var(--rasi-text)]'
             }`}
           >
@@ -237,9 +237,9 @@ export function StockChart({ dailyRows, symbol }: StockChartProps) {
             type="button"
             aria-pressed={viewSource === 'rasi'}
             onClick={() => setViewSource('rasi')}
-            className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all ${
+            className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all ${
               viewSource === 'rasi'
-                ? 'bg-[var(--rasi-primary)] text-white shadow-xs'
+                ? 'bg-white text-[#02050c] shadow-sm'
                 : 'text-[var(--rasi-muted)] hover:text-[var(--rasi-text)]'
             }`}
           >
@@ -270,7 +270,7 @@ export function StockChart({ dailyRows, symbol }: StockChartProps) {
 
       {/* VIEW 2: RASI INTERNAL SVG CHART */}
       {viewSource === 'rasi' && (
-        <div className="rounded-2xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-5 shadow-xs sm:p-6">
+        <div className="relative overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-5 shadow-2xl shadow-black/40 sm:p-6">
           {/* Header with Title & Quick Controls */}
           <div className="flex flex-col justify-between gap-4 border-b border-[var(--rasi-border)] pb-5 sm:flex-row sm:items-center">
             <div>
@@ -299,7 +299,7 @@ export function StockChart({ dailyRows, symbol }: StockChartProps) {
                 onClick={() => setShowSma20((prev) => !prev)}
                 className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold transition-all ${
                   showSma20
-                    ? 'border-amber-400/50 bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                    ? 'border-amber-400 bg-amber-50 text-amber-800 dark:border-amber-700 dark:bg-[#181102] dark:text-amber-300'
                     : 'border-[var(--rasi-border)] bg-[var(--rasi-surface)] text-[var(--rasi-muted)] hover:text-[var(--rasi-text)]'
                 }`}
               >
@@ -312,7 +312,7 @@ export function StockChart({ dailyRows, symbol }: StockChartProps) {
               </button>
 
               {/* Period Selector */}
-              <div className="flex rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/40 p-0.5 text-xs font-medium">
+              <div className="flex rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-0.5 text-xs font-medium">
                 <button
                   type="button"
                   aria-pressed={period === '30'}
@@ -341,7 +341,7 @@ export function StockChart({ dailyRows, symbol }: StockChartProps) {
               </div>
 
               {/* Type Selector */}
-              <div className="flex rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/40 p-0.5 text-xs">
+              <div className="flex rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-0.5 text-xs">
                 <button
                   type="button"
                   aria-pressed={chartType === 'line'}
@@ -377,7 +377,7 @@ export function StockChart({ dailyRows, symbol }: StockChartProps) {
           {/* Quick Period Stat Chips */}
           {metrics && (
             <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
-              <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/30 p-3">
+              <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-3">
                 <span className="text-[11px] font-medium text-[var(--rasi-muted)]">
                   Harga Terakhir
                 </span>
@@ -398,7 +398,7 @@ export function StockChart({ dailyRows, symbol }: StockChartProps) {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/30 p-3">
+              <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-3">
                 <span className="text-[11px] font-medium text-[var(--rasi-muted)]">
                   Tertinggi ({period === '30' ? '30 hari bursa' : 'Periode'})
                 </span>
@@ -407,7 +407,7 @@ export function StockChart({ dailyRows, symbol }: StockChartProps) {
                 </p>
               </div>
 
-              <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/30 p-3">
+              <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-3">
                 <span className="text-[11px] font-medium text-[var(--rasi-muted)]">
                   Terendah ({period === '30' ? '30 hari bursa' : 'Periode'})
                 </span>
@@ -416,7 +416,7 @@ export function StockChart({ dailyRows, symbol }: StockChartProps) {
                 </p>
               </div>
 
-              <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/30 p-3">
+              <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-3">
                 <span className="text-[11px] font-medium text-[var(--rasi-muted)]">
                   {' '}
                   Rata-rata jumlah saham diperdagangkan{' '}
@@ -506,11 +506,11 @@ export function StockChart({ dailyRows, symbol }: StockChartProps) {
                 </span>
               )}
               <span className="flex items-center gap-1">
-                <span className="h-2 w-2 rounded-xs bg-emerald-500/60" />
+                <span className="h-2 w-2 rounded-xs bg-emerald-500" />
                 Naik
               </span>
               <span className="flex items-center gap-1">
-                <span className="h-2 w-2 rounded-xs bg-rose-500/60" />
+                <span className="h-2 w-2 rounded-xs bg-rose-500" />
                 Turun
               </span>
             </div>
@@ -793,7 +793,7 @@ export function StockChart({ dailyRows, symbol }: StockChartProps) {
             <caption className="sr-only">
               Tabel data historis harga penutupan, volume transaksi, dan SMA-20 untuk {symbol}
             </caption>
-            <thead className="border-b border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/50 font-semibold text-[var(--rasi-muted)]">
+            <thead className="border-b border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] font-semibold text-[var(--rasi-muted)]">
               <tr>
                 <th scope="col" className="px-4 py-3">
                   Tanggal

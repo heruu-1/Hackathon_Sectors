@@ -313,7 +313,7 @@ function AssistantContent() {
 
       {/* Guest Notice */}
       {!sessionLoading && !session?.user && (
-        <div className="flex flex-col items-start justify-between gap-4 rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/60 p-4 sm:flex-row sm:items-center">
+        <div className="flex flex-col items-start justify-between gap-4 rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-4 sm:flex-row sm:items-center">
           <div>
             <p className="text-sm font-semibold text-[var(--rasi-text)]">
               Masuk untuk Menggunakan Asisten AI
@@ -339,7 +339,7 @@ function AssistantContent() {
         {/* Messages List */}
         <div className="flex-1 space-y-4 overflow-y-auto p-4 sm:p-6">
           {/* Introductory notice */}
-          <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/40 p-4 text-xs leading-relaxed text-[var(--rasi-muted)]">
+          <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-4 text-xs leading-relaxed text-[var(--rasi-muted)]">
             <strong className="text-[var(--rasi-text)]">Tentang Asisten RASI:</strong> Asisten
             menjelaskan data saham, bukan menentukan saham yang harus dibeli atau dijual. Periksa
             sumber dan tanggal data; jawaban AI bisa keliru.{' '}
@@ -400,7 +400,7 @@ function AssistantContent() {
 
                       {/* Warnings if any */}
                       {msg.warnings && msg.warnings.length > 0 && (
-                        <div className="space-y-1 rounded-lg border border-amber-200 bg-amber-50 p-2 text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-200">
+                        <div className="space-y-1 rounded-lg border border-amber-200 bg-amber-50 p-2 text-amber-800 dark:border-amber-800 dark:bg-[#181102] dark:text-amber-200">
                           {msg.warnings.map((w, idx) => (
                             <p key={idx} className="flex items-start gap-1">
                               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
@@ -468,7 +468,7 @@ function AssistantContent() {
         {error && (
           <div
             role="alert"
-            className="mx-4 mb-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/20 dark:text-rose-200"
+            className="mx-4 mb-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 dark:border-rose-900 dark:bg-[#1a080a] dark:text-rose-200"
           >
             {error}
           </div>
@@ -477,7 +477,7 @@ function AssistantContent() {
         {actionSuccess && (
           <div
             role="status"
-            className="mx-4 mb-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-200"
+            className="mx-4 mb-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800 dark:border-emerald-800 dark:bg-[#072418] dark:text-emerald-200"
           >
             {actionSuccess}
           </div>
@@ -485,7 +485,7 @@ function AssistantContent() {
 
         {/* Suggestions chips */}
         {messages.length === 0 && (
-          <div className="space-y-2 border-t border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/20 p-4">
+          <div className="space-y-2 border-t border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-4">
             <p className="text-[11px] font-semibold text-[var(--rasi-muted)]">
               Pertanyaan yang sering diajukan:
             </p>

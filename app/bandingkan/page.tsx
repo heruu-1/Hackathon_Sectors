@@ -138,7 +138,7 @@ function CompareContent() {
           {symbols.map((sym) => (
             <span
               key={sym}
-              className="inline-flex items-center gap-2 rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/60 px-3 py-1.5 font-mono text-sm font-bold text-[var(--rasi-text)]"
+              className="inline-flex items-center gap-2 rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] px-3 py-1.5 font-mono text-sm font-bold text-[var(--rasi-text)]"
             >
               {sym}
               {symbols.length > 2 && (
@@ -202,11 +202,11 @@ function CompareContent() {
       <div className="overflow-hidden rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)]">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left text-xs">
-            <thead className="border-b border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/50 text-[var(--rasi-muted)]">
+            <thead className="border-b border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] text-[var(--rasi-muted)]">
               <tr>
                 <th
                   scope="col"
-                  className="sticky left-0 z-20 w-44 bg-[var(--rasi-muted-bg)]/90 px-4 py-3 font-semibold backdrop-blur-xs"
+                  className="sticky left-0 z-20 w-44 bg-[var(--rasi-muted-bg)] px-4 py-3 font-semibold"
                 >
                   {' '}
                   Data yang dibandingkan{' '}
