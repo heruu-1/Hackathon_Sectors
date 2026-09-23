@@ -11,6 +11,7 @@ import { calculateTrailingStop } from './trade-risk.ts'
 import {
   computeTargetSessions,
   getNextTradingDay,
+  getSessionWindow,
   identifySession,
   isBarInContinuousTrading,
 } from './trading-sessions.ts'
@@ -289,21 +290,24 @@ export function buildRemainingSimulationSteps(params: {
     }
   }
 
-  let prevSession: SessionId | null = null
+  let prevSession: SessionId | null = baseSession
 
   for (let sIdx = 0; sIdx < allForwardSessions.length; sIdx++) {
     const sessionItem = allForwardSessions[sIdx]
     const horizonNumber = (sIdx + 1) as Horizon
 
+    const sessWin = getSessionWindow(sessionItem.dateStr, sessionItem.session)
+    const sessStartMs = new Date(sessWin.startAt).getTime()
+    const sessEndMs = new Date(sessWin.endAt).getTime()
+
     // Only simulate if this session or subsequent is pending
-    const win = targets[horizonNumber]
-    if (win && new Date(win.targetEndAt).getTime() <= asOfMs) {
+    if (sessEndMs <= asOfMs) {
       prevSession = sessionItem.session
       continue // Already elapsed
     }
 
-    // Insert inter-session gap if transitioning
-    if (prevSession !== null) {
+    // Insert inter-session gap if transitioning and asOf has not passed session start
+    if (prevSession !== null && asOfMs < sessStartMs) {
       if (prevSession === 'S1' && sessionItem.session === 'S2') {
         steps.push({
           type: 'lunch_gap',
@@ -330,6 +334,11 @@ export function buildRemainingSimulationSteps(params: {
         : volatilities.sigmaS2_5m * volMultiplier
 
     for (let b = 0; b < barCount; b++) {
+      const barEndMs = sessStartMs + (b + 1) * 5 * 60 * 1000
+      if (barEndMs <= asOfMs) {
+        continue // Skip historical bar
+      }
+
       const isLastBarOfSession = b === barCount - 1
       steps.push({
         type: '5m',

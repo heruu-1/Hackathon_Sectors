@@ -1,5 +1,5 @@
 {
-  "source": "Bursa Efek Indonesia (IDX) / SKB 3 Menteri Hari Libur Nasional & Cuti Bersama",
+  "source": "Bursa Efek Indonesia (IDX) / KSEI Peng-00041/KSEI/DIR/0126 & SKB 3 Menteri No. 1017/2025",
   "timezone": "Asia/Jakarta",
   "years": [2024, 2025, 2026],
   "holidays": [
@@ -59,6 +59,7 @@
     { "date": "2026-01-16", "name": "Isra Mi'raj Nabi Muhammad SAW" },
     { "date": "2026-02-16", "name": "Cuti Bersama Tahun Baru Imlek" },
     { "date": "2026-02-17", "name": "Tahun Baru Imlek 2577 Kongzili" },
+    { "date": "2026-03-18", "name": "Cuti Bersama Hari Suci Nyepi" },
     { "date": "2026-03-19", "name": "Hari Suci Nyepi Saka 1948" },
     { "date": "2026-03-20", "name": "Hari Raya Idul Fitri 1447 H" },
     { "date": "2026-03-23", "name": "Cuti Bersama Idul Fitri 1447 H" },
@@ -66,11 +67,14 @@
     { "date": "2026-04-03", "name": "Wafat Yesus Kristus" },
     { "date": "2026-05-01", "name": "Hari Buruh Internasional" },
     { "date": "2026-05-14", "name": "Kenaikan Yesus Kristus" },
+    { "date": "2026-05-15", "name": "Cuti Bersama Kenaikan Yesus Kristus" },
     { "date": "2026-05-27", "name": "Hari Raya Idul Adha 1447 H" },
+    { "date": "2026-05-28", "name": "Cuti Bersama Hari Raya Idul Adha 1447 H" },
     { "date": "2026-06-01", "name": "Hari Lahir Pancasila" },
     { "date": "2026-06-16", "name": "Tahun Baru Islam 1448 H" },
     { "date": "2026-08-17", "name": "Hari Kemerdekaan RI" },
     { "date": "2026-08-25", "name": "Maulid Nabi Muhammad SAW" },
+    { "date": "2026-12-24", "name": "Cuti Bersama Hari Raya Natal" },
     { "date": "2026-12-25", "name": "Hari Raya Natal" },
     { "date": "2026-12-31", "name": "Libur Akhir Tahun Bursa" }
   ]

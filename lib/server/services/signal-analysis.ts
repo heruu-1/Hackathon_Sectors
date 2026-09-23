@@ -56,6 +56,15 @@ export async function getSignalAnalysisReport(
   return getLatestSignalAnalysisRunForContext(context.id)
 }
 
+export function validateSignalContextMatch(context: SignalContext, ticker: string): void {
+  const cleanTicker = ticker.trim().toUpperCase().replace(/\.JK$/, '')
+  if (context.ticker !== cleanTicker) {
+    throw new Error(
+      `Signal context ticker mismatch: context=${context.ticker}, request=${cleanTicker}`,
+    )
+  }
+}
+
 /**
  * Creates or retrieves a context, fetches intraday data, evaluates outcomes,
  * calculates indicators and risk plan, runs Monte Carlo projection, and persists the run.
@@ -78,6 +87,7 @@ export async function evaluateSignalAnalysis(params: {
     if (!context) {
       throw new Error(`Signal context tidak ditemukan: ${params.contextId}`)
     }
+    validateSignalContextMatch(context, cleanTicker)
   } else {
     // Check if an existing context for this ticker exists
     context = await getLatestSignalContextForTicker(cleanTicker)
