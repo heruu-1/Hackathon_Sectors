@@ -7,7 +7,7 @@ import type {
   SessionId,
   SignalContext,
 } from '../lib/contracts/signal-analysis.ts'
-import { calculateTrailingStop } from './trade-risk.ts'
+import { calculateRiskPlan, calculateTrailingStop } from './trade-risk.ts'
 import {
   computeTargetSessions,
   getNextTradingDay,
@@ -209,11 +209,14 @@ export function calibrateIntradayVolatilities(
   }
 }
 
+export const DEFAULT_SIMULATION_MAX_PATHS = 25000
+
 export interface SimulationStepDefinition {
   type: '5m' | 'lunch_gap' | 'overnight_gap'
   session: SessionId
   sigma: number
   isHorizonBoundary?: Horizon
+  isCompleted15mClose?: boolean
 }
 
 /**
@@ -340,6 +343,7 @@ export function buildRemainingSimulationSteps(params: {
       }
 
       const isLastBarOfSession = b === barCount - 1
+      const isCompleted15mClose = ((b + 1) * 5) % 15 === 0 || isLastBarOfSession
       steps.push({
         type: '5m',
         session: sessionItem.session,
@@ -348,6 +352,7 @@ export function buildRemainingSimulationSteps(params: {
           isLastBarOfSession && (horizonNumber === 1 || horizonNumber === 3 || horizonNumber === 5)
             ? horizonNumber
             : undefined,
+        isCompleted15mClose,
       })
     }
 
@@ -365,9 +370,196 @@ export interface RunSimulationOptions {
   customSlippageTicks?: number
 }
 
+interface SimulatedPathSummary {
+  pTp1BeforeSl: number
+  pTp2BeforeSl: number
+  pSlBeforeTp1: number
+  pNeitherTouched: number
+  sumCheck: number
+  winRatePct: number
+  expectedReturnNetPct: number
+  avgRMultiple: number
+  horizonTerminalPrices: Record<Horizon, number[]>
+}
+
+function simulatePathsCore(params: {
+  steps: SimulationStepDefinition[]
+  numPaths: number
+  seed: number
+  asOfPrice: number
+  riskPlan: RiskPlan
+  sampleStride?: number
+  horizonIndices?: Map<Horizon, number>
+}): SimulatedPathSummary {
+  const { steps, numPaths, seed, asOfPrice, riskPlan, sampleStride, horizonIndices } = params
+
+  const stepSigmas = steps.map((s) => s.sigma)
+  const stepDrifts = steps.map((s) => -0.5 * s.sigma * s.sigma)
+
+  const TP1 = riskPlan.takeProfit1
+  const TP2 = riskPlan.takeProfit2
+  const SL = riskPlan.stopLoss
+  const BEP = riskPlan.breakEvenPrice
+  const initialATR = riskPlan.initialATR
+  const tick = riskPlan.tick
+  const costBasis = riskPlan.costBasis
+  const sellFee = riskPlan.sellFee
+  const netRiskPerShare = riskPlan.netRiskPerShare
+  const stopSlippage = riskPlan.stopSlippage
+
+  const prng = createMulberry32(seed)
+  const normalGen = createNormalGenerator(prng)
+
+  let tp1TouchCount = 0
+  let tp2TouchCount = 0
+  let slBeforeTp1Count = 0
+  let neitherCount = 0
+
+  let strategyWins = 0
+  let totalStrategyNetReturn = 0
+  let totalRMultiple = 0
+
+  const horizonTerminalPrices: Record<Horizon, number[]> = {
+    1: [],
+    3: [],
+    5: [],
+  }
+
+  const effectiveStride = sampleStride ?? Math.max(1, Math.floor(numPaths / 10000))
+
+  for (let path = 0; path < numPaths; path++) {
+    let price = asOfPrice
+    let hitTP1 = false
+    let hitTP2 = false
+    let hitSL = false
+    let currentTrailingStop = SL
+    let highest15mCloseSinceTP1 = asOfPrice
+    let positionActive = true
+    let halfClosedAtTP1 = false
+    let pathRealizedReturn = 0
+
+    const recordSample = horizonIndices && path % effectiveStride === 0
+
+    for (let i = 0; i < steps.length; i++) {
+      const step = steps[i]
+      const z = normalGen()
+      const dLog = stepDrifts[i] + stepSigmas[i] * z
+      price = price * Math.exp(dLog)
+
+      if (recordSample && horizonIndices) {
+        if (i === horizonIndices.get(1)) horizonTerminalPrices[1].push(price)
+        if (i === horizonIndices.get(3)) horizonTerminalPrices[3].push(price)
+        if (i === horizonIndices.get(5)) horizonTerminalPrices[5].push(price)
+      }
+
+      if (!hitTP1 && !hitSL) {
+        if (price >= TP1) {
+          hitTP1 = true
+          tp1TouchCount++
+          halfClosedAtTP1 = true
+          currentTrailingStop = Math.max(currentTrailingStop, BEP)
+          highest15mCloseSinceTP1 = price
+
+          // Check if TP2 is also hit in the same step
+          if (price >= TP2) {
+            hitTP2 = true
+            tp2TouchCount++
+            positionActive = false
+            const retTP1 = (TP1 * (1 - sellFee) - costBasis) / costBasis
+            const retTP2 = (TP2 * (1 - sellFee) - costBasis) / costBasis
+            pathRealizedReturn = 0.5 * retTP1 + 0.5 * retTP2
+            break
+          }
+        } else if (price <= SL) {
+          hitSL = true
+          slBeforeTp1Count++
+          positionActive = false
+          const execPrice = riskPlan.assumedStopExecution
+          pathRealizedReturn = (execPrice * (1 - sellFee) - costBasis) / costBasis
+          break
+        }
+      } else if (hitTP1 && !hitTP2 && positionActive) {
+        if (price >= TP2) {
+          hitTP2 = true
+          tp2TouchCount++
+          positionActive = false
+          const retTP1 = (TP1 * (1 - sellFee) - costBasis) / costBasis
+          const retTP2 = (TP2 * (1 - sellFee) - costBasis) / costBasis
+          pathRealizedReturn = 0.5 * retTP1 + 0.5 * retTP2
+          break
+        }
+
+        // Trailing stop triggers only on completed 15m close
+        if (step.isCompleted15mClose) {
+          highest15mCloseSinceTP1 = Math.max(highest15mCloseSinceTP1, price)
+          currentTrailingStop = calculateTrailingStop({
+            previousStop: currentTrailingStop,
+            breakEvenPrice: BEP,
+            highestCompleted15mCloseSinceTP1: highest15mCloseSinceTP1,
+            initialATR,
+            tick,
+          })
+
+          if (price <= currentTrailingStop) {
+            positionActive = false
+            const retTP1 = (TP1 * (1 - sellFee) - costBasis) / costBasis
+            const trailingExec = Math.max(1, currentTrailingStop - stopSlippage)
+            const retTrailing = (trailingExec * (1 - sellFee) - costBasis) / costBasis
+            pathRealizedReturn = 0.5 * retTP1 + 0.5 * retTrailing
+            break
+          }
+        }
+      }
+    }
+
+    if (!hitTP1 && !hitSL) {
+      neitherCount++
+    }
+
+    if (positionActive) {
+      if (halfClosedAtTP1) {
+        const retTP1 = (TP1 * (1 - sellFee) - costBasis) / costBasis
+        const retFinal = (price * (1 - sellFee) - costBasis) / costBasis
+        pathRealizedReturn = 0.5 * retTP1 + 0.5 * retFinal
+      } else {
+        pathRealizedReturn = (price * (1 - sellFee) - costBasis) / costBasis
+      }
+    }
+
+    if (pathRealizedReturn > 0) strategyWins++
+    totalStrategyNetReturn += pathRealizedReturn
+    if (netRiskPerShare > 0) {
+      const netGainPerShare = (1 + pathRealizedReturn) * costBasis - costBasis
+      totalRMultiple += netGainPerShare / netRiskPerShare
+    }
+  }
+
+  const pTp1BeforeSl = Number((tp1TouchCount / numPaths).toFixed(4))
+  const pTp2BeforeSl = Number((tp2TouchCount / numPaths).toFixed(4))
+  const pSlBeforeTp1 = Number((slBeforeTp1Count / numPaths).toFixed(4))
+  const pNeitherTouched = Number((neitherCount / numPaths).toFixed(4))
+  const sumCheck = Number((pTp1BeforeSl + pSlBeforeTp1 + pNeitherTouched).toFixed(4))
+
+  const winRatePct = Number(((strategyWins / numPaths) * 100).toFixed(1))
+  const expectedReturnNetPct = Number(((totalStrategyNetReturn / numPaths) * 100).toFixed(2))
+  const avgRMultiple = Number((totalRMultiple / numPaths).toFixed(2))
+
+  return {
+    pTp1BeforeSl,
+    pTp2BeforeSl,
+    pSlBeforeTp1,
+    pNeitherTouched,
+    sumCheck,
+    winRatePct,
+    expectedReturnNetPct,
+    avgRMultiple,
+    horizonTerminalPrices,
+  }
+}
+
 /**
- * Runs 100,000 Monte Carlo paths of Geometric Brownian Motion with zero base price drift.
- * Pure TypeScript implementation.
+ * Runs Monte Carlo paths of Geometric Brownian Motion with zero base price drift.
+ * Paths are strictly capped at DEFAULT_SIMULATION_MAX_PATHS (25,000).
  */
 export function runSignalProjections(params: {
   context: SignalContext
@@ -378,7 +570,11 @@ export function runSignalProjections(params: {
   options?: RunSimulationOptions
 }): ProjectionResult {
   const { context, asOfIso, asOfPrice, riskPlan, calibration, options = {} } = params
-  const { numPaths = 100000, seed = 42, volMultiplier = 1.0 } = options
+  const { seed = 42, volMultiplier = 1.0 } = options
+  const effectiveNumPaths = Math.min(
+    Math.max(1, options.numPaths ?? DEFAULT_SIMULATION_MAX_PATHS),
+    DEFAULT_SIMULATION_MAX_PATHS,
+  )
 
   if (!calibration.isSufficient) {
     return {
@@ -464,10 +660,6 @@ export function runSignalProjections(params: {
     }
   }
 
-  // Pre-calculate step parameters
-  // GBM zero base price drift: logReturn = -0.5 * sigma^2 + sigma * Z
-  const stepSigmas = steps.map((s) => s.sigma)
-  const stepDrifts = steps.map((s) => -0.5 * s.sigma * s.sigma)
   const horizonIndices = new Map<Horizon, number>()
   steps.forEach((s, idx) => {
     if (s.isHorizonBoundary) {
@@ -475,134 +667,69 @@ export function runSignalProjections(params: {
     }
   })
 
-  const TP1 = riskPlan.takeProfit1
-  const TP2 = riskPlan.takeProfit2
-  const SL = riskPlan.stopLoss
-  const BEP = riskPlan.breakEvenPrice
-  const initialATR = riskPlan.initialATR
-  const tick = riskPlan.tick
-  const costBasis = riskPlan.costBasis
-  const sellFee = riskPlan.sellFee
-  const netRiskPerShare = riskPlan.netRiskPerShare
+  // Subsample terminal prices for percentiles (sample up to 10,000 values to conserve memory)
+  const sampleStride = Math.max(1, Math.floor(effectiveNumPaths / 10000))
 
-  // Seeded PRNG & Box-Muller generator
-  const prng = createMulberry32(seed)
-  const normalGen = createNormalGenerator(prng)
+  // 1. Baseline simulation run
+  const baseline = simulatePathsCore({
+    steps,
+    numPaths: effectiveNumPaths,
+    seed,
+    asOfPrice,
+    riskPlan,
+    sampleStride,
+    horizonIndices,
+  })
 
-  let tp1TouchCount = 0
-  let tp2TouchCount = 0
-  let slBeforeTp1Count = 0
-  let neitherCount = 0
+  // 2. Empirical sensitivity reruns using identical seeded PRNG stream
+  const sensPaths = Math.min(effectiveNumPaths, 5000)
 
-  // Tracking dynamic strategy returns
-  let strategyWins = 0
-  let totalStrategyNetReturn = 0
-  let totalRMultiple = 0
+  // Vol +25%
+  const { steps: stepsVolPlus25 } = buildRemainingSimulationSteps({
+    context,
+    asOfIso,
+    volatilities: calibration,
+    volMultiplier: 1.25,
+  })
+  const simVolPlus25 = simulatePathsCore({
+    steps: stepsVolPlus25,
+    numPaths: sensPaths,
+    seed,
+    asOfPrice,
+    riskPlan,
+  })
 
-  // Track terminal prices at horizons
-  const horizonTerminalPrices: Record<Horizon, number[]> = {
-    1: [],
-    3: [],
-    5: [],
-  }
+  // Vol -25%
+  const { steps: stepsVolMinus25 } = buildRemainingSimulationSteps({
+    context,
+    asOfIso,
+    volatilities: calibration,
+    volMultiplier: 0.75,
+  })
+  const simVolMinus25 = simulatePathsCore({
+    steps: stepsVolMinus25,
+    numPaths: sensPaths,
+    seed,
+    asOfPrice,
+    riskPlan,
+  })
 
-  // Subsample terminal prices for percentiles (sample 10,000 values to conserve memory)
-  const sampleStride = Math.max(1, Math.floor(numPaths / 10000))
-
-  for (let path = 0; path < numPaths; path++) {
-    let price = asOfPrice
-    let hitTP1 = false
-    let hitSL = false
-    let currentTrailingStop = SL
-    let positionActive = true
-    let halfClosedAtTP1 = false
-    let pathRealizedReturn = 0
-
-    const recordSample = path % sampleStride === 0
-
-    for (let i = 0; i < steps.length; i++) {
-      const z = normalGen()
-      const dLog = stepDrifts[i] + stepSigmas[i] * z
-      price = price * Math.exp(dLog)
-
-      // Record horizon terminal prices
-      if (recordSample) {
-        if (i === horizonIndices.get(1)) horizonTerminalPrices[1].push(price)
-        if (i === horizonIndices.get(3)) horizonTerminalPrices[3].push(price)
-        if (i === horizonIndices.get(5)) horizonTerminalPrices[5].push(price)
-      }
-
-      // Check first passage touches
-      if (!hitTP1 && !hitSL) {
-        if (price >= TP1) {
-          hitTP1 = true
-          tp1TouchCount++
-          halfClosedAtTP1 = true
-          currentTrailingStop = Math.max(currentTrailingStop, BEP)
-        } else if (price <= SL) {
-          hitSL = true
-          slBeforeTp1Count++
-          positionActive = false
-          // Closed entirely at SL assumed execution
-          const execPrice = riskPlan.assumedStopExecution
-          pathRealizedReturn = (execPrice * (1 - sellFee) - costBasis) / costBasis
-          break
-        }
-      } else if (hitTP1 && !hitSL) {
-        // TP1 already hit, check TP2 or Trailing Stop
-        if (price >= TP2) {
-          tp2TouchCount++
-        }
-
-        // Update trailing stop
-        currentTrailingStop = calculateTrailingStop({
-          previousStop: currentTrailingStop,
-          breakEvenPrice: BEP,
-          highestCompleted15mCloseSinceTP1: price,
-          initialATR,
-          tick,
-        })
-
-        if (price <= currentTrailingStop) {
-          positionActive = false
-          // Half closed at TP1, half at trailing stop
-          const retTP1 = (TP1 * (1 - sellFee) - costBasis) / costBasis
-          const retTrailing = (currentTrailingStop * (1 - sellFee) - costBasis) / costBasis
-          pathRealizedReturn = 0.5 * retTP1 + 0.5 * retTrailing
-          break
-        }
-      }
-    }
-
-    if (!hitTP1 && !hitSL) {
-      neitherCount++
-    }
-
-    // Time stop at horizon 5 if position still open
-    if (positionActive) {
-      if (halfClosedAtTP1) {
-        const retTP1 = (TP1 * (1 - sellFee) - costBasis) / costBasis
-        const retFinal = (price * (1 - sellFee) - costBasis) / costBasis
-        pathRealizedReturn = 0.5 * retTP1 + 0.5 * retFinal
-      } else {
-        pathRealizedReturn = (price * (1 - sellFee) - costBasis) / costBasis
-      }
-    }
-
-    if (pathRealizedReturn > 0) strategyWins++
-    totalStrategyNetReturn += pathRealizedReturn
-    if (netRiskPerShare > 0) {
-      const netGainPerShare = (1 + pathRealizedReturn) * costBasis - costBasis
-      totalRMultiple += netGainPerShare / netRiskPerShare
-    }
-  }
-
-  // Probabilities
-  const pTp1BeforeSl = Number((tp1TouchCount / numPaths).toFixed(4))
-  const pTp2BeforeSl = Number((tp2TouchCount / numPaths).toFixed(4))
-  const pSlBeforeTp1 = Number((slBeforeTp1Count / numPaths).toFixed(4))
-  const pNeitherTouched = Number((neitherCount / numPaths).toFixed(4))
-  const sumCheck = Number((pTp1BeforeSl + pSlBeforeTp1 + pNeitherTouched).toFixed(4))
+  // 2-tick slippage
+  const riskPlan2Ticks = calculateRiskPlan({
+    entry: riskPlan.entry,
+    initialATR: riskPlan.initialATR,
+    tick: riskPlan.tick,
+    buyFee: riskPlan.buyFee,
+    sellFee: riskPlan.sellFee,
+    stopSlippageTicks: 2,
+  })
+  const simSlippage2Ticks = simulatePathsCore({
+    steps,
+    numPaths: sensPaths,
+    seed,
+    asOfPrice,
+    riskPlan: riskPlan2Ticks,
+  })
 
   // Percentiles helper
   const calcDist = (arr: number[]): ProjectionPriceDistribution => {
@@ -615,28 +742,10 @@ export function runSignalProjections(params: {
   }
 
   const priceDistributions: Record<Horizon, ProjectionPriceDistribution> = {
-    1: calcDist(horizonTerminalPrices[1]),
-    3: calcDist(horizonTerminalPrices[3]),
-    5: calcDist(horizonTerminalPrices[5]),
+    1: calcDist(baseline.horizonTerminalPrices[1]),
+    3: calcDist(baseline.horizonTerminalPrices[3]),
+    5: calcDist(baseline.horizonTerminalPrices[5]),
   }
-
-  // Strategy stats
-  const winRatePct = Number(((strategyWins / numPaths) * 100).toFixed(1))
-  const expectedReturnNetPct = Number(((totalStrategyNetReturn / numPaths) * 100).toFixed(2))
-  const avgRMultiple = Number((totalRMultiple / numPaths).toFixed(2))
-
-  // Sensitivities (analytical approximation based on standard Brownian motion scaling)
-  // Vol +25% increases barrier hit speed; Vol -25% slows it down
-  const volPlus25_pTp1 = Math.min(1, Number((pTp1BeforeSl * 1.08).toFixed(4)))
-  const volPlus25_pSl = Math.min(1, Number((pSlBeforeTp1 * 1.1).toFixed(4)))
-
-  const volMinus25_pTp1 = Math.max(0, Number((pTp1BeforeSl * 0.92).toFixed(4)))
-  const volMinus25_pSl = Math.max(0, Number((pSlBeforeTp1 * 0.9).toFixed(4)))
-
-  // 2-tick slippage changes net risk and stop execution
-  const slip2TicksRisk = Number((costBasis - (SL - 2 * tick) * (1 - sellFee)).toFixed(4))
-  const slip2_pTp1 = Number((pTp1BeforeSl * 0.98).toFixed(4))
-  const slip2_pSl = Number((pSlBeforeTp1 * 1.02).toFixed(4))
 
   return {
     status: 'COMPLETED',
@@ -651,26 +760,26 @@ export function runSignalProjections(params: {
     remainingSessionsCount: remainingSessions,
     priceDistributions,
     probabilities: {
-      pTp1BeforeSl,
-      pTp2BeforeSl,
-      pSlBeforeTp1,
-      pNeitherTouched,
-      sumCheck,
+      pTp1BeforeSl: baseline.pTp1BeforeSl,
+      pTp2BeforeSl: baseline.pTp2BeforeSl,
+      pSlBeforeTp1: baseline.pSlBeforeTp1,
+      pNeitherTouched: baseline.pNeitherTouched,
+      sumCheck: baseline.sumCheck,
     },
     dynamicStrategy: {
-      winRatePct,
-      expectedReturnNetPct,
-      avgRMultiple,
+      winRatePct: baseline.winRatePct,
+      expectedReturnNetPct: baseline.expectedReturnNetPct,
+      avgRMultiple: baseline.avgRMultiple,
     },
     sensitivities: {
-      volPlus25: { pTp1: volPlus25_pTp1, pSl: volPlus25_pSl },
-      volMinus25: { pTp1: volMinus25_pTp1, pSl: volMinus25_pSl },
+      volPlus25: { pTp1: simVolPlus25.pTp1BeforeSl, pSl: simVolPlus25.pSlBeforeTp1 },
+      volMinus25: { pTp1: simVolMinus25.pTp1BeforeSl, pSl: simVolMinus25.pSlBeforeTp1 },
       slippage2Ticks: {
-        pTp1: slip2_pTp1,
-        pSl: slip2_pSl,
-        netRisk: slip2TicksRisk,
+        pTp1: simSlippage2Ticks.pTp1BeforeSl,
+        pSl: simSlippage2Ticks.pSlBeforeTp1,
+        netRisk: riskPlan2Ticks.netRiskPerShare,
       },
     },
-    notes: `Simulasi 100.000 lintasan GBM murni (${PRNG_VERSION}) berbasis kalibrasi ${calibration.completeDaysCount} hari bursa.`,
+    notes: `Simulasi ${effectiveNumPaths.toLocaleString('id-ID')} lintasan GBM murni (${PRNG_VERSION}) berbasis kalibrasi ${calibration.completeDaysCount} hari bursa.`,
   }
 }

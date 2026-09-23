@@ -9,6 +9,7 @@ import {
 } from '../../../domain/signal-indicators.ts'
 import { evaluateSessionSignalOutcomes } from '../../../domain/signal-outcomes.ts'
 import {
+  DEFAULT_SIMULATION_MAX_PATHS,
   PRNG_VERSION,
   calibrateIntradayVolatilities,
   runSignalProjections,
@@ -253,6 +254,10 @@ export async function evaluateSignalAnalysis(params: {
 
   // 7. Calibrate & Run Stochastic Projections
   const calibration = calibrateIntradayVolatilities(bars, asOfIso)
+  const maxPaths = Math.min(
+    Number(process.env.SIMULATION_MAX_PATHS) || DEFAULT_SIMULATION_MAX_PATHS,
+    DEFAULT_SIMULATION_MAX_PATHS,
+  )
   const projection = runSignalProjections({
     context,
     asOfIso,
@@ -260,7 +265,7 @@ export async function evaluateSignalAnalysis(params: {
     riskPlan,
     calibration,
     options: {
-      numPaths: 100000,
+      numPaths: maxPaths,
       seed: 42,
     },
   })
@@ -274,7 +279,7 @@ export async function evaluateSignalAnalysis(params: {
   }
 
   const modelParams: SignalModelParams = {
-    numPaths: 100000,
+    numPaths: maxPaths,
     seed: 42,
     resolution: '5m',
     prngVersion: PRNG_VERSION,
