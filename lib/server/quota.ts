@@ -20,6 +20,7 @@ export const OPERATION_LIMITS: Record<string, QuotaConfig> = {
     perDay: Number(process.env.ANALYSIS_LIMIT_PER_DAY) || 1500,
   },
   screener: { perMinute: 30, perDay: 300 },
+  signal_analysis: { perMinute: 2, perDay: 20 },
 }
 
 /**
@@ -91,7 +92,7 @@ function consumeInMemoryQuota(
  */
 export async function consumeQuota(
   subject: string,
-  operation: 'assistant' | 'analysis' | 'screener',
+  operation: 'assistant' | 'analysis' | 'screener' | 'signal_analysis',
   customConfig?: Partial<QuotaConfig>,
 ): Promise<Result<{ remainingToday: number; remainingMinute: number }>> {
   const config: QuotaConfig = {

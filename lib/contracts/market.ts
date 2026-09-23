@@ -1,6 +1,6 @@
 export type DataState = 'ready' | 'partial' | 'empty' | 'unavailable' | 'error'
 
-export type DataSource = 'SECTORS' | 'GEMINI' | 'RULE_BASED' | 'RASI'
+export type DataSource = 'SECTORS' | 'GEMINI' | 'RULE_BASED' | 'RASI' | 'YAHOO'
 
 export type DataFreshness = 'fresh' | 'stale' | 'unknown'
 

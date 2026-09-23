@@ -498,3 +498,59 @@ export const signalOutcomes = pgTable(
 )
 
 export type SignalOutcomeRow = typeof signalOutcomes.$inferSelect
+
+// ---------------------------------------------------------------------------
+// 16. Market Intelligence: Signal Contexts (Immutable signal origin & initial parameters)
+// ---------------------------------------------------------------------------
+export const signalContexts = pgTable(
+  'signal_contexts',
+  {
+    id: text('id').primaryKey(), // UUID
+    ticker: varchar('ticker', { length: 10 }).notNull(),
+    signalAt: timestamp('signal_at', { withTimezone: true }).notNull(),
+    referencePrice: doublePrecision('reference_price').notNull(),
+    referencePriceAt: timestamp('reference_price_at', { withTimezone: true }).notNull(),
+    ruleLabel: varchar('rule_label', { length: 100 }).notNull(),
+    provenance: jsonb('provenance').notNull(),
+    methodologyVersion: varchar('methodology_version', { length: 50 }).notNull(),
+    initialRiskParams: jsonb('initial_risk_params').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    tickerIdx: index('signal_contexts_ticker_idx').on(table.ticker),
+    tickerSignalAtIdx: index('signal_contexts_ticker_signal_at_idx').on(
+      table.ticker,
+      table.signalAt,
+    ),
+  }),
+)
+
+export type SignalContextRow = typeof signalContexts.$inferSelect
+
+// ---------------------------------------------------------------------------
+// 17. Market Intelligence: Signal Analysis Runs (Historical evaluation runs)
+// ---------------------------------------------------------------------------
+export const signalAnalysisRuns = pgTable(
+  'signal_analysis_runs',
+  {
+    id: serial('id').primaryKey(),
+    contextId: text('context_id')
+      .notNull()
+      .references(() => signalContexts.id, { onDelete: 'cascade' }),
+    asOf: timestamp('as_of', { withTimezone: true }).notNull(),
+    methodologyVersion: varchar('methodology_version', { length: 50 }).notNull(),
+    configHash: varchar('config_hash', { length: 64 }).notNull(),
+    dataChecksum: varchar('data_checksum', { length: 64 }).notNull(),
+    report: jsonb('report').notNull(),
+    status: varchar('status', { length: 30 }).notNull(), // 'completed' | 'partial' | 'error'
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    contextAsOfUnique: uniqueIndex(
+      'signal_analysis_runs_context_asof_version_confighash_unique',
+    ).on(table.contextId, table.asOf, table.methodologyVersion, table.configHash),
+    contextIdIdx: index('signal_analysis_runs_context_id_idx').on(table.contextId),
+  }),
+)
+
+export type SignalAnalysisRunRow = typeof signalAnalysisRuns.$inferSelect

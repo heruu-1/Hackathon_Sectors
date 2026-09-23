@@ -1344,3 +1344,79 @@ export async function evaluateSignalOutcomesAction(
     }
   }
 }
+
+// ---------------------------------------------------------------------------
+// Dynamic Signal Analysis Actions (E01 Intraday & Stochastic Projections)
+// ---------------------------------------------------------------------------
+
+import type {
+  SignalAnalysisReport,
+} from '@/lib/contracts/signal-analysis'
+import {
+  EvaluateSignalAnalysisInputSchema,
+} from '@/lib/contracts/signal-analysis'
+import type { Result } from '@/lib/contracts/result'
+import { errorResult, successResult } from '@/lib/contracts/result'
+
+export async function getSignalAnalysisAction(
+  ticker: string,
+): Promise<Result<SignalAnalysisReport | null>> {
+  try {
+    const cleanTicker = (ticker || '').trim().toUpperCase()
+    if (!cleanTicker || cleanTicker.length > 10) {
+      return errorResult('VALIDATION_ERROR', 'Ticker saham tidak valid.')
+    }
+
+    const { getSignalAnalysisReport } = await import('@/lib/server/services/signal-analysis')
+    const report = await getSignalAnalysisReport(cleanTicker)
+    return successResult(report)
+  } catch (error) {
+    return errorResult(
+      'INTERNAL_ERROR',
+      error instanceof Error ? error.message : 'Gagal memuat evaluasi sinyal.',
+    )
+  }
+}
+
+export async function evaluateSignalAnalysisAction(
+  input: unknown,
+): Promise<Result<SignalAnalysisReport>> {
+  try {
+    const parsed = EvaluateSignalAnalysisInputSchema.safeParse(input)
+    if (!parsed.success) {
+      return errorResult('VALIDATION_ERROR', 'Input evaluasi sinyal tidak valid.', {
+        fieldErrors: parsed.error.flatten().fieldErrors as unknown as Record<string, string>,
+      })
+    }
+
+    const { ticker, contextId, requestKey } = parsed.data
+    const { getOptionalSession } = await import('@/lib/server/session')
+    const session = await getOptionalSession()
+    const userId = session?.id ?? 'guest-user'
+
+    // Rate limiting: 2 per minute, 20 per day
+    const { consumeQuota } = await import('@/lib/server/quota')
+    const quotaRes = await consumeQuota(userId, 'signal_analysis')
+    if (!quotaRes.ok) {
+      return quotaRes
+    }
+
+    // Idempotency deduplication
+    const { withIdempotency } = await import('@/lib/server/idempotency')
+    return await withIdempotency<Result<SignalAnalysisReport>>(
+      userId,
+      'signal_analysis',
+      requestKey,
+      async () => {
+        const { evaluateSignalAnalysis } = await import('@/lib/server/services/signal-analysis')
+        const report = await evaluateSignalAnalysis({ ticker, contextId })
+        return successResult(report)
+      },
+    )
+  } catch (error) {
+    return errorResult(
+      'INTERNAL_ERROR',
+      error instanceof Error ? error.message : 'Gagal menjalankan evaluasi sinyal.',
+    )
+  }
+}

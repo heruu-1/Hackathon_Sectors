@@ -51,6 +51,12 @@ export const ServerEnvSchema = z
       .trim()
       .optional()
       .transform((v) => v === 'true' || v === '1'),
+    SIGNAL_ANALYSIS_ENABLED: z
+      .string()
+      .trim()
+      .optional()
+      .transform((v) => v === 'true' || v === '1'),
+    INTRADAY_PROVIDER: z.enum(['yahoo']).default('yahoo'),
   })
   .superRefine((data, ctx) => {
     const isProd = data.NODE_ENV === 'production'

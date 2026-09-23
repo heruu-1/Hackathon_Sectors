@@ -5,7 +5,6 @@ import React, { useCallback, useEffect, useState } from 'react'
 import {
   ArrowDownRight,
   ArrowUpRight,
-  BarChart3,
   Check,
   Clock,
   Copy,
@@ -13,7 +12,6 @@ import {
   GitCompare,
   Printer,
   Save,
-  TrendingUp,
 } from 'lucide-react'
 
 import {
@@ -25,6 +23,7 @@ import {
   saveResearchNoteAction,
 } from '@/app/actions'
 import { Button } from '@/components/ui'
+import { SignalEvaluationPanel } from '@/components/SignalEvaluationPanel'
 import { type SnapshotDiffResult, generateSnapshotMarkdown } from '@/domain/snapshot-diff'
 import type { AnalysisSnapshot } from '@/lib/contracts/analysis'
 
@@ -524,66 +523,55 @@ export function ResearchWorkspace({
         )}
       </div>
 
-      {/* 3. Signal Outcomes Tracking (E01, E02) */}
-      <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6 shadow-md">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-4">
+      {/* 3. Dynamic Signal Evaluation, Risk & Projections (E01 Intraday Sessions) */}
+      <SignalEvaluationPanel ticker={ticker} companyName={companyName} />
+
+      {/* 3b. Legacy Evaluation Archive (Daily Trading Days Based) */}
+      <details className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-4 shadow-sm group">
+        <summary className="cursor-pointer text-xs font-semibold text-[var(--rasi-muted)] hover:text-[var(--rasi-text)] flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-[var(--rasi-primary)]" />
-            <h2 className="text-base font-bold text-[var(--rasi-text)]">
-              Evaluasi Hasil Sinyal (1, 3, 5 Sesi)
-            </h2>
+            <Clock className="h-4 w-4 text-[var(--rasi-muted)]" />
+            <span>Evaluasi lama — berbasis hari bursa (Legacy)</span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-[var(--rasi-muted)]">E01/E02 Forward Return</span>
+          <span className="text-[11px] text-[var(--rasi-muted)] group-open:rotate-180 transition-transform">
+            ▼
+          </span>
+        </summary>
+
+        <div className="mt-4 pt-3 border-t border-[var(--border-subtle)] space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-[11px] text-[var(--rasi-muted)] leading-relaxed">
+              Data di bawah ini dihitung dari deret harga harian (hari bursa), sebelum adopsi sistem sesi intraday BEI (Sesi I dan Sesi II).
+            </p>
             {currentSnapshot && (
               <Button
                 variant="secondary"
                 size="sm"
-                icon={BarChart3}
                 onClick={handleEvaluateOutcomes}
                 disabled={evaluatingOutcomes}
               >
-                {evaluatingOutcomes ? 'Mengevaluasi…' : 'Evaluasi Sinyal Terkini'}
+                {evaluatingOutcomes ? 'Mengevaluasi...' : 'Hitung Evaluasi Harian'}
               </Button>
             )}
           </div>
-        </div>
 
-        {outcomes.length === 0 ? (
-          <div className="py-6 text-center text-xs text-[var(--rasi-muted)]">
-            Belum ada data evaluasi hasil sinyal untuk emiten ini. Klik &quot;Evaluasi Sinyal
-            Terkini&quot; untuk menguji kinerja sinyal pada 1, 3, dan 5 sesi perdagangan ke depan.
-          </div>
-        ) : (
-          <div className="mt-4 space-y-3">
+          {outcomes.length === 0 ? (
+            <div className="py-4 text-center text-xs text-[var(--rasi-muted)]">
+              Tidak ada data evaluasi harian lama.
+            </div>
+          ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead className="border-b border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] font-semibold text-[var(--rasi-muted)]">
                   <tr>
-                    <th scope="col" className="px-3 py-2">
-                      Aturan
-                    </th>
-                    <th scope="col" className="px-3 py-2">
-                      Tgl Sinyal
-                    </th>
-                    <th scope="col" className="px-3 py-2 text-right">
-                      Harga Awal
-                    </th>
-                    <th scope="col" className="px-3 py-2 text-center">
-                      Horizon
-                    </th>
-                    <th scope="col" className="px-3 py-2">
-                      Tgl Target
-                    </th>
-                    <th scope="col" className="px-3 py-2 text-right">
-                      Harga Target
-                    </th>
-                    <th scope="col" className="px-3 py-2 text-right">
-                      Return Sesi
-                    </th>
-                    <th scope="col" className="px-3 py-2 text-center">
-                      Status
-                    </th>
+                    <th scope="col" className="px-3 py-2">Aturan</th>
+                    <th scope="col" className="px-3 py-2">Tgl Sinyal</th>
+                    <th scope="col" className="px-3 py-2 text-right">Harga Awal</th>
+                    <th scope="col" className="px-3 py-2 text-center">Horizon</th>
+                    <th scope="col" className="px-3 py-2">Tgl Target</th>
+                    <th scope="col" className="px-3 py-2 text-right">Harga aktual akhir horizon</th>
+                    <th scope="col" className="px-3 py-2 text-right">Return Hari</th>
+                    <th scope="col" className="px-3 py-2 text-center">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--rasi-border)] text-[var(--rasi-text)]">
@@ -601,7 +589,7 @@ export function ResearchWorkspace({
                           : '—'}
                       </td>
                       <td className="px-3 py-2 text-center font-mono font-semibold">
-                        {o.horizon} Sesi
+                        {o.horizon} Hari
                       </td>
                       <td className="px-3 py-2 font-mono text-[var(--rasi-muted)]">
                         {o.targetDate ?? '—'}
@@ -641,9 +629,9 @@ export function ResearchWorkspace({
                 </tbody>
               </table>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      </details>
 
       {/* 4. Export & Printable Brief */}
       {currentSnapshot && (
