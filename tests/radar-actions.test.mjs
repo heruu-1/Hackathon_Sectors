@@ -68,6 +68,21 @@ function loadRadar() {
           : [],
     },
   }
+  const radarOutput = ts.transpileModule(
+    readFileSync(new URL('../app/actions/radar.ts', import.meta.url), 'utf8'),
+    {
+      compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+    },
+  ).outputText
+  const radarExports = {}
+  vm.runInNewContext(radarOutput, {
+    exports: radarExports,
+    Date: Clock,
+    process: { env: {} },
+    require: (name) => modules[name] ?? {},
+  })
+  modules['./actions/radar'] = radarExports
+
   vm.runInNewContext(output, {
     exports,
     Date: Clock,
