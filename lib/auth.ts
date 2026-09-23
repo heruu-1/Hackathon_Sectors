@@ -28,12 +28,25 @@ export function isAuthSecretValid(): boolean {
   return true
 }
 
+const trustedOrigins = (() => {
+  try {
+    const list = [new URL(authUrl).origin]
+    if (!isProduction) {
+      list.push('http://localhost:3000', 'http://127.0.0.1:3000')
+    }
+    return Array.from(new Set(list))
+  } catch {
+    return isProduction ? [] : ['http://localhost:3000', 'http://127.0.0.1:3000']
+  }
+})()
+
 /**
  * Server-only Better Auth configuration.
  * Safe for build time; runtime blocks requests if production secret is not configured.
  */
 export const auth = betterAuth({
   baseURL: authUrl,
+  trustedOrigins,
   secret: authSecret || 'rasi-development-secret-change-this-before-deployment-32-chars',
   database: drizzleAdapter(db, {
     provider: 'pg',
@@ -50,5 +63,11 @@ export const auth = betterAuth({
       : undefined,
   advanced: {
     useSecureCookies: isProduction,
+    cookiePrefix: 'rasi',
+    defaultCookieAttributes: {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'lax',
+    },
   },
 })

@@ -9,6 +9,7 @@ import { ArrowLeft, LogIn } from 'lucide-react'
 
 import { Button } from '@/components/ui'
 import { authClient } from '@/lib/auth-client'
+import { sanitizeCallbackUrl } from '@/lib/security/redirect'
 
 function SignInContent() {
   const router = useRouter()
@@ -19,7 +20,7 @@ function SignInContent() {
   async function signIn() {
     setBusy(true)
     setError('')
-    const callbackURL = searchParams.get('callbackURL') || '/'
+    const callbackURL = sanitizeCallbackUrl(searchParams.get('callbackURL'), '/')
     const result = await authClient.signIn.social({
       provider: 'google',
       callbackURL,
