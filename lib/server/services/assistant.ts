@@ -121,7 +121,7 @@ function generateRuleBasedAnswer(
   const liveLines =
     liveQuote && liveQuote.price
       ? [
-          `### Harga Pasar Real-Time **${cleanTicker}** (${liveQuote.timestamp ?? 'Detik Ini'}):`,
+          `### Kuotasi Pasar **${cleanTicker}** (Pengamatan: ${liveQuote.timestamp ?? 'Waktu pengamatan terkini'}):`,
           `- **Harga Terakhir**: Rp${liveQuote.price.toLocaleString('id-ID')} (${liveQuote.changePercent ?? '0%'})`,
           `- **Perubahan**: ${liveQuote.change !== null && liveQuote.change > 0 ? '+' : ''}${liveQuote.change?.toLocaleString('id-ID') ?? '-'}`,
           `- **Rentang Hari Ini (Low - High)**: Rp${liveQuote.dayLow?.toLocaleString('id-ID') ?? '-'} — Rp${liveQuote.dayHigh?.toLocaleString('id-ID') ?? '-'}`,

@@ -52,9 +52,9 @@ export function MethodologyDisclosure() {
                 <span>Karakteristik Feed Data</span>
               </div>
               <p className="text-[11px]">
-                Data intraday 5 menit bersumber dari feed upstream Yahoo Chart dengan keterlambatan
-                resmi bursa ~10 menit. Sistem ini berfungsi sebagai panduan evaluasi skenario
-                risiko, bukan alarm eksekusi pasar langsung.
+                Data intraday 5 menit bersumber dari feed upstream dengan keterlambatan resmi bursa
+                ~10–15 menit. Sistem ini berfungsi sebagai panduan evaluasi skenario risiko, bukan
+                alarm eksekusi pasar langsung.
               </p>
             </div>
 
@@ -78,13 +78,14 @@ export function MethodologyDisclosure() {
               berlangsung).
             </p>
             <p>
-              • <strong>Model Proyeksi:</strong> Menggunakan simulasi 100.000 lintasan Geometric
-              Brownian Motion (GBM) murni TypeScript dengan drift harga dasar nol. Volatilitas
-              diestimasi terpisah untuk Sesi I, Sesi II, gap makan siang, dan gap semalam.
+              • <strong>Model Proyeksi:</strong> Menggunakan simulasi Monte Carlo hingga 25.000
+              lintasan Geometric Brownian Motion (GBM) murni TypeScript dengan drift harga dasar
+              nol. Volatilitas diestimasi terpisah untuk Sesi I, Sesi II, gap makan siang, dan gap
+              semalam.
             </p>
             <p>
               • <strong>Batas Risiko & Trailing Stop:</strong> Stop Loss awal dibekukan berbasis
-              1,5x ATR Wilder 14 sesi. Ketika target TP1 tercapai, trailing stop dinaikkan secara
+              2,0x ATR Wilder 14 sesi. Ketika target TP1 tercapai, trailing stop dinaikkan secara
               dinamis untuk melindungi modal.
             </p>
           </div>

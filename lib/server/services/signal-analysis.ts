@@ -102,6 +102,7 @@ export async function evaluateSignalAnalysis(params: {
       let refPrice = 0
       let refPriceAt = new Date().toISOString()
       let initialATR = 0
+      let provenanceSource: 'YAHOO' | 'sectors-daily' = 'YAHOO'
 
       if (validBars.length > 0) {
         const lastBar = validBars[validBars.length - 1]
@@ -119,6 +120,7 @@ export async function evaluateSignalAnalysis(params: {
         const dailyEnvelope = await fetchDailyPrices(cleanTicker, undefined, 30)
         const dailyRows = dailyEnvelope.data ?? []
         if (dailyRows.length > 0) {
+          provenanceSource = 'sectors-daily'
           const sorted = [...dailyRows].sort((a, b) => a.date.localeCompare(b.date))
           const latestDaily = sorted[sorted.length - 1]
           if (refPrice === 0) {
@@ -127,8 +129,27 @@ export async function evaluateSignalAnalysis(params: {
           }
 
           if (initialATR === 0 && sorted.length >= 15) {
-            // Rough daily ATR approximation: 2% of price if daily range missing
-            initialATR = Number((refPrice * 0.02).toFixed(4))
+            // Compute real Wilder ATR across daily closing/high/low
+            const dailyTrs: number[] = []
+            for (let i = 1; i < sorted.length; i++) {
+              const cur = sorted[i]
+              const prev = sorted[i - 1]
+              const curHigh = cur.high ?? cur.close
+              const curLow = cur.low ?? cur.close
+              const tr = Math.max(
+                curHigh - curLow,
+                Math.abs(curHigh - prev.close),
+                Math.abs(curLow - prev.close),
+              )
+              dailyTrs.push(tr)
+            }
+            if (dailyTrs.length >= 14) {
+              let atr = dailyTrs.slice(0, 14).reduce((sum, val) => sum + val, 0) / 14
+              for (let i = 14; i < dailyTrs.length; i++) {
+                atr = (atr * 13 + dailyTrs[i]) / 14
+              }
+              initialATR = Number(atr.toFixed(4))
+            }
           }
         }
       }
@@ -140,7 +161,9 @@ export async function evaluateSignalAnalysis(params: {
       }
 
       if (initialATR <= 0) {
-        initialATR = Number((refPrice * 0.02).toFixed(4))
+        throw new Error(
+          `INSUFFICIENT_DATA: Riwayat harga ${cleanTicker} tidak mencukupi untuk menghitung ATR (minimal 15 bar diperlukan).`,
+        )
       }
 
       const tick = getIdxTickSize(refPrice)
@@ -154,7 +177,7 @@ export async function evaluateSignalAnalysis(params: {
         referencePriceAt: refPriceAt,
         ruleLabel: 'Analisis umum',
         provenance: {
-          source: 'YAHOO',
+          source: provenanceSource,
           details: { createdAutomatically: true },
         },
         methodologyVersion: METHODOLOGY_VERSION,
@@ -234,12 +257,28 @@ export async function evaluateSignalAnalysis(params: {
     // Optional
   }
 
-  const vwap = calculateVWAP(bars)
+  // VWAP & RVOL calculated per continuous session / day
+  const latestBar = bars.length > 0 ? bars[bars.length - 1] : null
+  const latestDateStr = latestBar ? latestBar.startAt.slice(0, 10) : ''
+  const currentSessionBars = latestDateStr
+    ? bars.filter((b) => b.startAt.startsWith(latestDateStr))
+    : []
 
-  // RVOL comparison
-  const sessionVolumes = bars.map((b) => b.volume)
-  const currentVolume = sessionVolumes.length > 0 ? sessionVolumes[sessionVolumes.length - 1] : 0
-  const rvol = calculateRVOL(currentVolume, sessionVolumes)
+  const vwap = calculateVWAP(currentSessionBars.length > 0 ? currentSessionBars : bars)
+
+  let rvol: number | null = null
+  if (bars.length > 0 && latestDateStr) {
+    const volumeByDay = new Map<string, number>()
+    for (const b of bars) {
+      const day = b.startAt.slice(0, 10)
+      volumeByDay.set(day, (volumeByDay.get(day) ?? 0) + b.volume)
+    }
+    const currentDayVolume = volumeByDay.get(latestDateStr) ?? 0
+    const historicalDayVolumes = Array.from(volumeByDay.entries())
+      .filter(([day]) => day !== latestDateStr)
+      .map(([, vol]) => vol)
+    rvol = calculateRVOL(currentDayVolume, historicalDayVolumes)
+  }
 
   const barsSinceSignal = bars.filter((b) => b.startAt >= context.signalAt)
   const assessment = assessSignalConditions({

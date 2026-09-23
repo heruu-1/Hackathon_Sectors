@@ -1,6 +1,6 @@
 /**
- * Real-time market data provider for Indonesian Stocks (IDX).
- * Fetches second-by-second live intraday quotes from Yahoo Finance
+ * Market data provider for Indonesian Stocks (IDX).
+ * Fetches intraday quotes from Yahoo Finance (delayed feed ~10-15m)
  * with fallback to Sectors Financial API.
  */
 
@@ -82,7 +82,7 @@ export async function fetchLiveMarketQuote(ticker: string): Promise<LiveMarketQu
           volume: meta.regularMarketVolume ?? null,
           timestamp: timeStr,
           currency: meta.currency ?? 'IDR',
-          source: 'Bursa Efek Indonesia (Real-Time)',
+          source: 'Yahoo Finance (Tertunda ~10-15m)',
         }
       }
     }
