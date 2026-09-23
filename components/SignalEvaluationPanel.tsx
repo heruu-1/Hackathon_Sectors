@@ -160,7 +160,7 @@ export function SignalEvaluationPanel({ ticker, companyName }: SignalEvaluationP
 
       {/* Empty State */}
       {!loading && !report && !error && (
-        <div className="rounded-xl border border-dashed border-[var(--rasi-border)] py-10 px-4 text-center space-y-3">
+        <div className="rounded-xl border border-dashed border-[var(--rasi-border)] bg-[var(--surface-card)] py-10 px-4 text-center space-y-3 shadow-[var(--rasi-card-shadow)]">
           <Layers className="h-8 w-8 mx-auto text-[var(--rasi-muted)]/50" />
           <div className="space-y-1">
             <h3 className="text-sm font-semibold text-[var(--rasi-text)]">

@@ -11,6 +11,7 @@ export const metadata: Metadata = {
 
 export default async function BrokerPage() {
   const endDate = new Date().toISOString().split('T')[0]
+  // eslint-disable-next-line react-hooks/purity
   const startDate = new Date(Date.now() - 4 * 86_400_000).toISOString().split('T')[0]
 
   const [registryRes, summaryRes] = await Promise.all([
@@ -19,8 +20,8 @@ export default async function BrokerPage() {
   ])
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-6 space-y-2">
+    <div className="space-y-6 py-2">
+      <div className="space-y-2">
         <h1 className="text-2xl font-bold tracking-tight text-[var(--rasi-text)] sm:text-3xl">
           Penelusuran & Perbandingan Broker
         </h1>

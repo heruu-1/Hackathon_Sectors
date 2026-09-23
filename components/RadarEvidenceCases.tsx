@@ -159,7 +159,7 @@ export function RadarEvidenceCases() {
           {filteredCases.map((item) => (
             <div
               key={item.ticker}
-              className="flex flex-col justify-between rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-card)] p-5 shadow-sm transition-all hover:border-[var(--rasi-primary)]/50 hover:shadow-md"
+              className="rasi-ambient-top-cyan flex flex-col justify-between rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-card)] p-5 shadow-[var(--rasi-card-shadow)] transition-all hover:border-[var(--rasi-accent)]/50 hover:shadow-md"
             >
               <div>
                 {/* Header */}
@@ -196,7 +196,7 @@ export function RadarEvidenceCases() {
                   {item.reasonsForRadar.map((r, i) => (
                     <span
                       key={i}
-                      className="rounded bg-[var(--rasi-border)]/60 px-2 py-0.5 text-[11px] font-medium text-[var(--rasi-text)]"
+                      className="rounded bg-[var(--rasi-muted-bg)] px-2 py-0.5 text-[11px] font-medium text-[var(--rasi-text)]"
                     >
                       {r}
                     </span>
@@ -205,12 +205,12 @@ export function RadarEvidenceCases() {
 
                 {/* Conflicting Evidence */}
                 {item.conflictingEvidence.length > 0 && (
-                  <div className="mt-4 rounded-lg border border-[var(--rasi-danger)]/30 bg-[var(--rasi-danger)]/5 p-3">
-                    <div className="flex items-center gap-1.5 text-xs font-semibold text-[var(--rasi-danger)]">
+                  <div className="rasi-alert-danger mt-4 rounded-lg p-3">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold">
                       <AlertTriangle className="h-3.5 w-3.5" />
                       <span>Bukti Berlawanan Arah (Divergensi)</span>
                     </div>
-                    <ul className="mt-1.5 list-disc space-y-1 pl-4 text-xs text-[var(--rasi-danger)]/90">
+                    <ul className="mt-1.5 list-disc space-y-1 pl-4 text-xs opacity-90">
                       {item.conflictingEvidence.map((e, idx) => (
                         <li key={idx}>{e}</li>
                       ))}

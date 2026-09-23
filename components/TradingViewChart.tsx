@@ -28,7 +28,7 @@ function resolveEffectiveTheme(themePref?: 'system' | 'light' | 'dark'): 'dark' 
 export const TradingViewChart = memo(function TradingViewChart({
   symbol,
   theme,
-  height = 620,
+  height,
 }: TradingViewChartProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [loadFailed, setLoadFailed] = useState(false)
@@ -37,7 +37,36 @@ export const TradingViewChart = memo(function TradingViewChart({
   const [resolvedTheme, setResolvedTheme] = useState<'dark' | 'light'>('dark')
 
   const cleanSymbol = symbol.trim().toUpperCase().replace(/\.JK$/i, '')
-  const numericHeight = typeof height === 'number' ? height : parseInt(String(height), 10) || 620
+
+  // Responsive height calculation: mobile 380px, tablet 480px, desktop 580px
+  const [responsiveHeight, setResponsiveHeight] = useState<number>(() => {
+    if (typeof height === 'number') return height
+    if (typeof height === 'string') return parseInt(height, 10) || 580
+    if (typeof window !== 'undefined') {
+      if (window.innerWidth < 640) return 380
+      if (window.innerWidth < 1024) return 480
+      return 580
+    }
+    return 580
+  })
+
+  useEffect(() => {
+    if (height !== undefined) {
+      setResponsiveHeight(typeof height === 'number' ? height : parseInt(String(height), 10) || 580)
+      return
+    }
+    const handleResize = () => {
+      const w = window.innerWidth
+      if (w < 640) setResponsiveHeight(380)
+      else if (w < 1024) setResponsiveHeight(480)
+      else setResponsiveHeight(580)
+    }
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [height])
+
+  const numericHeight = responsiveHeight
 
   useEffect(() => {
     const updateTheme = () => {

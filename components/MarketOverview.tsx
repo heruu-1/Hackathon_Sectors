@@ -5,12 +5,9 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
 import {
-  ChevronRight,
-  ExternalLink,
   Layers,
   Minus,
   RefreshCw,
-  Search,
   TrendingDown,
   TrendingUp,
 } from 'lucide-react'
@@ -18,7 +15,6 @@ import {
 import { getMarketOverviewAction } from '@/app/actions'
 import { Button } from '@/components/ui'
 import type { MarketOverviewData } from '@/domain/market-overview'
-import type { SectorSummary, UniverseCompany } from '@/domain/universe'
 
 export interface MarketOverviewProps {
   initialData?: MarketOverviewData
@@ -105,7 +101,7 @@ export function MarketOverview({ initialData }: MarketOverviewProps = {}) {
   return (
     <div className="space-y-6">
       {/* Header & Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-card)] p-5 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-card)] p-5 shadow-[var(--rasi-card-shadow)]">
         <div>
           <div className="flex items-center gap-2">
             <Layers className="h-5 w-5 text-[var(--rasi-primary)]" />
@@ -139,7 +135,7 @@ export function MarketOverview({ initialData }: MarketOverviewProps = {}) {
 
       {/* Market Breadth Cards */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-card)] p-4 shadow-sm">
+        <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-card)] p-4 shadow-[var(--rasi-card-shadow)]">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-[var(--rasi-muted)]">Saham Naik</span>
             <TrendingUp className="h-4 w-4 text-[var(--rasi-success)]" />
@@ -153,7 +149,7 @@ export function MarketOverview({ initialData }: MarketOverviewProps = {}) {
           </span>
         </div>
 
-        <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-card)] p-4 shadow-sm">
+        <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-card)] p-4 shadow-[var(--rasi-card-shadow)]">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-[var(--rasi-muted)]">Saham Turun</span>
             <TrendingDown className="h-4 w-4 text-[var(--rasi-danger)]" />
@@ -167,7 +163,7 @@ export function MarketOverview({ initialData }: MarketOverviewProps = {}) {
           </span>
         </div>
 
-        <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-card)] p-4 shadow-sm">
+        <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-card)] p-4 shadow-[var(--rasi-card-shadow)]">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-[var(--rasi-muted)]">Tidak Berubah</span>
             <Minus className="h-4 w-4 text-[var(--rasi-muted)]" />
@@ -176,7 +172,7 @@ export function MarketOverview({ initialData }: MarketOverviewProps = {}) {
           <span className="text-[11px] text-[var(--rasi-muted)]">Harga stagnan</span>
         </div>
 
-        <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-card)] p-4 shadow-sm">
+        <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-card)] p-4 shadow-[var(--rasi-card-shadow)]">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-[var(--rasi-muted)]">Median Pasar</span>
             <Layers className="h-4 w-4 text-[var(--rasi-primary)]" />
@@ -206,10 +202,10 @@ export function MarketOverview({ initialData }: MarketOverviewProps = {}) {
               <div
                 key={sec.sector}
                 onClick={() => setSelectedSector(selectedSector === sec.sector ? null : sec.sector)}
-                className={`cursor-pointer rounded-xl border p-4 transition-all hover:shadow-md ${
+                className={`cursor-pointer rounded-xl border p-4 transition-all ${
                   selectedSector === sec.sector
-                    ? 'border-[var(--rasi-primary)] bg-[var(--rasi-primary)]/5 ring-1 ring-[var(--rasi-primary)]'
-                    : 'border-[var(--rasi-border)] bg-[var(--rasi-card)] hover:border-[var(--rasi-border-hover)]'
+                    ? 'border-[var(--rasi-accent)] bg-[var(--rasi-surface-2)] ring-1 ring-[var(--rasi-accent)] shadow-[var(--rasi-card-shadow)]'
+                    : 'border-[var(--rasi-border)] bg-[var(--rasi-card)] hover:border-[var(--rasi-border-hover)] hover:shadow-xs shadow-[var(--rasi-card-shadow)]'
                 }`}
               >
                 <div className="flex items-center justify-between">
@@ -217,10 +213,10 @@ export function MarketOverview({ initialData }: MarketOverviewProps = {}) {
                   <span
                     className={`rounded px-2 py-0.5 text-xs font-bold ${
                       isPositive
-                        ? 'bg-[var(--rasi-success)]/10 text-[var(--rasi-success)]'
+                        ? 'bg-[var(--rasi-success)]/15 text-[var(--rasi-success)]'
                         : isNegative
-                          ? 'bg-[var(--rasi-danger)]/10 text-[var(--rasi-danger)]'
-                          : 'bg-[var(--rasi-muted)]/10 text-[var(--rasi-muted)]'
+                          ? 'bg-[var(--rasi-danger)]/15 text-[var(--rasi-danger)]'
+                          : 'bg-[var(--rasi-muted)]/15 text-[var(--rasi-muted)]'
                     }`}
                   >
                     {sec.medianChangeFraction !== null
@@ -238,31 +234,37 @@ export function MarketOverview({ initialData }: MarketOverviewProps = {}) {
                 </div>
 
                 {/* Top Movers in Sector */}
-                <div className="mt-3 space-y-1 border-t border-[var(--rasi-border)] pt-2">
+                <div className="mt-3 space-y-1.5 border-t border-[var(--rasi-border)] pt-2.5">
                   {sec.topGainers.slice(0, 2).map((g) => (
-                    <div key={g.symbol} className="flex items-center justify-between text-xs">
+                    <div
+                      key={g.symbol}
+                      className="flex items-center justify-between rounded-md border border-[var(--rasi-border)]/50 bg-[var(--rasi-surface-2)]/70 px-2 py-1 text-xs"
+                    >
                       <Link
                         href={`/saham/${g.symbol}`}
                         onClick={(e) => e.stopPropagation()}
-                        className="font-medium text-[var(--rasi-text)] hover:text-[var(--rasi-primary)] hover:underline"
+                        className="font-mono font-bold text-[var(--rasi-text)] hover:text-[var(--rasi-accent)] hover:underline"
                       >
                         {g.symbol}
                       </Link>
-                      <span className="font-semibold text-[var(--rasi-success)]">
+                      <span className="font-mono font-semibold tabular-nums text-[var(--rasi-success)]">
                         +{((g.dailyChange ?? 0) * 100).toFixed(2)}%
                       </span>
                     </div>
                   ))}
                   {sec.topLosers.slice(0, 1).map((l) => (
-                    <div key={l.symbol} className="flex items-center justify-between text-xs">
+                    <div
+                      key={l.symbol}
+                      className="flex items-center justify-between rounded-md border border-[var(--rasi-border)]/50 bg-[var(--rasi-surface-2)]/70 px-2 py-1 text-xs"
+                    >
                       <Link
                         href={`/saham/${l.symbol}`}
                         onClick={(e) => e.stopPropagation()}
-                        className="font-medium text-[var(--rasi-text)] hover:text-[var(--rasi-primary)] hover:underline"
+                        className="font-mono font-bold text-[var(--rasi-text)] hover:text-[var(--rasi-accent)] hover:underline"
                       >
                         {l.symbol}
                       </Link>
-                      <span className="font-semibold text-[var(--rasi-danger)]">
+                      <span className="font-mono font-semibold tabular-nums text-[var(--rasi-danger)]">
                         {((l.dailyChange ?? 0) * 100).toFixed(2)}%
                       </span>
                     </div>
@@ -277,7 +279,7 @@ export function MarketOverview({ initialData }: MarketOverviewProps = {}) {
       {/* Top Market Movers & Radar CTA */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* Top Gainers */}
-        <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-card)] p-5 shadow-sm">
+        <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-card)] p-5 shadow-[var(--rasi-card-shadow)]">
           <div className="mb-3 flex items-center justify-between border-b border-[var(--rasi-border)] pb-2">
             <h4 className="text-sm font-bold text-[var(--rasi-text)]">Top Gainers Terpantau</h4>
             <span className="text-xs text-[var(--rasi-muted)]">Perubahan 1 Sesi</span>
@@ -291,17 +293,17 @@ export function MarketOverview({ initialData }: MarketOverviewProps = {}) {
                 <div>
                   <Link
                     href={`/saham/${g.symbol}`}
-                    className="font-semibold text-[var(--rasi-text)] hover:text-[var(--rasi-primary)]"
+                    className="font-mono font-bold text-[var(--rasi-text)] hover:text-[var(--rasi-accent)] hover:underline"
                   >
                     {g.symbol}
                   </Link>
                   <p className="line-clamp-1 text-[11px] text-[var(--rasi-muted)]">{g.name}</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-[var(--rasi-success)]">
+                  <p className="font-mono font-bold tabular-nums text-[var(--rasi-success)]">
                     +{((g.dailyChange ?? 0) * 100).toFixed(2)}%
                   </p>
-                  <p className="text-[11px] text-[var(--rasi-muted)]">
+                  <p className="font-mono text-[11px] text-[var(--rasi-muted)]">
                     {g.lastPrice ? `Rp${g.lastPrice.toLocaleString('id-ID')}` : '-'}
                   </p>
                 </div>
@@ -311,7 +313,7 @@ export function MarketOverview({ initialData }: MarketOverviewProps = {}) {
         </div>
 
         {/* Top Losers */}
-        <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-card)] p-5 shadow-sm">
+        <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-card)] p-5 shadow-[var(--rasi-card-shadow)]">
           <div className="mb-3 flex items-center justify-between border-b border-[var(--rasi-border)] pb-2">
             <h4 className="text-sm font-bold text-[var(--rasi-text)]">Top Losers Terpantau</h4>
             <span className="text-xs text-[var(--rasi-muted)]">Perubahan 1 Sesi</span>
@@ -325,17 +327,17 @@ export function MarketOverview({ initialData }: MarketOverviewProps = {}) {
                 <div>
                   <Link
                     href={`/saham/${l.symbol}`}
-                    className="font-semibold text-[var(--rasi-text)] hover:text-[var(--rasi-primary)]"
+                    className="font-mono font-bold text-[var(--rasi-text)] hover:text-[var(--rasi-accent)] hover:underline"
                   >
                     {l.symbol}
                   </Link>
                   <p className="line-clamp-1 text-[11px] text-[var(--rasi-muted)]">{l.name}</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-[var(--rasi-danger)]">
+                  <p className="font-mono font-bold tabular-nums text-[var(--rasi-danger)]">
                     {((l.dailyChange ?? 0) * 100).toFixed(2)}%
                   </p>
-                  <p className="text-[11px] text-[var(--rasi-muted)]">
+                  <p className="font-mono text-[11px] text-[var(--rasi-muted)]">
                     {l.lastPrice ? `Rp${l.lastPrice.toLocaleString('id-ID')}` : '-'}
                   </p>
                 </div>

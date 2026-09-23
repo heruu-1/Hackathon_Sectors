@@ -407,9 +407,9 @@ export function ResearchWorkspace({
 
             {/* Diff Results Presentation */}
             {diffResult && (
-              <div className="mt-4 space-y-4 rounded-xl border border-[var(--rasi-primary)]/30 bg-[var(--rasi-primary)]/5 p-4">
-                <div className="flex items-center justify-between border-b border-[var(--rasi-primary)]/20 pb-2">
-                  <span className="text-xs font-bold text-[var(--rasi-primary)]">
+              <div className="mt-4 space-y-4 rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface-2)] p-4 shadow-[var(--rasi-card-shadow)]">
+                <div className="flex items-center justify-between border-b border-[var(--rasi-border)] pb-2">
+                  <span className="text-xs font-bold text-[var(--rasi-text)]">
                     Hasil Perbandingan: {diffResult.dateEarlier} → {diffResult.dateLater}
                   </span>
                   <span className="font-mono text-xs text-[var(--rasi-muted)]">

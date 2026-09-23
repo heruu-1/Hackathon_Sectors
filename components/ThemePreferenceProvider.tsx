@@ -14,21 +14,32 @@ interface ThemePreferenceContextType {
 
 const ThemePreferenceContext = createContext<ThemePreferenceContextType | null>(null)
 
+function applyThemeToDOM(themePref: ThemePreference) {
+  if (typeof window === 'undefined') return
+
+  if (themePref === 'light' || themePref === 'dark') {
+    document.documentElement.dataset.rasiTheme = themePref
+    document.documentElement.dataset.rasiThemePreference = themePref
+  } else {
+    // Mode 'system': deteksi prefers-color-scheme OS secara dinamis
+    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    document.documentElement.dataset.rasiTheme = isDark ? 'dark' : 'light'
+    document.documentElement.dataset.rasiThemePreference = 'system'
+  }
+}
+
 export function ThemePreferenceProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<ThemePreference>('system')
   const [mode, setModeState] = useState<ModePreference>('beginner')
 
   useEffect(() => {
+    let savedTheme: ThemePreference = 'system'
     try {
-      const savedTheme = localStorage.getItem('rasi-theme') as ThemePreference | null
-      if (savedTheme === 'light' || savedTheme === 'dark' || savedTheme === 'system') {
+      const stored = localStorage.getItem('rasi-theme') as ThemePreference | null
+      if (stored === 'light' || stored === 'dark' || stored === 'system') {
+        savedTheme = stored
         // eslint-disable-next-line react-hooks/set-state-in-effect
-        setThemeState(savedTheme)
-        if (savedTheme === 'light' || savedTheme === 'dark') {
-          document.documentElement.dataset.rasiTheme = savedTheme
-        } else {
-          delete document.documentElement.dataset.rasiTheme
-        }
+        setThemeState(stored)
       }
 
       const savedMode = localStorage.getItem('rasi-mode') as ModePreference | null
@@ -38,20 +49,34 @@ export function ThemePreferenceProvider({ children }: { children: React.ReactNod
     } catch {
       // Ignore localStorage read errors
     }
+
+    applyThemeToDOM(savedTheme)
+
+    // Listener reaktif jika OS berganti terang/gelap saat mode 'system'
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    const handleSystemChange = () => {
+      try {
+        const current = (localStorage.getItem('rasi-theme') as ThemePreference) || 'system'
+        if (current === 'system') {
+          applyThemeToDOM('system')
+        }
+      } catch {
+        applyThemeToDOM('system')
+      }
+    }
+
+    mediaQuery.addEventListener('change', handleSystemChange)
+    return () => mediaQuery.removeEventListener('change', handleSystemChange)
   }, [])
 
   const setTheme = (newTheme: ThemePreference) => {
     setThemeState(newTheme)
     try {
       localStorage.setItem('rasi-theme', newTheme)
-      if (newTheme === 'light' || newTheme === 'dark') {
-        document.documentElement.dataset.rasiTheme = newTheme
-      } else {
-        delete document.documentElement.dataset.rasiTheme
-      }
     } catch {
       // Ignore localStorage write errors
     }
+    applyThemeToDOM(newTheme)
   }
 
   const setMode = (newMode: ModePreference) => {

@@ -27,37 +27,40 @@ const lessons = [
 
 export default function LearnPage() {
   return (
-    <section className="max-w-4xl py-4">
-      <p className="text-sm font-semibold text-[var(--rasi-primary)]">Belajar saham</p>
-      <h1 className="mt-2 text-3xl font-bold tracking-tight">
-        {' '}
-        Kenali istilah yang sering muncul{' '}
-      </h1>
-      <p className="mt-3 max-w-2xl leading-7 text-[var(--rasi-muted)]">
-        {' '}
-        Penjelasan singkat untuk membantu Anda membaca data saham. Anda juga bisa membuka “Apa
-        artinya?” di halaman saham.{' '}
-      </p>
-      <div className="mt-8 grid gap-4 sm:grid-cols-2">
+    <div className="space-y-6 py-4">
+      <div className="border-b border-[var(--rasi-border)] pb-4">
+        <p className="text-sm font-semibold text-[var(--rasi-primary)]">Belajar Saham</p>
+        <h1 className="mt-1 text-2xl font-bold tracking-tight text-[var(--rasi-text)] sm:text-3xl">
+          Kenali istilah yang sering muncul
+        </h1>
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--rasi-muted)]">
+          Penjelasan singkat untuk membantu Anda membaca data saham. Anda juga bisa membuka “Apa
+          artinya?” di halaman saham.
+        </p>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {lessons.map(([title, text]) => (
           <article
             key={title}
-            className="relative overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-5 shadow-2xl shadow-black/40"
+            className="flex flex-col justify-between rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-card)] p-5 shadow-[var(--rasi-card-shadow)]"
           >
-            <div className="flex items-center gap-2">
-              <BookOpen className="h-4 w-4 text-[var(--rasi-primary)]" />
-              <h2 className="font-semibold">{title}</h2>
+            <div>
+              <div className="flex items-center gap-2">
+                <BookOpen className="h-4 w-4 text-[var(--rasi-primary)]" />
+                <h2 className="font-semibold text-[var(--rasi-text)]">{title}</h2>
+              </div>
+              <p className="mt-3 text-sm leading-relaxed text-[var(--rasi-muted)]">{text}</p>
             </div>
-            <p className="mt-3 text-sm leading-6 text-[var(--rasi-muted)]">{text}</p>
             <Link
               href="/asisten"
-              className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-[var(--rasi-primary)] hover:underline"
+              className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-[var(--rasi-accent)] hover:underline"
             >
               <Info className="h-3.5 w-3.5" /> Tanyakan ke AI
             </Link>
           </article>
         ))}
       </div>
-    </section>
+    </div>
   )
 }

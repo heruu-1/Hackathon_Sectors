@@ -1,12 +1,13 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import Link from 'next/link'
 
 import { ArrowRightLeft, Building2, Loader2, TrendingDown, TrendingUp } from 'lucide-react'
 
 import { compareBrokersAction, getBrokerActivityAction, getBrokerListAction } from '@/app/actions'
+import { Button } from '@/components/ui'
 import type { BrokerActivitySummary, DualBrokerComparison } from '@/domain/broker-activity'
 import type { BrokerRegistryEntry } from '@/lib/contracts/market'
 
@@ -76,11 +77,11 @@ export function BrokerActivityExplorer({
   }, [selectedBrokerA, selectedBrokerB, isComparing, rangeDays])
 
   // Skip the first fetch if initialSummary is already provided
-  const [skipInitialFetch, setSkipInitialFetch] = useState(() => Boolean(initialSummary))
+  const hasInitialSummaryRef = useRef(Boolean(initialSummary))
 
   useEffect(() => {
-    if (skipInitialFetch) {
-      setSkipInitialFetch(false)
+    if (hasInitialSummaryRef.current) {
+      hasInitialSummaryRef.current = false
       return
     }
     let isMounted = true
@@ -92,14 +93,14 @@ export function BrokerActivityExplorer({
       isMounted = false
       window.clearTimeout(timer)
     }
-  }, [fetchData, skipInitialFetch])
+  }, [fetchData])
 
   const brokerList = Object.values(registry).sort((a, b) => a.code.localeCompare(b.code))
 
   return (
     <div className="space-y-6">
       {/* Controls Header */}
-      <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-5 shadow-sm">
+      <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-5 shadow-[var(--rasi-card-shadow)]">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-wrap items-center gap-3">
             {/* Broker A Selector */}
@@ -124,7 +125,7 @@ export function BrokerActivityExplorer({
               onClick={() => setIsComparing(!isComparing)}
               className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
                 isComparing
-                  ? 'border-[var(--rasi-primary)] bg-[var(--rasi-primary)]/10 text-[var(--rasi-primary)]'
+                  ? 'border-[var(--rasi-accent)] bg-[var(--rasi-active-bg)] text-[var(--rasi-text)] ring-1 ring-[var(--rasi-accent)]'
                   : 'border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] text-[var(--rasi-muted)] hover:text-[var(--rasi-text)]'
               }`}
             >
@@ -188,7 +189,7 @@ export function BrokerActivityExplorer({
       {/* Comparison View */}
       {!loading && isComparing && comparison && (
         <div className="space-y-6">
-          <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-5">
+          <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-5 shadow-[var(--rasi-card-shadow)]">
             <h3 className="text-base font-bold text-[var(--rasi-text)]">
               Kesimpulan Perbandingan: {comparison.brokerA.brokerCode} vs{' '}
               {comparison.brokerB.brokerCode}
@@ -201,7 +202,7 @@ export function BrokerActivityExplorer({
             <h4 className="text-sm font-bold text-[var(--rasi-text)]">
               Saham yang Sama-sama Ditransaksikan ({comparison.commonStocks.length})
             </h4>
-            <div className="overflow-x-auto rounded-xl border border-[var(--rasi-border)]">
+            <div className="overflow-x-auto rounded-xl border border-[var(--rasi-border)] bg-[var(--surface-card)] shadow-[var(--rasi-card-shadow)]">
               <table className="w-full text-left text-xs">
                 <thead className="bg-[var(--rasi-muted-bg)] text-[var(--rasi-muted)]">
                   <tr>
@@ -214,7 +215,7 @@ export function BrokerActivityExplorer({
                 </thead>
                 <tbody className="divide-y divide-[var(--rasi-border)]">
                   {comparison.commonStocks.map((c) => (
-                    <tr key={c.symbol} className="hover:bg-[var(--rasi-muted-bg)]">
+                    <tr key={c.symbol} className="transition-colors hover:bg-[var(--rasi-surface-2)]">
                       <td className="p-3">
                         <Link
                           href={`/saham/${c.symbol}`}
@@ -277,7 +278,7 @@ export function BrokerActivityExplorer({
         <div className="space-y-6">
           {/* Summary Cards */}
           <div className="grid gap-4 sm:grid-cols-4">
-            <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--surface-card)] p-4">
+            <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--surface-card)] p-4 shadow-[var(--rasi-card-shadow)]">
               <span className="block text-xs text-[var(--rasi-muted)]">Broker Terpilih</span>
               <span className="mt-1 block font-mono text-xl font-bold text-[var(--rasi-text)]">
                 {summaryA.brokerCode}
@@ -287,7 +288,7 @@ export function BrokerActivityExplorer({
               </span>
             </div>
 
-            <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--surface-card)] p-4">
+            <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--surface-card)] p-4 shadow-[var(--rasi-card-shadow)]">
               <span className="block text-xs text-[var(--rasi-muted)]">
                 Total Transaksi (Gross)
               </span>
@@ -299,7 +300,7 @@ export function BrokerActivityExplorer({
               </span>
             </div>
 
-            <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--surface-card)] p-4">
+            <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--surface-card)] p-4 shadow-[var(--rasi-card-shadow)]">
               <span className="block text-xs text-[var(--rasi-muted)]">Net Transaksi</span>
               <span
                 className={`mt-1 block font-mono text-xl font-bold tabular-nums ${
@@ -317,7 +318,7 @@ export function BrokerActivityExplorer({
               </span>
             </div>
 
-            <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--surface-card)] p-4">
+            <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--surface-card)] p-4 shadow-[var(--rasi-card-shadow)]">
               <span className="block text-xs text-[var(--rasi-muted)]">Cakupan Pengamatan</span>
               <span className="mt-1 block text-sm font-bold text-[var(--rasi-text)]">
                 {summaryA.periodStart} s/d {summaryA.periodEnd}
@@ -330,7 +331,7 @@ export function BrokerActivityExplorer({
 
           {/* Top Rankings: 3 columns */}
           {summaryA.totalGrossValue === 0 ? (
-            <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--surface-card)] p-8 text-center shadow-sm">
+            <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--surface-card)] p-8 text-center shadow-[var(--rasi-card-shadow)]">
               <Building2 className="mx-auto h-8 w-8 text-[var(--rasi-muted)]" />
               <p className="mt-2 text-sm font-semibold text-[var(--rasi-text)]">
                 Tidak ada transaksi tercatat untuk broker {summaryA.brokerCode} pada periode ini
@@ -340,20 +341,20 @@ export function BrokerActivityExplorer({
                 Hal ini biasanya terjadi jika bursa sedang libur, akhir pekan, atau belum ada transaksi pada rentang yang dipilih.
               </p>
               <div className="mt-4 flex justify-center gap-2">
-                <button
-                  type="button"
+                <Button
+                  variant="primary"
+                  size="sm"
                   onClick={() => setRangeDays('5')}
-                  className="rounded-lg bg-[var(--rasi-primary)] px-3 py-1.5 text-xs font-semibold text-[var(--rasi-primary-text)] shadow-sm hover:opacity-90"
                 >
                   Pilih Periode 5 Sesi
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
                   onClick={() => setRangeDays('14')}
-                  className="rounded-lg border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] px-3 py-1.5 text-xs font-semibold text-[var(--rasi-text)] hover:border-[var(--rasi-text)]"
                 >
                   Pilih Periode 14 Hari
-                </button>
+                </Button>
               </div>
             </div>
           ) : (
@@ -364,7 +365,7 @@ export function BrokerActivityExplorer({
                   <TrendingUp className="h-4 w-4 text-emerald-400" />
                   <h4 className="text-sm font-bold text-[var(--rasi-text)]">Top Net Buy</h4>
                 </div>
-                <div className="overflow-x-auto rounded-xl border border-[var(--rasi-border)]">
+                <div className="overflow-x-auto rounded-xl border border-[var(--rasi-border)] bg-[var(--surface-card)] shadow-[var(--rasi-card-shadow)]">
                   <table className="w-full text-left text-xs">
                     <thead className="bg-[var(--rasi-muted-bg)] text-[var(--rasi-muted)]">
                       <tr>
@@ -375,7 +376,7 @@ export function BrokerActivityExplorer({
                     </thead>
                     <tbody className="divide-y divide-[var(--rasi-border)]">
                       {summaryA.topNetBuy.map((s) => (
-                        <tr key={s.symbol} className="hover:bg-[var(--rasi-muted-bg)]">
+                        <tr key={s.symbol} className="transition-colors hover:bg-[var(--rasi-surface-2)]">
                           <td className="p-2.5">
                             <Link
                               href={`/saham/${s.symbol}`}
@@ -403,7 +404,7 @@ export function BrokerActivityExplorer({
                   <TrendingDown className="h-4 w-4 text-rose-400" />
                   <h4 className="text-sm font-bold text-[var(--rasi-text)]">Top Net Sell</h4>
                 </div>
-                <div className="overflow-x-auto rounded-xl border border-[var(--rasi-border)]">
+                <div className="overflow-x-auto rounded-xl border border-[var(--rasi-border)] bg-[var(--surface-card)] shadow-[var(--rasi-card-shadow)]">
                   <table className="w-full text-left text-xs">
                     <thead className="bg-[var(--rasi-muted-bg)] text-[var(--rasi-muted)]">
                       <tr>
@@ -414,7 +415,7 @@ export function BrokerActivityExplorer({
                     </thead>
                     <tbody className="divide-y divide-[var(--rasi-border)]">
                       {summaryA.topNetSell.map((s) => (
-                        <tr key={s.symbol} className="hover:bg-[var(--rasi-muted-bg)]">
+                        <tr key={s.symbol} className="transition-colors hover:bg-[var(--rasi-surface-2)]">
                           <td className="p-2.5">
                             <Link
                               href={`/saham/${s.symbol}`}
@@ -442,7 +443,7 @@ export function BrokerActivityExplorer({
                   <Building2 className="h-4 w-4 text-[var(--rasi-primary)]" />
                   <h4 className="text-sm font-bold text-[var(--rasi-text)]">Top Gross Transaksi</h4>
                 </div>
-                <div className="overflow-x-auto rounded-xl border border-[var(--rasi-border)]">
+                <div className="overflow-x-auto rounded-xl border border-[var(--rasi-border)] bg-[var(--surface-card)] shadow-[var(--rasi-card-shadow)]">
                   <table className="w-full text-left text-xs">
                     <thead className="bg-[var(--rasi-muted-bg)] text-[var(--rasi-muted)]">
                       <tr>
@@ -453,7 +454,7 @@ export function BrokerActivityExplorer({
                     </thead>
                     <tbody className="divide-y divide-[var(--rasi-border)]">
                       {summaryA.topGross.map((s) => (
-                        <tr key={s.symbol} className="hover:bg-[var(--rasi-muted-bg)]">
+                        <tr key={s.symbol} className="transition-colors hover:bg-[var(--rasi-surface-2)]">
                           <td className="p-2.5">
                             <Link
                               href={`/saham/${s.symbol}`}

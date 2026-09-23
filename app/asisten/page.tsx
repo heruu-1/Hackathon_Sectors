@@ -261,7 +261,7 @@ function AssistantContent() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 py-4">
+    <div className="space-y-6 py-4">
       {/* Header bar */}
       <div className="flex flex-col justify-between gap-4 border-b border-[var(--rasi-border)] pb-4 sm:flex-row sm:items-center">
         <div className="flex items-center gap-3">
@@ -335,11 +335,11 @@ function AssistantContent() {
       )}
 
       {/* Main Chat Box */}
-      <div className="flex min-h-[500px] flex-col rounded-2xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] shadow-xs">
+      <div className="flex min-h-[500px] flex-col rounded-2xl border border-[var(--rasi-border)] bg-[var(--surface-card)] shadow-[var(--rasi-card-shadow)]">
         {/* Messages List */}
         <div className="flex-1 space-y-4 overflow-y-auto p-4 sm:p-6">
           {/* Introductory notice */}
-          <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-4 text-xs leading-relaxed text-[var(--rasi-muted)]">
+          <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface-2)] p-4 text-xs leading-relaxed text-[var(--rasi-muted)]">
             <strong className="text-[var(--rasi-text)]">Tentang Asisten RASI:</strong> Asisten
             menjelaskan data saham, bukan menentukan saham yang harus dibeli atau dijual. Periksa
             sumber dan tanggal data; jawaban AI bisa keliru.{' '}
@@ -357,7 +357,7 @@ function AssistantContent() {
                   className={`max-w-[85%] rounded-2xl p-4 text-sm leading-relaxed ${
                     isUser
                       ? 'rounded-tr-xs bg-[var(--rasi-primary)] font-medium text-[var(--rasi-primary-text)]'
-                      : 'space-y-3 rounded-tl-xs border border-[var(--rasi-border)] bg-[var(--rasi-surface)] text-[var(--rasi-text)]'
+                      : 'space-y-3 rounded-tl-xs border border-[var(--rasi-border)] bg-[var(--rasi-surface-2)] text-[var(--rasi-text)] shadow-xs'
                   }`}
                 >
                   {isUser ? (
@@ -562,7 +562,7 @@ function AssistantContent() {
               <div
                 key={c.id}
                 onClick={() => openSavedConversation(c.id)}
-                className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-[var(--rasi-border)] p-3 transition-colors hover:border-[var(--rasi-primary)] hover:bg-[var(--rasi-muted-bg)]/40"
+                className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-[var(--rasi-border)] bg-[var(--surface-card)] p-3 shadow-xs transition-colors hover:border-[var(--rasi-border-hover)] hover:bg-[var(--rasi-surface-2)]"
               >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
@@ -570,7 +570,7 @@ function AssistantContent() {
                       {c.title || 'Percakapan Riset'}
                     </span>
                     {c.ticker && (
-                      <span className="rounded bg-[var(--rasi-muted-bg)] px-1.5 py-0.5 font-mono text-[10px]">
+                      <span className="rounded bg-[var(--rasi-surface-2)] px-1.5 py-0.5 font-mono text-[10px]">
                         {c.ticker}
                       </span>
                     )}

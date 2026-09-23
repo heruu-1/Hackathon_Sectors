@@ -6,38 +6,58 @@
    LIGHT MODE: Putih Bersih & Biru Sangat Gelap
    ────────────────────────────────────────────────────────────────── */
 :root {
-  --background: #ffffff;
+  --background: #f8fafc;
   --foreground: #080f1d;
-  --rasi-bg: #ffffff;
-  --rasi-surface: #f8fafc;
+  --rasi-bg: #f8fafc;
+  --rasi-surface: #ffffff;
   --rasi-surface-2: #f1f5f9;
+  --rasi-card: #ffffff;
   --rasi-text: #080f1d;
   --rasi-muted: #475569;
   --rasi-muted-bg: #f1f5f9;
   --rasi-border: #e2e8f0;
+  --rasi-border-hover: #cbd5e1;
   --rasi-primary: #080f1d;
   --rasi-primary-text: #ffffff;
   --rasi-primary-hover: #16243b;
   --rasi-active-bg: #e2e8f0;
+  --rasi-accent: #0284c7;
   --rasi-success: #15803d;
   --rasi-danger: #dc2626;
   --rasi-warning: #d97706;
   --rasi-focus: #080f1d;
   --rasi-navy: #080f1d;
   --rasi-ocean: #16243b;
-  --rasi-cyan: #38bdf8;
-  --rasi-mint: #34d399;
-  --rasi-accent-violet: #818cf8;
-  --rasi-accent-cyan: #38bdf8;
-  --rasi-accent-mint: #34d399;
+  --rasi-cyan: #0284c7;
+  --rasi-mint: #10b981;
+  --rasi-accent-violet: #6366f1;
+  --rasi-accent-cyan: #0284c7;
+  --rasi-accent-mint: #10b981;
 
-  /* Card Gradient & Typography Aliases */
-  --border-subtle: #e2e8f0;
-  --bg-main: #f8fafc;
-  --surface-card: #ffffff;
-  --text-primary: #080f1d;
-  --text-secondary: #64748b;
-  --accent-cyan: #0284c7;
+  /* Adaptive Card Shadow: Halus di mode terang */
+  --rasi-card-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+
+  /* Semantic Alerts di Light Mode */
+  --rasi-success-bg: #f0fdf4;
+  --rasi-success-border: #bbf7d0;
+  --rasi-success-text: #166534;
+  --rasi-danger-bg: #fef2f2;
+  --rasi-danger-border: #fecaca;
+  --rasi-danger-text: #991b1b;
+  --rasi-warning-bg: #fffbeb;
+  --rasi-warning-border: #fde68a;
+  --rasi-warning-text: #92400e;
+  --rasi-info-bg: #eff6ff;
+  --rasi-info-border: #bfdbfe;
+  --rasi-info-text: #1e40af;
+
+  /* Card Gradient & Typography Aliases (Dipetakan langsung ke token baku) */
+  --border-subtle: var(--rasi-border);
+  --bg-main: var(--rasi-bg);
+  --surface-card: var(--rasi-card);
+  --text-primary: var(--rasi-text);
+  --text-secondary: var(--rasi-muted);
+  --accent-cyan: var(--rasi-cyan);
 }
 
 @theme inline {
@@ -62,98 +82,160 @@
     --background: #02050c;
     --foreground: #ffffff;
     --rasi-bg: #02050c;
-    --rasi-surface: #050a14;
-    --rasi-surface-2: #0b1322;
+    --rasi-surface: #060b17;
+    --rasi-surface-2: #0f1a2e;
+    --rasi-card: #080f1e;
     --rasi-text: #ffffff;
     --rasi-muted: #94a3b8;
-    --rasi-muted-bg: #0b1322;
+    --rasi-muted-bg: #0f1a2e;
     --rasi-border: #1a273e;
+    --rasi-border-hover: #2e3e5c;
     --rasi-primary: #ffffff;
     --rasi-primary-text: #02050c;
     --rasi-primary-hover: #e2e8f0;
-    --rasi-active-bg: #0f1a2e;
+    --rasi-active-bg: #162644;
+    --rasi-accent: #38bdf8;
     --rasi-success: #34d399;
     --rasi-danger: #f87171;
     --rasi-warning: #fbbf24;
-    --rasi-focus: #ffffff;
+    --rasi-focus: #38bdf8;
     --rasi-navy: #080f1e;
     --rasi-ocean: #0f1a2e;
-    --rasi-cyan: #ffffff;
-    --rasi-mint: #ffffff;
-    --rasi-accent-violet: #cbd5e1;
-    --rasi-accent-cyan: #e2e8f0;
-    --rasi-accent-mint: #f8fafc;
+    --rasi-cyan: #38bdf8;
+    --rasi-mint: #34d399;
+    --rasi-accent-violet: #818cf8;
+    --rasi-accent-cyan: #38bdf8;
+    --rasi-accent-mint: #34d399;
+
+    /* Adaptive Card Shadow: Efek kedalaman dengan rim-light di dark mode */
+    --rasi-card-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.07);
+
+    /* Semantic Alerts di Dark Mode */
+    --rasi-success-bg: #052e16;
+    --rasi-success-border: #166534;
+    --rasi-success-text: #86efac;
+    --rasi-danger-bg: #2b0808;
+    --rasi-danger-border: #7f1d1d;
+    --rasi-danger-text: #fca5a5;
+    --rasi-warning-bg: #291a02;
+    --rasi-warning-border: #78350f;
+    --rasi-warning-text: #fde047;
+    --rasi-info-bg: #081d38;
+    --rasi-info-border: #1e3a8a;
+    --rasi-info-text: #93c5fd;
 
     /* Card Gradient & Typography Aliases (Dark Mode) */
-    --border-subtle: #1a273e;
-    --bg-main: #02050c;
-    --surface-card: #070e1b;
-    --text-primary: #ffffff;
-    --text-secondary: #94a3b8;
-    --accent-cyan: #38bdf8;
+    --border-subtle: var(--rasi-border);
+    --bg-main: var(--rasi-bg);
+    --surface-card: var(--rasi-card);
+    --text-primary: var(--rasi-text);
+    --text-secondary: var(--rasi-muted);
+    --accent-cyan: var(--rasi-cyan);
   }
 }
 
 :root[data-rasi-theme='light'] {
-  --background: #ffffff;
+  --background: #f8fafc;
   --foreground: #080f1d;
-  --rasi-bg: #ffffff;
+  --rasi-bg: #f8fafc;
   --rasi-surface: #ffffff;
-  --rasi-surface-2: #f8fafc;
+  --rasi-surface-2: #f1f5f9;
+  --rasi-card: #ffffff;
   --rasi-text: #080f1d;
   --rasi-muted: #475569;
   --rasi-muted-bg: #f1f5f9;
   --rasi-border: #e2e8f0;
+  --rasi-border-hover: #cbd5e1;
   --rasi-primary: #080f1d;
   --rasi-primary-text: #ffffff;
   --rasi-primary-hover: #16243b;
   --rasi-active-bg: #e2e8f0;
+  --rasi-accent: #0284c7;
   --rasi-success: #15803d;
   --rasi-danger: #dc2626;
   --rasi-warning: #d97706;
   --rasi-focus: #080f1d;
   --rasi-navy: #080f1d;
   --rasi-ocean: #16243b;
-  --rasi-cyan: #38bdf8;
-  --rasi-mint: #34d399;
-  --rasi-accent-violet: #818cf8;
-  --rasi-accent-cyan: #38bdf8;
-  --rasi-accent-mint: #34d399;
+  --rasi-cyan: #0284c7;
+  --rasi-mint: #10b981;
+  --rasi-accent-violet: #6366f1;
+  --rasi-accent-cyan: #0284c7;
+  --rasi-accent-mint: #10b981;
+
+  --rasi-card-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+
+  --rasi-success-bg: #f0fdf4;
+  --rasi-success-border: #bbf7d0;
+  --rasi-success-text: #166534;
+  --rasi-danger-bg: #fef2f2;
+  --rasi-danger-border: #fecaca;
+  --rasi-danger-text: #991b1b;
+  --rasi-warning-bg: #fffbeb;
+  --rasi-warning-border: #fde68a;
+  --rasi-warning-text: #92400e;
+  --rasi-info-bg: #eff6ff;
+  --rasi-info-border: #bfdbfe;
+  --rasi-info-text: #1e40af;
+
+  --border-subtle: var(--rasi-border);
+  --bg-main: var(--rasi-bg);
+  --surface-card: var(--rasi-card);
+  --text-primary: var(--rasi-text);
+  --text-secondary: var(--rasi-muted);
+  --accent-cyan: var(--rasi-cyan);
 }
 
 :root[data-rasi-theme='dark'] {
   --background: #02050c;
   --foreground: #ffffff;
   --rasi-bg: #02050c;
-  --rasi-surface: #050a14;
-  --rasi-surface-2: #0b1322;
+  --rasi-surface: #060b17;
+  --rasi-surface-2: #0f1a2e;
+  --rasi-card: #080f1e;
   --rasi-text: #ffffff;
   --rasi-muted: #94a3b8;
-  --rasi-muted-bg: #0b1322;
+  --rasi-muted-bg: #0f1a2e;
   --rasi-border: #1a273e;
+  --rasi-border-hover: #2e3e5c;
   --rasi-primary: #ffffff;
   --rasi-primary-text: #02050c;
   --rasi-primary-hover: #e2e8f0;
-  --rasi-active-bg: #0f1a2e;
+  --rasi-active-bg: #162644;
+  --rasi-accent: #38bdf8;
   --rasi-success: #34d399;
   --rasi-danger: #f87171;
   --rasi-warning: #fbbf24;
-  --rasi-focus: #ffffff;
+  --rasi-focus: #38bdf8;
   --rasi-navy: #080f1e;
   --rasi-ocean: #0f1a2e;
-  --rasi-cyan: #ffffff;
-  --rasi-mint: #ffffff;
-  --rasi-accent-violet: #cbd5e1;
-  --rasi-accent-cyan: #e2e8f0;
-  --rasi-accent-mint: #f8fafc;
+  --rasi-cyan: #38bdf8;
+  --rasi-mint: #34d399;
+  --rasi-accent-violet: #818cf8;
+  --rasi-accent-cyan: #38bdf8;
+  --rasi-accent-mint: #34d399;
 
-  /* Card Gradient & Typography Aliases (Dark Mode Explicit) */
-  --border-subtle: #1a273e;
-  --bg-main: #02050c;
-  --surface-card: #070e1b;
-  --text-primary: #ffffff;
-  --text-secondary: #94a3b8;
-  --accent-cyan: #38bdf8;
+  --rasi-card-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.07);
+
+  --rasi-success-bg: #052e16;
+  --rasi-success-border: #166534;
+  --rasi-success-text: #86efac;
+  --rasi-danger-bg: #2b0808;
+  --rasi-danger-border: #7f1d1d;
+  --rasi-danger-text: #fca5a5;
+  --rasi-warning-bg: #291a02;
+  --rasi-warning-border: #78350f;
+  --rasi-warning-text: #fde047;
+  --rasi-info-bg: #081d38;
+  --rasi-info-border: #1e3a8a;
+  --rasi-info-text: #93c5fd;
+
+  --border-subtle: var(--rasi-border);
+  --bg-main: var(--rasi-bg);
+  --surface-card: var(--rasi-card);
+  --text-primary: var(--rasi-text);
+  --text-secondary: var(--rasi-muted);
+  --accent-cyan: var(--rasi-cyan);
 }
 
 html {
@@ -220,3 +302,142 @@ dialog {
     animation-iteration-count: 1 !important;
   }
 }
+
+/* ──────────────────────────────────────────────────────────────────
+   SEMANTIC ALERTS & STATUS CALLOUTS
+   Mendukung kontras sempurna di Light Mode & Dark Mode
+   ────────────────────────────────────────────────────────────────── */
+.rasi-alert-danger {
+  background-color: var(--rasi-danger-bg);
+  border: 1px solid var(--rasi-danger-border);
+  color: var(--rasi-danger-text);
+}
+
+.rasi-alert-warning {
+  background-color: var(--rasi-warning-bg);
+  border: 1px solid var(--rasi-warning-border);
+  color: var(--rasi-warning-text);
+}
+
+.rasi-alert-success {
+  background-color: var(--rasi-success-bg);
+  border: 1px solid var(--rasi-success-border);
+  color: var(--rasi-success-text);
+}
+
+.rasi-alert-info {
+  background-color: var(--rasi-info-bg);
+  border: 1px solid var(--rasi-info-border);
+  color: var(--rasi-info-text);
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   TACTICAL VIBRANT ACCENTS (WARNA MENYALA TERARAH)
+   Pendar halus (ambient glow) khusus sinyal penting tanpa efek norak
+   ────────────────────────────────────────────────────────────────── */
+.rasi-glow-cyan {
+  box-shadow: 0 0 16px -2px rgba(56, 189, 248, 0.25);
+}
+
+.rasi-glow-mint {
+  box-shadow: 0 0 16px -2px rgba(52, 211, 153, 0.25);
+}
+
+.rasi-glow-amber {
+  box-shadow: 0 0 16px -2px rgba(251, 191, 36, 0.25);
+}
+
+.rasi-glow-rose {
+  box-shadow: 0 0 16px -2px rgba(244, 63, 94, 0.25);
+}
+
+/* Garis pendar halus 1px di bibir atas kartu (Ambient Top Highlight) */
+.rasi-ambient-top-cyan {
+  position: relative;
+}
+.rasi-ambient-top-cyan::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--rasi-accent) 50%, transparent 100%);
+  opacity: 0.7;
+}
+
+.rasi-ambient-top-ai {
+  position: relative;
+}
+.rasi-ambient-top-ai::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, #818cf8 35%, var(--rasi-cyan) 65%, transparent 100%);
+  opacity: 0.8;
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   AURORA BOREALIS & GALAXY SKY ENGINE
+   Pendar cahaya aurora hijau-emerald, cyan elektrik, dan kabut galaksi
+   ────────────────────────────────────────────────────────────────── */
+@keyframes aurora-wave-1 {
+  0%, 100% {
+    transform: translateY(0) scaleY(1) rotate(-6deg);
+    opacity: 0.70;
+  }
+  50% {
+    transform: translateY(-28px) scaleY(1.18) rotate(-2deg);
+    opacity: 0.95;
+  }
+}
+
+@keyframes aurora-wave-2 {
+  0%, 100% {
+    transform: translateY(0) scaleX(1) rotate(12deg);
+    opacity: 0.60;
+  }
+  50% {
+    transform: translateY(32px) scaleX(1.14) rotate(7deg);
+    opacity: 0.88;
+  }
+}
+
+@keyframes galaxy-core-pulse {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.75;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.10);
+    opacity: 1;
+  }
+}
+
+.animate-aurora-1 {
+  animation: aurora-wave-1 14s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+.animate-aurora-2 {
+  animation: aurora-wave-2 20s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+.animate-galaxy-pulse {
+  animation: galaxy-core-pulse 16s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+/* Utility untuk menyembunyikan scrollbar namun tetap bisa digulir */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+

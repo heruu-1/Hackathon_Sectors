@@ -15,7 +15,6 @@ import {
   updateWatchlistItem,
 } from '@/app/actions'
 import { StockPreviewDialog } from '@/components/StockPreviewDialog'
-import { StockSearchCombobox } from '@/components/StockSearchCombobox'
 import { WatchlistDeleteDialog } from '@/components/WatchlistDeleteDialog'
 import { WatchlistNoteDialog } from '@/components/WatchlistNoteDialog'
 import { ActionMenu, Button, ButtonLink } from '@/components/ui'
@@ -243,7 +242,7 @@ function WatchlistContent({ initialTab = 'watchlist' }: { initialTab?: 'watchlis
           {/* Quick Add Form */}
           <form
             onSubmit={handleQuickAdd}
-            className="relative flex flex-wrap items-center gap-2 overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-4 shadow-xl shadow-black/40"
+            className="relative flex flex-wrap items-center gap-2 overflow-hidden rounded-xl border border-[var(--rasi-border)] bg-[var(--surface-card)] p-4 shadow-[var(--rasi-card-shadow)]"
           >
             <label htmlFor="quick-add-ticker" className="sr-only">
               Kode saham
@@ -282,7 +281,7 @@ function WatchlistContent({ initialTab = 'watchlist' }: { initialTab?: 'watchlis
 
           {/* Watchlist Items */}
           {loadingWatchlist ? (
-            <div className="flex min-h-[180px] items-center justify-center rounded-xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-8 text-sm text-[var(--rasi-muted)] shadow-xl shadow-black/40">
+            <div className="flex min-h-[180px] items-center justify-center rounded-xl border border-[var(--rasi-border)] bg-[var(--surface-card)] p-8 text-sm text-[var(--rasi-muted)] shadow-[var(--rasi-card-shadow)]">
               <Loader2 className="mr-2 h-4 w-4 animate-spin text-[var(--rasi-primary)]" />
               Memuat daftar pantauan…
             </div>
@@ -294,7 +293,7 @@ function WatchlistContent({ initialTab = 'watchlist' }: { initialTab?: 'watchlis
               {watchlistError}
             </div>
           ) : watchlist.length === 0 ? (
-            <div className="rounded-xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-12 text-center text-sm text-[var(--rasi-muted)] shadow-xl shadow-black/40">
+            <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--surface-card)] p-12 text-center text-sm text-[var(--rasi-muted)] shadow-[var(--rasi-card-shadow)]">
               <Star className="mx-auto mb-2 h-8 w-8 text-[var(--rasi-muted)]" aria-hidden="true" />
               <p className="font-semibold text-[var(--rasi-text)]">
                 Belum ada saham dalam pantauan
@@ -308,7 +307,7 @@ function WatchlistContent({ initialTab = 'watchlist' }: { initialTab?: 'watchlis
               {watchlist.map((item) => (
                 <div
                   key={item.id}
-                  className="relative flex flex-col justify-between gap-4 overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-5 shadow-xl shadow-black/40 transition-colors hover:border-[var(--rasi-primary)] sm:flex-row sm:items-center"
+                  className="relative flex flex-col justify-between gap-4 overflow-hidden rounded-xl border border-[var(--rasi-border)] bg-[var(--surface-card)] p-5 shadow-[var(--rasi-card-shadow)] transition-colors hover:border-[var(--rasi-border-hover)] sm:flex-row sm:items-center"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-3">
@@ -396,7 +395,7 @@ function WatchlistContent({ initialTab = 'watchlist' }: { initialTab?: 'watchlis
           </div>
 
           {loadingHistory ? (
-            <div className="flex min-h-[180px] items-center justify-center rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-8 text-sm text-[var(--rasi-muted)]">
+            <div className="flex min-h-[180px] items-center justify-center rounded-xl border border-[var(--rasi-border)] bg-[var(--surface-card)] p-8 text-sm text-[var(--rasi-muted)] shadow-[var(--rasi-card-shadow)]">
               <Loader2 className="mr-2 h-4 w-4 animate-spin text-[var(--rasi-primary)]" />
               Memuat riwayat riset…
             </div>
@@ -408,7 +407,7 @@ function WatchlistContent({ initialTab = 'watchlist' }: { initialTab?: 'watchlis
               {historyError}
             </div>
           ) : history.length === 0 ? (
-            <div className="rounded-xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-12 text-center text-sm text-[var(--rasi-muted)] shadow-xl shadow-black/40">
+            <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--surface-card)] p-12 text-center text-sm text-[var(--rasi-muted)] shadow-[var(--rasi-card-shadow)]">
               <History
                 className="mx-auto mb-2 h-8 w-8 text-[var(--rasi-muted)]"
                 aria-hidden="true"
@@ -425,7 +424,7 @@ function WatchlistContent({ initialTab = 'watchlist' }: { initialTab?: 'watchlis
               {history.map((row) => (
                 <div
                   key={row.id}
-                  className="relative flex flex-col justify-between gap-3 overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-5 shadow-xl shadow-black/40 transition-colors hover:border-[var(--rasi-primary)] sm:flex-row sm:items-center"
+                  className="relative flex flex-col justify-between gap-3 overflow-hidden rounded-xl border border-[var(--rasi-border)] bg-[var(--surface-card)] p-5 shadow-[var(--rasi-card-shadow)] transition-colors hover:border-[var(--rasi-border-hover)] sm:flex-row sm:items-center"
                 >
                   <div>
                     <div className="flex items-center gap-3">

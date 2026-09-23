@@ -325,7 +325,7 @@ export default function StockDetail({ ticker, initialData }: StockDetailProps) {
       </div>
 
       {/* 2. Price, Change, Summary, and Primary Actions */}
-      <div className="relative space-y-5 overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-5 shadow-2xl shadow-black/40 sm:p-8">
+      <div className="relative space-y-5 overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-5 shadow-[var(--rasi-card-shadow)] sm:p-8">
         <div className="flex flex-col justify-between gap-4 border-b border-[var(--rasi-border)] pb-5 sm:flex-row sm:items-baseline">
           <div className="flex items-baseline gap-4">
             <span className="font-mono text-3xl font-extrabold text-[var(--rasi-text)] tabular-nums sm:text-4xl">
@@ -367,7 +367,7 @@ export default function StockDetail({ ticker, initialData }: StockDetailProps) {
         {saveError && (
           <p
             role="alert"
-            className="rounded-lg border border-rose-200 bg-rose-50 p-2.5 text-xs text-rose-800 dark:border-rose-900 dark:bg-[#1a080a] dark:text-rose-200"
+            className="rasi-alert-danger rounded-lg p-2.5 text-xs"
           >
             {saveError}
           </p>
@@ -389,8 +389,8 @@ export default function StockDetail({ ticker, initialData }: StockDetailProps) {
           </p>
         </div>
 
-        {/* Deep analysis explicit trigger */}
-        <div className="flex flex-col justify-between gap-3 border-t border-[var(--rasi-border)] pt-4 text-xs sm:flex-row sm:items-center">
+        {/* Deep analysis explicit trigger with AI ambient highlight */}
+        <div className="rasi-ambient-top-ai -mx-5 -mb-5 flex flex-col justify-between gap-3 border-t border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)]/40 p-5 text-xs sm:-mx-8 sm:-mb-8 sm:flex-row sm:items-center sm:px-8">
           <div>
             <span className="font-semibold text-[var(--rasi-text)]">
               {' '}
@@ -409,6 +409,7 @@ export default function StockDetail({ ticker, initialData }: StockDetailProps) {
             onClick={triggerDeepAnalysis}
             pending={analysisState === 'analyzing'}
             pendingText="Menganalisis…"
+            className="text-[var(--rasi-accent)] hover:text-[var(--rasi-accent)]"
           >
             Buat analisis baru
           </Button>
@@ -416,10 +417,10 @@ export default function StockDetail({ ticker, initialData }: StockDetailProps) {
 
         {analysisMessage && (
           <p
-            className={`rounded-lg border p-2.5 text-xs ${
+            className={`rounded-lg p-2.5 text-xs ${
               analysisState === 'done'
-                ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-[#072418] dark:text-emerald-200'
-                : 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-900 dark:bg-[#1a080a] dark:text-rose-200'
+                ? 'rasi-alert-success'
+                : 'rasi-alert-danger'
             }`}
           >
             {analysisMessage}
@@ -434,31 +435,35 @@ export default function StockDetail({ ticker, initialData }: StockDetailProps) {
       <div className="space-y-4">
         {/* Tab Navigation and Mode Toggle */}
         <div className="flex flex-col justify-between gap-3 border-b border-[var(--rasi-border)] sm:flex-row sm:items-center">
-          <div className="flex overflow-x-auto">
-            {[
-              { key: 'fundamental', label: 'Keuangan & Kinerja' },
-              { key: 'valuation', label: 'Valuasi & Pembanding' },
-              { key: 'ownership', label: 'Kepemilikan & Float' },
-              { key: 'broker', label: 'Transaksi Broker' },
-              { key: 'news', label: 'Berita & Katalis' },
-              { key: 'research', label: 'Ruang Riset & Tesis' },
-            ].map((tab) => {
-              const active = currentTab === tab.key
-              return (
-                <button
-                  key={tab.key}
-                  type="button"
-                  onClick={() => setTab(tab.key)}
-                  className={`min-h-[44px] border-b-2 px-4 py-2 text-sm font-semibold whitespace-nowrap transition-colors ${
-                    active
-                      ? 'border-[var(--rasi-primary)] text-[var(--rasi-primary)]'
-                      : 'border-transparent text-[var(--rasi-muted)] hover:text-[var(--rasi-text)]'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              )
-            })}
+          <div className="relative flex-1 overflow-hidden">
+            <div className="no-scrollbar flex overflow-x-auto scroll-smooth">
+              {[
+                { key: 'fundamental', label: 'Keuangan & Kinerja' },
+                { key: 'valuation', label: 'Valuasi & Pembanding' },
+                { key: 'ownership', label: 'Kepemilikan & Float' },
+                { key: 'broker', label: 'Transaksi Broker' },
+                { key: 'news', label: 'Berita & Katalis' },
+                { key: 'research', label: 'Ruang Riset & Tesis' },
+              ].map((tab) => {
+                const active = currentTab === tab.key
+                return (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => setTab(tab.key)}
+                    className={`min-h-[44px] border-b-2 px-4 py-2 text-sm font-semibold whitespace-nowrap transition-colors ${
+                      active
+                        ? 'border-[var(--rasi-primary)] text-[var(--rasi-primary)]'
+                        : 'border-transparent text-[var(--rasi-muted)] hover:text-[var(--rasi-text)]'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                )
+              })}
+            </div>
+            {/* Visual gradient mask cue for horizontal scroll affordance on mobile */}
+            <div className="pointer-events-none absolute top-0 right-0 bottom-0 w-8 bg-gradient-to-l from-[var(--rasi-bg)] to-transparent sm:hidden" />
           </div>
 
           <div className="flex items-center gap-2 pb-2 sm:pb-0">
@@ -474,12 +479,12 @@ export default function StockDetail({ ticker, initialData }: StockDetailProps) {
         </div>
 
         {/* TAB CONTENT */}
-        <div className="relative overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-5 shadow-2xl shadow-black/40 sm:p-6">
+        <div className="relative overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-5 shadow-[var(--rasi-card-shadow)] sm:p-6">
           {/* TAB: FUNDAMENTAL */}
           {currentTab === 'fundamental' && (
             <div className="space-y-6">
               {mode === 'beginner' && (
-                <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-xs leading-relaxed text-blue-950 dark:border-blue-900 dark:bg-[#071328] dark:text-blue-200">
+                <div className="rasi-alert-info rounded-xl p-4 text-xs leading-relaxed">
                   <strong> Cara membaca keuangan: </strong> Evaluasi kinerja bisnis membandingkan
                   kuartal terkini dengan periode sama tahun sebelumnya (YoY). Perusahaan keuangan
                   (bank) dinilai dari pertumbuhan bunga dan kredit, sedangkan perusahaan nonkeuangan
@@ -491,8 +496,8 @@ export default function StockDetail({ ticker, initialData }: StockDetailProps) {
               {data?.fundamentals &&
                 'isCashFlowDivergent' in data.fundamentals &&
                 data.fundamentals.isCashFlowDivergent && (
-                  <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-200">
-                    <strong className="font-semibold text-amber-300">
+                  <div className="rasi-alert-warning rounded-xl p-4 text-xs">
+                    <strong className="font-semibold">
                       ⚠️ Divergensi Arus Kas Operasi (R07):
                     </strong>{' '}
                     Perusahaan membukukan laba bersih positif, namun arus kas operasi negatif.
@@ -821,8 +826,8 @@ export default function StockDetail({ ticker, initialData }: StockDetailProps) {
 
               {/* R06 Value Trap Alert */}
               {data?.peerComparison?.ruleR06.triggered && (
-                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-200">
-                  <strong className="font-semibold text-amber-300">
+                <div className="rasi-alert-warning rounded-xl p-4 text-xs">
+                  <strong className="font-semibold">
                     ⚠️ Peringatan Valuasi Semu (R06):
                   </strong>{' '}
                   {data.peerComparison.ruleR06.explanation}
@@ -831,7 +836,7 @@ export default function StockDetail({ ticker, initialData }: StockDetailProps) {
 
               {/* Sample size warning */}
               {data?.peerComparison && !data.peerComparison.isSampleSufficient && (
-                <div className="rounded-xl border border-blue-500/20 bg-blue-500/10 p-3 text-xs text-blue-300">
+                <div className="rasi-alert-info rounded-xl p-3 text-xs">
                   ℹ️ Jumlah pembanding aktif kurang dari 5 emiten; median mungkin kurang
                   representatif.
                 </div>
