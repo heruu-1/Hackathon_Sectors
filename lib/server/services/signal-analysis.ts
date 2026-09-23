@@ -22,6 +22,7 @@ import type {
   SignalModelParams,
 } from '../../contracts/signal-analysis.ts'
 import { isFeatureEnabled } from '../env.ts'
+import { logger } from '../logger.ts'
 import { fetchIntradayPrices } from '../providers/intraday.ts'
 import { fetchDailyPrices } from '../providers/sectors.ts'
 import {
@@ -196,7 +197,7 @@ export async function evaluateSignalAnalysis(params: {
         await saveSignalContext(context)
       } catch (err) {
         // If DB fails, log but do not mask
-        console.warn('Gagal menyimpan signal context ke DB:', err)
+        logger.warn('Gagal menyimpan signal context ke DB', { error: err })
       }
     }
   }
@@ -359,7 +360,7 @@ export async function evaluateSignalAnalysis(params: {
       status: runStatus,
     })
   } catch (err) {
-    console.warn('Gagal menyimpan signal analysis run ke DB:', err)
+    logger.warn('Gagal menyimpan signal analysis run ke DB', { error: err })
   }
 
   return report

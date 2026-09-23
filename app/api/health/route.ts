@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server'
-
 import { sql } from 'drizzle-orm'
 
 import { db } from '@/db'
+import { getFeatureFlagStatus } from '@/lib/server/env'
+import { logger } from '@/lib/server/logger'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,6 +10,9 @@ export async function GET() {
   const timestamp = new Date().toISOString()
   let databaseStatus: 'connected' | 'disconnected' = 'disconnected'
   let dbLatencyMs: number | null = null
+  let dbError: string | null = null
+  let migrationsStatus: 'applied' | 'pending' | 'unmigrated' | 'unknown' = 'unknown'
+  let migrationsCount = 0
 
   try {
     const start = performance.now()
@@ -22,31 +25,46 @@ export async function GET() {
     ])
     dbLatencyMs = Math.round(performance.now() - start)
     databaseStatus = 'connected'
+
+    // Check migration ledger status
+    try {
+      const migRows = (await db.execute(
+        sql`SELECT count(*)::int as count FROM _rasi_migrations`,
+      )) as unknown as Array<{ count: number }>
+      migrationsCount = migRows[0]?.count ?? 0
+      migrationsStatus = migrationsCount >= 4 ? 'applied' : 'pending'
+    } catch {
+      migrationsStatus = 'unmigrated'
+    }
   } catch (error) {
-    console.error(
-      '[HealthCheck] Database check failed:',
-      error instanceof Error ? error.message : error,
-    )
+    dbError = error instanceof Error ? error.message : String(error)
+    logger.error('HealthCheck: Database check failed', error, { databaseStatus: 'disconnected' })
     databaseStatus = 'disconnected'
   }
 
-  const isHealthy = databaseStatus === 'connected'
+  const isHealthy = databaseStatus === 'connected' && migrationsStatus !== 'unmigrated'
 
-  return NextResponse.json(
-    {
-      status: isHealthy ? 'ok' : 'degraded',
-      timestamp,
-      version: '0.1.0',
-      database: {
-        status: databaseStatus,
-        latencyMs: dbLatencyMs,
-      },
+  const payload = {
+    status: isHealthy ? 'ok' : 'degraded',
+    readiness: isHealthy ? 'READY' : 'NOT_READY',
+    timestamp,
+    version: '0.1.0',
+    database: {
+      status: databaseStatus,
+      latencyMs: dbLatencyMs,
+      error: dbError || undefined,
     },
-    {
-      status: 200,
-      headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate',
-      },
+    migrations: {
+      status: migrationsStatus,
+      appliedCount: migrationsCount,
     },
-  )
+    features: getFeatureFlagStatus(),
+  }
+
+  return Response.json(payload, {
+    status: isHealthy ? 200 : 503,
+    headers: {
+      'Cache-Control': 'no-store, no-cache, must-revalidate',
+    },
+  })
 }

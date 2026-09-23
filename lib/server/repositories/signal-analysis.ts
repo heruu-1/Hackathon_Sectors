@@ -55,16 +55,21 @@ export async function getLatestSignalContextForTicker(
 ): Promise<SignalContext | null> {
   if (!process.env.DATABASE_URL) return null
 
-  const cleanTicker = ticker.trim().toUpperCase()
-  const rows = await db
-    .select()
-    .from(signalContexts)
-    .where(eq(signalContexts.ticker, cleanTicker))
-    .orderBy(desc(signalContexts.signalAt))
-    .limit(1)
+  try {
+    const cleanTicker = ticker.trim().toUpperCase()
+    const rows = await db
+      .select()
+      .from(signalContexts)
+      .where(eq(signalContexts.ticker, cleanTicker))
+      .orderBy(desc(signalContexts.signalAt))
+      .limit(1)
 
-  if (rows.length === 0) return null
-  return mapRowToSignalContext(rows[0])
+    if (rows.length === 0) return null
+    return mapRowToSignalContext(rows[0])
+  } catch (err) {
+    if (process.env.NODE_ENV === 'production') throw err
+    return null
+  }
 }
 
 /**
@@ -73,10 +78,15 @@ export async function getLatestSignalContextForTicker(
 export async function getSignalContextById(id: string): Promise<SignalContext | null> {
   if (!process.env.DATABASE_URL) return null
 
-  const rows = await db.select().from(signalContexts).where(eq(signalContexts.id, id)).limit(1)
+  try {
+    const rows = await db.select().from(signalContexts).where(eq(signalContexts.id, id)).limit(1)
 
-  if (rows.length === 0) return null
-  return mapRowToSignalContext(rows[0])
+    if (rows.length === 0) return null
+    return mapRowToSignalContext(rows[0])
+  } catch (err) {
+    if (process.env.NODE_ENV === 'production') throw err
+    return null
+  }
 }
 
 /**
@@ -88,15 +98,20 @@ export async function listSignalContextsForTicker(
 ): Promise<SignalContext[]> {
   if (!process.env.DATABASE_URL) return []
 
-  const cleanTicker = ticker.trim().toUpperCase()
-  const rows = await db
-    .select()
-    .from(signalContexts)
-    .where(eq(signalContexts.ticker, cleanTicker))
-    .orderBy(desc(signalContexts.signalAt))
-    .limit(limit)
+  try {
+    const cleanTicker = ticker.trim().toUpperCase()
+    const rows = await db
+      .select()
+      .from(signalContexts)
+      .where(eq(signalContexts.ticker, cleanTicker))
+      .orderBy(desc(signalContexts.signalAt))
+      .limit(limit)
 
-  return rows.map(mapRowToSignalContext)
+    return rows.map(mapRowToSignalContext)
+  } catch (err) {
+    if (process.env.NODE_ENV === 'production') throw err
+    return []
+  }
 }
 
 /**

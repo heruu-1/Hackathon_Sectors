@@ -99,7 +99,11 @@ runStep(1, 'Validasi Skema Environment', nodeCmd, [
 ])
 
 // Step 2: Database Migration Check
-if (process.env.DATABASE_URL && !process.env.SKIP_DB_CHECK) {
+const shouldSkipDb =
+  process.env.SKIP_DB_CHECK === '1' ||
+  process.argv.includes('--skip-db') ||
+  !process.env.DATABASE_URL
+if (!shouldSkipDb) {
   runStep(2, 'Pemeriksaan Ledger & Integritas Migrasi Database', nodeCmd, [
     'scripts/migrate-unified.mjs',
     '--check',

@@ -169,6 +169,14 @@ export function isFeatureEnabled(
   return val === 'true' || val === '1'
 }
 
+export function getFeatureFlagStatus() {
+  return {
+    analysis: isFeatureEnabled('RASI_ANALYSIS_ENABLED'),
+    assistant: isFeatureEnabled('RASI_ASSISTANT_ENABLED'),
+    signalAnalysis: isFeatureEnabled('SIGNAL_ANALYSIS_ENABLED'),
+  }
+}
+
 export function getServerEnv(
   envSource: Record<string, string | undefined> = process.env,
 ): ServerEnv {
