@@ -11,7 +11,8 @@
     "test": "node --experimental-strip-types --test tests/*.test.mjs",
     "format:check": "prettier --check --ignore-unknown .",
     "format": "prettier --write --ignore-unknown .",
-    "db:push": "drizzle-kit push",
+    "db:migrate": "node scripts/migrate-unified.mjs",
+    "db:migrate:check": "node scripts/migrate-unified.mjs --check",
     "db:seed": "node scripts/seed.mjs",
     "db:studio": "drizzle-kit studio"
   },
