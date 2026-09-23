@@ -18,8 +18,18 @@ async function run() {
   const data = await res.json()
   console.log('Response data:', data)
   if (data.valuation) console.log('Has valuation:', Object.keys(data.valuation))
-  if (data.insiders) console.log('Has insiders:', Array.isArray(data.insiders) ? data.insiders.length : typeof data.insiders)
-  if (data.quarterly_financials) console.log('Has quarterly_financials:', Array.isArray(data.quarterly_financials) ? data.quarterly_financials.length : typeof data.quarterly_financials)
+  if (data.insiders)
+    console.log(
+      'Has insiders:',
+      Array.isArray(data.insiders) ? data.insiders.length : typeof data.insiders,
+    )
+  if (data.quarterly_financials)
+    console.log(
+      'Has quarterly_financials:',
+      Array.isArray(data.quarterly_financials)
+        ? data.quarterly_financials.length
+        : typeof data.quarterly_financials,
+    )
   if (data.shareholders) console.log('Has shareholders:', Object.keys(data.shareholders))
   if (data.segments) console.log('Has segments:', Object.keys(data.segments))
 }

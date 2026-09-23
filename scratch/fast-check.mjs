@@ -22,18 +22,35 @@ async function run() {
   console.log(`getMarketOverviewService took ${Date.now() - t0}ms`)
   if (overviewRes.ok) {
     const b = overviewRes.data.breadth
-    console.log(`Breadth: Naik=${b.advancing}, Turun=${b.declining}, Stagnan=${b.unchanged}, Median=${(b.medianMarketChange * 100).toFixed(2)}%`)
-    console.log(`Cakupan: ${overviewRes.data.monitoredCoverage.withPrice} emiten (${overviewRes.data.monitoredCoverage.percentCovered}%)`)
+    console.log(
+      `Breadth: Naik=${b.advancing}, Turun=${b.declining}, Stagnan=${b.unchanged}, Median=${(b.medianMarketChange * 100).toFixed(2)}%`,
+    )
+    console.log(
+      `Cakupan: ${overviewRes.data.monitoredCoverage.withPrice} emiten (${overviewRes.data.monitoredCoverage.percentCovered}%)`,
+    )
     console.log(`Jumlah Sektor: ${overviewRes.data.sectors.length}`)
-    console.log(`Top 3 Sektor:`, overviewRes.data.sectors.slice(0, 3).map(s => `${s.sector} (${s.totalCompanies} emiten, median ${(s.medianChangeFraction * 100).toFixed(2)}%)`))
-    console.log(`Top Gainer #1: ${overviewRes.data.topGainers[0]?.symbol} (+${(overviewRes.data.topGainers[0]?.dailyChange * 100).toFixed(2)}%)`)
-    console.log(`Top Loser #1: ${overviewRes.data.topLosers[0]?.symbol} (${(overviewRes.data.topLosers[0]?.dailyChange * 100).toFixed(2)}%)`)
+    console.log(
+      `Top 3 Sektor:`,
+      overviewRes.data.sectors
+        .slice(0, 3)
+        .map(
+          (s) =>
+            `${s.sector} (${s.totalCompanies} emiten, median ${(s.medianChangeFraction * 100).toFixed(2)}%)`,
+        ),
+    )
+    console.log(
+      `Top Gainer #1: ${overviewRes.data.topGainers[0]?.symbol} (+${(overviewRes.data.topGainers[0]?.dailyChange * 100).toFixed(2)}%)`,
+    )
+    console.log(
+      `Top Loser #1: ${overviewRes.data.topLosers[0]?.symbol} (${(overviewRes.data.topLosers[0]?.dailyChange * 100).toFixed(2)}%)`,
+    )
   } else {
     console.error('Overview error:', overviewRes.error)
   }
 
   console.log('\n=== TEST 2: Stock Data BBCA (/saham/BBCA) ===')
-  const { fetchCompanyValuation, fetchDailyPrices, fetchCompanyShareholders } = await import('../lib/server/providers/sectors.ts')
+  const { fetchCompanyValuation, fetchDailyPrices, fetchCompanyShareholders } =
+    await import('../lib/server/providers/sectors.ts')
   const { fetchCompanySegments } = await import('../lib/server/providers/segments.ts')
 
   const t1 = Date.now()
@@ -44,7 +61,9 @@ async function run() {
     fetchCompanySegments('BBCA'),
   ])
   console.log(`Parallel fetch (Valuation, Daily, Shareholders, Segments) took ${Date.now() - t1}ms`)
-  console.log(`BBCA Price: ${val.data?.lastClosePrice}, Daily change: ${(val.data?.dailyCloseChange * 100).toFixed(2)}%`)
+  console.log(
+    `BBCA Price: ${val.data?.lastClosePrice}, Daily change: ${(val.data?.dailyCloseChange * 100).toFixed(2)}%`,
+  )
   console.log(`BBCA Daily rows: ${daily.data?.length} rows`)
   console.log(`BBCA Shareholders monthly snapshots: ${sh.data?.monthlyReports.length} months`)
   console.log(`BBCA Revenue Segments: ${seg.data?.revenueSegments.length} segments`)

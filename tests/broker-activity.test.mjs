@@ -197,7 +197,13 @@ test('fetchBrokerActivity parses nested data[].summary Sectors API response corr
       headers: { 'Content-Type': 'application/json' },
     })
 
-  const envelope = await fetchBrokerActivity('YP', '2026-09-09', '2026-09-22', 'dummy-key', mockFetch)
+  const envelope = await fetchBrokerActivity(
+    'YP',
+    '2026-09-09',
+    '2026-09-22',
+    'dummy-key',
+    mockFetch,
+  )
 
   assert.equal(envelope.state, 'ready')
   assert.equal(envelope.data.length, 2)

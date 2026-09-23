@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { POPULAR_STOCKS, getStockRelevanceScore, searchLocalStocks } from '../domain/stocks.ts'
+import { getStockRelevanceScore, searchLocalStocks } from '../domain/stocks.ts'
 
 test('domain/stocks: searchLocalStocks returns instant popular stocks for empty query', () => {
   const results = searchLocalStocks('', 5)

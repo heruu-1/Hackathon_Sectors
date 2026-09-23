@@ -1,8 +1,9 @@
 import { and, desc, eq, sql } from 'drizzle-orm'
 
+import type { AnalysisSnapshot } from '@/lib/contracts/analysis'
+
 import { db } from '../../../db/index.ts'
 import { analysisHistory, analysisSnapshots } from '../../../db/schema.ts'
-import type { AnalysisSnapshot } from '@/lib/contracts/analysis'
 
 export interface HistoryItemDTO {
   id: number

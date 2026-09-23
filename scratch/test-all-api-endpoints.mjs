@@ -48,7 +48,7 @@ async function run() {
     `https://api.sectors.app/v2/company/report/${symbol}/?sections=peers`,
     `https://api.sectors.app/v2/company/report/${symbol}/?sections=top_shareholders`,
     `https://api.sectors.app/v2/company/report/${symbol}/?sections=major_shareholders`,
-    
+
     // possible standalone endpoints
     `https://api.sectors.app/v2/company/get-top-shareholders/${symbol}/`,
     `https://api.sectors.app/v2/company/top-shareholders/${symbol}/`,
@@ -59,7 +59,7 @@ async function run() {
     `https://api.sectors.app/v2/company/overview/${symbol}/`,
     `https://api.sectors.app/v2/company/profile/${symbol}/`,
     `https://api.sectors.app/v2/company/management/${symbol}/`,
-    
+
     // other endpoints
     `https://api.sectors.app/v2/companies/top-shareholders/${symbol}/`,
     `https://api.sectors.app/v2/companies/shareholders/${symbol}/`,

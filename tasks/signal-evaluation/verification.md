@@ -3,6 +3,7 @@
 ## 1. Kriteria Penerimaan & Verifikasi Fixture BMRI
 
 Fixture aritmetika BMRI untuk validasi numerik `domain/trade-risk.ts`:
+
 - Input:
   - `entry = 4200`
   - `initialATR = 62.670334`
@@ -30,6 +31,7 @@ Fixture aritmetika BMRI untuk validasi numerik `domain/trade-risk.ts`:
 ## 2. Pengujian Terfokus Unit Node
 
 Perintah pengujian terfokus:
+
 ```powershell
 node --experimental-strip-types tests/trading-sessions.test.mjs
 node --experimental-strip-types tests/trade-risk.test.mjs
@@ -39,11 +41,13 @@ node --experimental-strip-types tests/signal-outcomes.test.mjs
 ```
 
 ## 3. Verifikasi Database & Migrasi
+
 ```powershell
 node scripts/migrate-signal-analysis.mjs --check
 ```
 
 ## 4. Gates Kualitas Proyek
+
 ```powershell
 corepack pnpm typecheck
 corepack pnpm lint
@@ -52,6 +56,7 @@ git diff --check
 ```
 
 ## 5. Verifikasi UI & Browser
+
 - Tampilan 320px, 768px, 1024px, 1440px.
 - Kontras tema gelap & terang.
 - State loading, error, data parsial (`INSUFFICIENT_DATA`), dan tersimpan.
@@ -62,6 +67,7 @@ git diff --check
 ## 6. Hasil Eksekusi Verifikasi
 
 ### Pengujian Unit Terfokus Node
+
 - `node tests/trading-sessions.test.mjs`: PASSED (5/5)
 - `node tests/trade-risk.test.mjs`: PASSED (5/5, verifikasi fixture BMRI exact match)
 - `node tests/intraday-provider.test.mjs`: PASSED (5/5)
@@ -70,6 +76,7 @@ git diff --check
 - **Total Pengujian**: 29 passed, 0 failed.
 
 ### Gate Kualitas & Kompilasi
+
 - `corepack pnpm typecheck`: PASSED (exit code 0, 0 error).
 - `corepack pnpm build`: PASSED (Next.js 16.3.4 Turbopack production build compiled in 7.6s, 17/17 pages generated).
 - `git diff --check`: PASSED (exit code 0, no whitespace errors).

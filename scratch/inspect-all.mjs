@@ -44,7 +44,9 @@ async function run() {
 
   console.log('\n--- ENVELOPES ---')
   for (const [k, v] of Object.entries(data.envelopes)) {
-    console.log(`envelope ${k}: state=${v?.state}, data=${Array.isArray(v?.data) ? `Array(${v.data.length})` : typeof v?.data}, error=${v?.error}`)
+    console.log(
+      `envelope ${k}: state=${v?.state}, data=${Array.isArray(v?.data) ? `Array(${v.data.length})` : typeof v?.data}, error=${v?.error}`,
+    )
   }
 }
 

@@ -9,6 +9,14 @@ import { isValidTicker } from '@/domain/ticker'
 import { auth } from '@/lib/auth'
 import type { BandarmologyAnalysis } from '@/lib/bandarmology'
 import type { AnalysisSnapshot } from '@/lib/contracts/analysis'
+import type { Result } from '@/lib/contracts/result'
+import { errorResult, successResult } from '@/lib/contracts/result'
+// ---------------------------------------------------------------------------
+// Dynamic Signal Analysis Actions (E01 Intraday & Stochastic Projections)
+// ---------------------------------------------------------------------------
+
+import type { SignalAnalysisReport } from '@/lib/contracts/signal-analysis'
+import { EvaluateSignalAnalysisInputSchema } from '@/lib/contracts/signal-analysis'
 import type { WatchlistItemDTO } from '@/lib/contracts/watchlist'
 import type { CatalystDivergence } from '@/lib/divergence'
 import type { GeminiNewsImpact } from '@/lib/gemini'
@@ -1344,19 +1352,6 @@ export async function evaluateSignalOutcomesAction(
     }
   }
 }
-
-// ---------------------------------------------------------------------------
-// Dynamic Signal Analysis Actions (E01 Intraday & Stochastic Projections)
-// ---------------------------------------------------------------------------
-
-import type {
-  SignalAnalysisReport,
-} from '@/lib/contracts/signal-analysis'
-import {
-  EvaluateSignalAnalysisInputSchema,
-} from '@/lib/contracts/signal-analysis'
-import type { Result } from '@/lib/contracts/result'
-import { errorResult, successResult } from '@/lib/contracts/result'
 
 export async function getSignalAnalysisAction(
   ticker: string,

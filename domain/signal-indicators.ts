@@ -188,16 +188,20 @@ export function assessSignalConditions(params: {
 
     if (bullishSignals >= 3) {
       condition = 'STRONG_BULLISH'
-      summary = 'Kondisi teknis sangat kuat: harga bertahan di atas VWAP, EMA-20, dan harga acuan dengan volume sehat.'
+      summary =
+        'Kondisi teknis sangat kuat: harga bertahan di atas VWAP, EMA-20, dan harga acuan dengan volume sehat.'
     } else if (bullishSignals > bearishSignals) {
       condition = 'BULLISH'
-      summary = 'Kondisi teknis positif: harga berada di atas level acuan/VWAP dengan skenario stop terjaga.'
+      summary =
+        'Kondisi teknis positif: harga berada di atas level acuan/VWAP dengan skenario stop terjaga.'
     } else if (bearishSignals >= 3) {
       condition = 'BEARISH'
-      summary = 'Kondisi teknis melemah: harga tertekan di bawah VWAP atau tren rata-rata, dekati batas risiko.'
+      summary =
+        'Kondisi teknis melemah: harga tertekan di bawah VWAP atau tren rata-rata, dekati batas risiko.'
     } else {
       condition = 'NEUTRAL'
-      summary = 'Kondisi teknis konsolidasi: pergerakan harga relatif berimbang terhadap VWAP dan harga acuan.'
+      summary =
+        'Kondisi teknis konsolidasi: pergerakan harga relatif berimbang terhadap VWAP dan harga acuan.'
     }
   }
 

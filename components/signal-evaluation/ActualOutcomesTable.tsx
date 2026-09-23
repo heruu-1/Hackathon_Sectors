@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+
 import type { SignalOutcome, SignalOutcomeStatus } from '@/lib/contracts/signal-analysis'
 
 interface ActualOutcomesTableProps {
@@ -11,31 +12,31 @@ function getStatusBadge(status: SignalOutcomeStatus) {
   switch (status) {
     case 'MATURED':
       return (
-        <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-500 border border-emerald-500/20">
+        <span className="inline-flex items-center rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-500">
           Sudah dievaluasi
         </span>
       )
     case 'PENDING':
       return (
-        <span className="inline-flex items-center rounded-full bg-blue-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-blue-400 border border-blue-500/20">
+        <span className="inline-flex items-center rounded-full border border-blue-500/20 bg-blue-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-blue-400">
           Menunggu akhir sesi
         </span>
       )
     case 'AWAITING_DATA':
       return (
-        <span className="inline-flex items-center rounded-full bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-amber-400 border border-amber-500/20">
+        <span className="inline-flex items-center rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-amber-400">
           Menunggu pembaruan data
         </span>
       )
     case 'MISSING_PRICE':
       return (
-        <span className="inline-flex items-center rounded-full bg-rose-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-rose-400 border border-rose-500/20">
+        <span className="inline-flex items-center rounded-full border border-rose-500/20 bg-rose-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-rose-400">
           Harga sesi belum tersedia
         </span>
       )
     case 'CALENDAR_UNAVAILABLE':
       return (
-        <span className="inline-flex items-center rounded-full bg-zinc-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-zinc-400 border border-zinc-500/20">
+        <span className="inline-flex items-center rounded-full border border-zinc-500/20 bg-zinc-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-zinc-400">
           Kalender di luar rentang
         </span>
       )
@@ -89,11 +90,9 @@ export function ActualOutcomesTable({ outcomes }: ActualOutcomesTableProps) {
               return (
                 <tr
                   key={`outcome-${o.horizon}`}
-                  className="hover:bg-[var(--rasi-muted-bg)]/40 transition-colors"
+                  className="transition-colors hover:bg-[var(--rasi-muted-bg)]/40"
                 >
-                  <td className="px-3.5 py-3 text-center font-mono font-bold">
-                    {o.horizon} Sesi
-                  </td>
+                  <td className="px-3.5 py-3 text-center font-mono font-bold">{o.horizon} Sesi</td>
                   <td className="px-3.5 py-3 font-mono text-[var(--rasi-muted)]">
                     <span className="font-semibold text-[var(--rasi-text)]">
                       Sesi {o.targetSession === 'S1' ? 'I' : 'II'}
@@ -101,15 +100,15 @@ export function ActualOutcomesTable({ outcomes }: ActualOutcomesTableProps) {
                     — {o.targetDate || '—'}
                   </td>
                   <td className="px-3.5 py-3 text-right font-mono font-semibold tabular-nums">
-                    {hasActual
-                      ? `Rp ${o.actualPrice!.toLocaleString('id-ID')}`
-                      : '—'}
+                    {hasActual ? `Rp ${o.actualPrice!.toLocaleString('id-ID')}` : '—'}
                   </td>
                   <td className="px-3.5 py-3 text-right font-mono tabular-nums">
                     {hasActual && o.grossReturn !== null ? (
                       <span
                         className={
-                          o.grossReturn >= 0 ? 'text-emerald-500 font-semibold' : 'text-rose-500 font-semibold'
+                          o.grossReturn >= 0
+                            ? 'font-semibold text-emerald-500'
+                            : 'font-semibold text-rose-500'
                         }
                       >
                         {o.grossReturn >= 0 ? '+' : ''}
@@ -123,7 +122,9 @@ export function ActualOutcomesTable({ outcomes }: ActualOutcomesTableProps) {
                     {hasActual && o.netReturn !== null ? (
                       <span
                         className={
-                          o.netReturn >= 0 ? 'text-emerald-500 font-bold' : 'text-rose-500 font-bold'
+                          o.netReturn >= 0
+                            ? 'font-bold text-emerald-500'
+                            : 'font-bold text-rose-500'
                         }
                       >
                         {o.netReturn >= 0 ? '+' : ''}
@@ -133,9 +134,7 @@ export function ActualOutcomesTable({ outcomes }: ActualOutcomesTableProps) {
                       '—'
                     )}
                   </td>
-                  <td className="px-3.5 py-3 text-center">
-                    {getStatusBadge(o.status)}
-                  </td>
+                  <td className="px-3.5 py-3 text-center">{getStatusBadge(o.status)}</td>
                 </tr>
               )
             })}
@@ -143,8 +142,10 @@ export function ActualOutcomesTable({ outcomes }: ActualOutcomesTableProps) {
         </table>
       </div>
 
-      <p className="text-[11px] text-[var(--rasi-muted)] leading-relaxed">
-        * <strong>Harga aktual akhir horizon</strong> adalah observasi penutupan sesi kontinu target yang sah, bukan estimasi proyeksi dan bukan target take profit. Return bersih telah memperhitungkan estimasi biaya transaksi beli (0,15%) dan jual (0,25%).
+      <p className="text-[11px] leading-relaxed text-[var(--rasi-muted)]">
+        * <strong>Harga aktual akhir horizon</strong> adalah observasi penutupan sesi kontinu target
+        yang sah, bukan estimasi proyeksi dan bukan target take profit. Return bersih telah
+        memperhitungkan estimasi biaya transaksi beli (0,15%) dan jual (0,25%).
       </p>
     </div>
   )

@@ -1,11 +1,11 @@
-import idxCalendar from '../lib/data/idx-calendar-2026.json' with { type: 'json' }
 import type { Horizon, SessionId } from '../lib/contracts/signal-analysis.ts'
+import idxCalendar from '../lib/data/idx-calendar-2026.json' with { type: 'json' }
 
 export interface SessionWindow {
   dateStr: string
   session: SessionId
   startAt: string // ISO string in UTC or +07:00
-  endAt: string   // ISO string in UTC or +07:00
+  endAt: string // ISO string in UTC or +07:00
 }
 
 export interface TargetSessionInfo {

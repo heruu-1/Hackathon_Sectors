@@ -1,15 +1,8 @@
 import { and, desc, eq } from 'drizzle-orm'
 
 import { db } from '../../../db/index.ts'
-import {
-  type SignalContextRow,
-  signalAnalysisRuns,
-  signalContexts,
-} from '../../../db/schema.ts'
-import type {
-  SignalAnalysisReport,
-  SignalContext,
-} from '../../contracts/signal-analysis.ts'
+import { type SignalContextRow, signalAnalysisRuns, signalContexts } from '../../../db/schema.ts'
+import type { SignalAnalysisReport, SignalContext } from '../../contracts/signal-analysis.ts'
 
 function mapRowToSignalContext(row: SignalContextRow): SignalContext {
   return {
@@ -80,11 +73,7 @@ export async function getLatestSignalContextForTicker(
 export async function getSignalContextById(id: string): Promise<SignalContext | null> {
   if (!process.env.DATABASE_URL) return null
 
-  const rows = await db
-    .select()
-    .from(signalContexts)
-    .where(eq(signalContexts.id, id))
-    .limit(1)
+  const rows = await db.select().from(signalContexts).where(eq(signalContexts.id, id)).limit(1)
 
   if (rows.length === 0) return null
   return mapRowToSignalContext(rows[0])

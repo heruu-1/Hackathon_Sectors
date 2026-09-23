@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import Link from 'next/link'
 
@@ -28,9 +28,7 @@ export function BrokerActivityExplorer({
   const [rangeDays, setRangeDays] = useState<'1' | '5' | '14'>('5')
 
   const [loading, setLoading] = useState(false)
-  const [summaryA, setSummaryA] = useState<BrokerActivitySummary | null>(
-    initialSummary || null,
-  )
+  const [summaryA, setSummaryA] = useState<BrokerActivitySummary | null>(initialSummary || null)
   const [comparison, setComparison] = useState<DualBrokerComparison | null>(null)
   const [error, setError] = useState('')
 
@@ -76,11 +74,11 @@ export function BrokerActivityExplorer({
   }, [selectedBrokerA, selectedBrokerB, isComparing, rangeDays])
 
   // Skip the first fetch if initialSummary is already provided
-  const [skipInitialFetch, setSkipInitialFetch] = useState(() => Boolean(initialSummary))
+  const hasInitializedRef = useRef(Boolean(initialSummary))
 
   useEffect(() => {
-    if (skipInitialFetch) {
-      setSkipInitialFetch(false)
+    if (hasInitializedRef.current) {
+      hasInitializedRef.current = false
       return
     }
     let isMounted = true
@@ -92,7 +90,7 @@ export function BrokerActivityExplorer({
       isMounted = false
       window.clearTimeout(timer)
     }
-  }, [fetchData, skipInitialFetch])
+  }, [fetchData])
 
   const brokerList = Object.values(registry).sort((a, b) => a.code.localeCompare(b.code))
 
@@ -337,7 +335,8 @@ export function BrokerActivityExplorer({
               </p>
               <p className="mt-1 text-xs text-[var(--rasi-muted)]">
                 Rentang: {summaryA.periodStart || 'Terkini'} s/d {summaryA.periodEnd || 'Terkini'}.
-                Hal ini biasanya terjadi jika bursa sedang libur, akhir pekan, atau belum ada transaksi pada rentang yang dipilih.
+                Hal ini biasanya terjadi jika bursa sedang libur, akhir pekan, atau belum ada
+                transaksi pada rentang yang dipilih.
               </p>
               <div className="mt-4 flex justify-center gap-2">
                 <button

@@ -76,9 +76,7 @@ export function calculateRiskPlan(input: TradeRiskInput): RiskPlan {
   const assumedStopExecution = stopLoss - stopSlippage
 
   // Net risk per share: R = C - (SL - stopSlippage) * (1 - sellFee)
-  const netRiskPerShare = Number(
-    (costBasis - assumedStopExecution * (1 - sellFee)).toFixed(4),
-  )
+  const netRiskPerShare = Number((costBasis - assumedStopExecution * (1 - sellFee)).toFixed(4))
 
   // TP1: ceilToTick((C + 1.25 * R) / (1 - sellFee), tick)
   const rawTP1 = (costBasis + 1.25 * netRiskPerShare) / (1 - sellFee)
@@ -191,8 +189,7 @@ export function calculatePositionSize(params: {
 
   const totalCapitalRequired = Number((totalLots * 100 * costBasis).toFixed(2))
   const totalRiskAllocated = Number((totalLots * 100 * netRiskPerShare).toFixed(2))
-  const riskFractionActual =
-    capital > 0 ? Number((totalRiskAllocated / capital).toFixed(6)) : 0
+  const riskFractionActual = capital > 0 ? Number((totalRiskAllocated / capital).toFixed(6)) : 0
 
   return {
     totalLots,

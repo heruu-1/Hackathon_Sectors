@@ -1,10 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import {
-  normalizeYahooTicker,
-  parseYahooChartResponse,
-} from '../lib/server/providers/intraday.ts'
+import { normalizeYahooTicker, parseYahooChartResponse } from '../lib/server/providers/intraday.ts'
 
 test('normalizeYahooTicker handles casing and .JK suffix', () => {
   assert.equal(normalizeYahooTicker('bmri'), 'BMRI.JK')
@@ -29,10 +26,10 @@ test('parseYahooChartResponse processes valid 5m bars in continuous trading', ()
             exchangeTimezoneName: 'Asia/Jakarta',
           },
           timestamp: [
-            baseTs,           // 09:00 WIB (S1 valid)
-            baseTs + 300,     // 09:05 WIB (S1 valid)
-            baseTs + 600,     // 09:10 WIB (null bar)
-            baseTs + 900,     // 09:15 WIB (S1 valid)
+            baseTs, // 09:00 WIB (S1 valid)
+            baseTs + 300, // 09:05 WIB (S1 valid)
+            baseTs + 600, // 09:10 WIB (null bar)
+            baseTs + 900, // 09:15 WIB (S1 valid)
           ],
           indicators: {
             quote: [

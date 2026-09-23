@@ -34,7 +34,7 @@ try {
 
   // Clean old daily cache entries from api_cache so fresh 60-day data is fetched immediately
   console.log('\nClearing old daily cache entries from api_cache...')
-  const deleted = await sql`DELETE FROM api_cache WHERE cache_key LIKE '%daily%'`
+  await sql`DELETE FROM api_cache WHERE cache_key LIKE '%daily%'`
   console.log(`Deleted old daily cache entries successfully.`)
 } catch (err) {
   console.error('DB error:', err.message)

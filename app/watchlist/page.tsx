@@ -15,7 +15,6 @@ import {
   updateWatchlistItem,
 } from '@/app/actions'
 import { StockPreviewDialog } from '@/components/StockPreviewDialog'
-import { StockSearchCombobox } from '@/components/StockSearchCombobox'
 import { WatchlistDeleteDialog } from '@/components/WatchlistDeleteDialog'
 import { WatchlistNoteDialog } from '@/components/WatchlistNoteDialog'
 import { ActionMenu, Button, ButtonLink } from '@/components/ui'

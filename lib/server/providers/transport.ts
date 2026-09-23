@@ -75,7 +75,7 @@ export async function requestSectorsShared<T = unknown>(
   const { capabilityId, params, apiKey, fetchFn = fetch, timeoutMs = 10_000 } = options
 
   const key = validateApiKey(apiKey)
-  const cap = getCapability(capabilityId)
+  getCapability(capabilityId)
   const cost = calculateCapabilityCost(capabilityId, params)
 
   // 1. Reserve credits before proceeding

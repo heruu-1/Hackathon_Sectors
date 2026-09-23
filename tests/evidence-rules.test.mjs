@@ -10,7 +10,6 @@ import {
   evaluateR05,
   evaluateR06,
   evaluateR07,
-  evaluateR08,
   evaluateR09,
   evaluateR10,
 } from '../domain/evidence-rules.ts'

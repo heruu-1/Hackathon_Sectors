@@ -3,6 +3,7 @@
 ## 1. Konteks dan Tujuan
 
 Fitur ini merekonstruksi panel **“Evaluasi Hasil Sinyal”** pada tab riset saham RASI (`ResearchWorkspace.tsx`) menjadi sistem evaluasi sinyal dinamis untuk seluruh saham BEI/IHSG, yang mencakup:
+
 1. Hasil aktual 1, 3, dan 5 sesi perdagangan BEI (Sesi I dan Sesi II).
 2. Rencana risiko komprehensif setelah fee (SL, TP1, TP2, BEP, trailing stop, kalkulator alokasi lot modal).
 3. Proyeksi stokastik Geometric Brownian Motion (GBM) murni TypeScript untuk horizon tersisa dengan kalkulasi probabilitas sentuhan level dan sensitivitas.
@@ -10,14 +11,14 @@ Fitur ini merekonstruksi panel **“Evaluasi Hasil Sinyal”** pada tab riset sa
 
 ## 2. Temuan Audit & Resolusi
 
-| Masalah Terverifikasi | Solusi Implementasi |
-|---|---|
+| Masalah Terverifikasi                                           | Solusi Implementasi                                                                       |
+| --------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | `domain/signal-outcomes.ts` menghitung horizon pada data harian | Buat evaluator sesi kontinu intraday 5m; labeli hasil lama sebagai "berbasis hari bursa". |
-| Parameter sinyal & tanggal dikirim dari state browser | Konteks sinyal (`SignalContext`) dibuat immutable dan diverifikasi penuh di server. |
-| ID sementara `snap-...` menyebabkan foreign key failure di DB | Sinyal baru disimpan di tabel tersendiri (`signal_contexts` & `signal_analysis_runs`). |
-| Kegagalan evaluasi tersamar oleh fallback memori | Pemisahan status: memuat, mengevaluasi, parsial, gagal, dan tersimpan. |
-| Jam Sesi II pada skrip terdahulu mencapai 16.15 | Jam perdagangan kontinu Sesi II dibatasi ketat sampai 15.50 WIB (eksklusif). |
-| Bar 15.45 dipakai sebelum selesai | Bar intraday memiliki `startAt` dan `endAt`; bar hanya valid jika `endAt <= asOf`. |
+| Parameter sinyal & tanggal dikirim dari state browser           | Konteks sinyal (`SignalContext`) dibuat immutable dan diverifikasi penuh di server.       |
+| ID sementara `snap-...` menyebabkan foreign key failure di DB   | Sinyal baru disimpan di tabel tersendiri (`signal_contexts` & `signal_analysis_runs`).    |
+| Kegagalan evaluasi tersamar oleh fallback memori                | Pemisahan status: memuat, mengevaluasi, parsial, gagal, dan tersimpan.                    |
+| Jam Sesi II pada skrip terdahulu mencapai 16.15                 | Jam perdagangan kontinu Sesi II dibatasi ketat sampai 15.50 WIB (eksklusif).              |
+| Bar 15.45 dipakai sebelum selesai                               | Bar intraday memiliki `startAt` dan `endAt`; bar hanya valid jika `endAt <= asOf`.        |
 
 ## 3. Komponen Utama & File Sasaran
 

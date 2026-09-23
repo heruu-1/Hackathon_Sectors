@@ -41,7 +41,15 @@ async function test() {
   console.log('Breadth:', overview.breadth)
   console.log('Coverage:', overview.monitoredCoverage)
   console.log('Sectors count:', overview.sectors.length)
-  console.log('Sectors sample:', overview.sectors.slice(0, 3).map(s => ({ sector: s.sector, total: s.totalCompanies, adv: s.advancing, dec: s.declining })))
+  console.log(
+    'Sectors sample:',
+    overview.sectors.slice(0, 3).map((s) => ({
+      sector: s.sector,
+      total: s.totalCompanies,
+      adv: s.advancing,
+      dec: s.declining,
+    })),
+  )
   console.log('Top Gainers count:', overview.topGainers.length, overview.topGainers.slice(0, 2))
   console.log('Top Losers count:', overview.topLosers.length, overview.topLosers.slice(0, 2))
 }

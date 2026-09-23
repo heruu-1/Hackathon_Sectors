@@ -8,7 +8,16 @@ if (fs.existsSync('.env.local')) {
 }
 
 async function run() {
-  for (const sec of ['insiders', 'shareholders', 'segments', 'overview', 'peers', 'management', 'financials', 'valuation']) {
+  for (const sec of [
+    'insiders',
+    'shareholders',
+    'segments',
+    'overview',
+    'peers',
+    'management',
+    'financials',
+    'valuation',
+  ]) {
     const res = await fetch('https://api.sectors.app/v2/company/report/BBCA/?sections=' + sec, {
       headers: { Authorization: apiKey },
     })

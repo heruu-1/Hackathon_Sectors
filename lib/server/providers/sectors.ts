@@ -404,9 +404,10 @@ export async function fetchCompanyShareholders(
               ? (m.individual_f / sharesTotal) * 100
               : null,
           totalPct:
-            sharesTotal && (typeof m.individual_l === 'number' || typeof m.individual_f === 'number')
-              ? (((m.individual_l as number) || 0) + ((m.individual_f as number) || 0)) /
-                sharesTotal *
+            sharesTotal &&
+            (typeof m.individual_l === 'number' || typeof m.individual_f === 'number')
+              ? ((((m.individual_l as number) || 0) + ((m.individual_f as number) || 0)) /
+                  sharesTotal) *
                 100
               : null,
         },
@@ -425,8 +426,8 @@ export async function fetchCompanyShareholders(
               : null,
           totalPct:
             sharesTotal && (typeof m.corporate_l === 'number' || typeof m.corporate_f === 'number')
-              ? (((m.corporate_l as number) || 0) + ((m.corporate_f as number) || 0)) /
-                sharesTotal *
+              ? ((((m.corporate_l as number) || 0) + ((m.corporate_f as number) || 0)) /
+                  sharesTotal) *
                 100
               : null,
         },
@@ -444,9 +445,10 @@ export async function fetchCompanyShareholders(
               ? (m.mutual_fund_f / sharesTotal) * 100
               : null,
           totalPct:
-            sharesTotal && (typeof m.mutual_fund_l === 'number' || typeof m.mutual_fund_f === 'number')
-              ? (((m.mutual_fund_l as number) || 0) + ((m.mutual_fund_f as number) || 0)) /
-                sharesTotal *
+            sharesTotal &&
+            (typeof m.mutual_fund_l === 'number' || typeof m.mutual_fund_f === 'number')
+              ? ((((m.mutual_fund_l as number) || 0) + ((m.mutual_fund_f as number) || 0)) /
+                  sharesTotal) *
                 100
               : null,
         },
@@ -465,8 +467,8 @@ export async function fetchCompanyShareholders(
               : null,
           totalPct:
             sharesTotal && (typeof m.insurance_l === 'number' || typeof m.insurance_f === 'number')
-              ? (((m.insurance_l as number) || 0) + ((m.insurance_f as number) || 0)) /
-                sharesTotal *
+              ? ((((m.insurance_l as number) || 0) + ((m.insurance_f as number) || 0)) /
+                  sharesTotal) *
                 100
               : null,
         },
@@ -484,9 +486,10 @@ export async function fetchCompanyShareholders(
               ? (m.pension_fund_f / sharesTotal) * 100
               : null,
           totalPct:
-            sharesTotal && (typeof m.pension_fund_l === 'number' || typeof m.pension_fund_f === 'number')
-              ? (((m.pension_fund_l as number) || 0) + ((m.pension_fund_f as number) || 0)) /
-                sharesTotal *
+            sharesTotal &&
+            (typeof m.pension_fund_l === 'number' || typeof m.pension_fund_f === 'number')
+              ? ((((m.pension_fund_l as number) || 0) + ((m.pension_fund_f as number) || 0)) /
+                  sharesTotal) *
                 100
               : null,
         },
@@ -509,9 +512,9 @@ export async function fetchCompanyShareholders(
             sharesTotal &&
             (typeof m.financial_institutions_l === 'number' ||
               typeof m.financial_institutions_f === 'number')
-              ? (((m.financial_institutions_l as number) || 0) +
+              ? ((((m.financial_institutions_l as number) || 0) +
                   ((m.financial_institutions_f as number) || 0)) /
-                sharesTotal *
+                  sharesTotal) *
                 100
               : null,
         },
@@ -534,9 +537,9 @@ export async function fetchCompanyShareholders(
             sharesTotal &&
             (typeof m.securities_companies_l === 'number' ||
               typeof m.securities_companies_f === 'number')
-              ? (((m.securities_companies_l as number) || 0) +
+              ? ((((m.securities_companies_l as number) || 0) +
                   ((m.securities_companies_f as number) || 0)) /
-                sharesTotal *
+                  sharesTotal) *
                 100
               : null,
         },
@@ -556,8 +559,8 @@ export async function fetchCompanyShareholders(
           totalPct:
             sharesTotal &&
             (typeof m.foundation_l === 'number' || typeof m.foundation_f === 'number')
-              ? (((m.foundation_l as number) || 0) + ((m.foundation_f as number) || 0)) /
-                sharesTotal *
+              ? ((((m.foundation_l as number) || 0) + ((m.foundation_f as number) || 0)) /
+                  sharesTotal) *
                 100
               : null,
         },
@@ -566,20 +569,13 @@ export async function fetchCompanyShareholders(
           name: 'Lainnya',
           localShares: typeof m.other_l === 'number' ? m.other_l : null,
           localPct:
-            sharesTotal && typeof m.other_l === 'number'
-              ? (m.other_l / sharesTotal) * 100
-              : null,
+            sharesTotal && typeof m.other_l === 'number' ? (m.other_l / sharesTotal) * 100 : null,
           foreignShares: typeof m.other_f === 'number' ? m.other_f : null,
           foreignPct:
-            sharesTotal && typeof m.other_f === 'number'
-              ? (m.other_f / sharesTotal) * 100
-              : null,
+            sharesTotal && typeof m.other_f === 'number' ? (m.other_f / sharesTotal) * 100 : null,
           totalPct:
-            sharesTotal &&
-            (typeof m.other_l === 'number' || typeof m.other_f === 'number')
-              ? (((m.other_l as number) || 0) + ((m.other_f as number) || 0)) /
-                sharesTotal *
-                100
+            sharesTotal && (typeof m.other_l === 'number' || typeof m.other_f === 'number')
+              ? ((((m.other_l as number) || 0) + ((m.other_f as number) || 0)) / sharesTotal) * 100
               : null,
         },
       ]
@@ -599,7 +595,8 @@ export async function fetchCompanyShareholders(
 
     const data: CompanyShareholdersData = {
       symbol: cleanTicker,
-      companyName: typeof rawReport?.company_name === 'string' ? rawReport.company_name : cleanTicker,
+      companyName:
+        typeof rawReport?.company_name === 'string' ? rawReport.company_name : cleanTicker,
       topShareholders,
       monthlyReports,
     }
@@ -716,4 +713,3 @@ export async function fetchUniverseCompanies(
 
   return Array.isArray(data) ? data : []
 }
-

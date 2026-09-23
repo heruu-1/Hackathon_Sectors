@@ -50,7 +50,13 @@ try {
       for (const item of flat) {
         totalGross += item.total_val
         totalNet += item.nval
-        const prev = stockMap.get(item.symbol) || { symbol: item.symbol, bval: 0, sval: 0, nval: 0, total_val: 0 }
+        const prev = stockMap.get(item.symbol) || {
+          symbol: item.symbol,
+          bval: 0,
+          sval: 0,
+          nval: 0,
+          total_val: 0,
+        }
         prev.bval += item.bval
         prev.sval += item.sval
         prev.nval += item.nval
@@ -66,13 +72,17 @@ try {
       const topBuy = [...stocks].sort((a, b) => b.nval - a.nval).slice(0, 5)
       console.log('\nTop 5 Net Buy:')
       for (const s of topBuy) {
-        console.log(`- ${s.symbol}: Rp ${(s.nval / 1e9).toFixed(2)} M (Gross: Rp ${(s.total_val / 1e9).toFixed(2)} M)`)
+        console.log(
+          `- ${s.symbol}: Rp ${(s.nval / 1e9).toFixed(2)} M (Gross: Rp ${(s.total_val / 1e9).toFixed(2)} M)`,
+        )
       }
 
       const topSell = [...stocks].sort((a, b) => a.nval - b.nval).slice(0, 5)
       console.log('\nTop 5 Net Sell:')
       for (const s of topSell) {
-        console.log(`- ${s.symbol}: Rp ${(s.nval / 1e9).toFixed(2)} M (Gross: Rp ${(s.total_val / 1e9).toFixed(2)} M)`)
+        console.log(
+          `- ${s.symbol}: Rp ${(s.nval / 1e9).toFixed(2)} M (Gross: Rp ${(s.total_val / 1e9).toFixed(2)} M)`,
+        )
       }
     }
   }

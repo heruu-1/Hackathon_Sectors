@@ -16,7 +16,6 @@ if (fs.existsSync('.env.local')) {
 
 async function profile() {
   console.log('--- Step 1: Direct fetch to sectors API companies ---')
-  const t0 = Date.now()
   const BASE_COLUMNS_WHERE = [
     '(sector is not null or sector is null)',
     '(sub_sector is not null or sub_sector is null)',
@@ -45,7 +44,9 @@ async function profile() {
   console.log(`Direct fetch took: ${Date.now() - fetchStart}ms, status: ${res.status}`)
   const jsonStart = Date.now()
   const data = await res.json()
-  console.log(`JSON parse took: ${Date.now() - jsonStart}ms, results count: ${data.results?.length}`)
+  console.log(
+    `JSON parse took: ${Date.now() - jsonStart}ms, results count: ${data.results?.length}`,
+  )
 
   console.log('\n--- Step 2: requestSectorsShared ---')
   const { requestSectorsShared } = await import('../lib/server/providers/transport.ts')

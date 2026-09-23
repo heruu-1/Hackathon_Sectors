@@ -18,7 +18,7 @@ if (fs.existsSync('.env.local')) {
 async function run() {
   console.log('Testing readStockData("BBCA")...')
   const { readStockData } = await import('../lib/server/services/analysis.ts')
-  
+
   const t0 = Date.now()
   const data1 = await readStockData('BBCA')
   console.log(`Call 1 (cold) took ${Date.now() - t0}ms: ${data1.companyName} @ ${data1.price}`)

@@ -18,7 +18,10 @@ async function run() {
   const { fetchQuarterlyFinancials } = await import('../lib/server/providers/quarterly.ts')
   const res = await fetchQuarterlyFinancials('BBCA')
   console.log('fetchQuarterlyFinancials length:', res.data?.length)
-  console.log('Quarters:', res.data?.map(q => q.quarter))
+  console.log(
+    'Quarters:',
+    res.data?.map((q) => q.quarter),
+  )
   console.log('Item 0:', res.data?.[0])
   if (res.data && res.data.length > 1) {
     console.log('Item 1:', res.data[1])

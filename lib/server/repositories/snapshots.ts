@@ -1,8 +1,9 @@
 import { desc, eq } from 'drizzle-orm'
 
+import type { AnalysisSnapshot } from '@/lib/contracts/analysis'
+
 import { db } from '../../../db/index.ts'
 import { analysisSnapshots } from '../../../db/schema.ts'
-import type { AnalysisSnapshot } from '@/lib/contracts/analysis'
 
 const inMemorySnapshots = new Map<string, AnalysisSnapshot>()
 

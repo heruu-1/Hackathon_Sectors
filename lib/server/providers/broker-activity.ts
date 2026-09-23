@@ -67,8 +67,7 @@ export async function fetchBrokerActivity(
     } else if (raw && typeof raw === 'object') {
       const obj = raw as {
         data?: Array<
-          | { date?: string; summary?: Array<Record<string, unknown>> }
-          | Record<string, unknown>
+          { date?: string; summary?: Array<Record<string, unknown>> } | Record<string, unknown>
         >
       }
       if (Array.isArray(obj.data)) {
@@ -136,10 +135,7 @@ export async function fetchBrokerActivity(
             : typeof item.net_val === 'number'
               ? item.net_val
               : bval - sval
-        const total_val =
-          typeof item.total_val === 'number'
-            ? item.total_val
-            : bval + sval
+        const total_val = typeof item.total_val === 'number' ? item.total_val : bval + sval
 
         return {
           symbol,

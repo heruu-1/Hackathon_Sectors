@@ -1,11 +1,27 @@
 import crypto from 'node:crypto'
 
+import {
+  assessSignalConditions,
+  calculateEMA20,
+  calculateRVOL,
+  calculateVWAP,
+  calculateWilderATR,
+} from '../../../domain/signal-indicators.ts'
+import { evaluateSessionSignalOutcomes } from '../../../domain/signal-outcomes.ts'
+import {
+  PRNG_VERSION,
+  calibrateIntradayVolatilities,
+  runSignalProjections,
+} from '../../../domain/signal-projections.ts'
+import { calculateRiskPlan, getIdxTickSize } from '../../../domain/trade-risk.ts'
 import type {
   SignalAnalysisReport,
   SignalContext,
   SignalDataQuality,
   SignalModelParams,
 } from '../../contracts/signal-analysis.ts'
+import { fetchIntradayPrices } from '../providers/intraday.ts'
+import { fetchDailyPrices } from '../providers/sectors.ts'
 import {
   getExactSignalAnalysisRun,
   getLatestSignalAnalysisRunForContext,
@@ -14,22 +30,6 @@ import {
   saveSignalAnalysisRun,
   saveSignalContext,
 } from '../repositories/signal-analysis.ts'
-import { fetchIntradayPrices } from '../providers/intraday.ts'
-import { fetchDailyPrices } from '../providers/sectors.ts'
-import { evaluateSessionSignalOutcomes } from '../../../domain/signal-outcomes.ts'
-import {
-  assessSignalConditions,
-  calculateEMA20,
-  calculateRVOL,
-  calculateVWAP,
-  calculateWilderATR,
-} from '../../../domain/signal-indicators.ts'
-import { calculateRiskPlan, getIdxTickSize } from '../../../domain/trade-risk.ts'
-import {
-  PRNG_VERSION,
-  calibrateIntradayVolatilities,
-  runSignalProjections,
-} from '../../../domain/signal-projections.ts'
 
 export const METHODOLOGY_VERSION = 'rasi-v2.0'
 
@@ -166,10 +166,8 @@ export async function evaluateSignalAnalysis(params: {
   const intradayEnvelope = await fetchIntradayPrices(cleanTicker)
   const bars = intradayEnvelope.data ?? []
 
-  const asOfIso =
-    bars.length > 0 ? bars[bars.length - 1].endAt : new Date().toISOString()
-  const asOfPrice =
-    bars.length > 0 ? bars[bars.length - 1].close : context.referencePrice
+  const asOfIso = bars.length > 0 ? bars[bars.length - 1].endAt : new Date().toISOString()
+  const asOfPrice = bars.length > 0 ? bars[bars.length - 1].close : context.referencePrice
 
   const configHash = computeConfigHash(context)
 

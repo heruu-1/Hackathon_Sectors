@@ -2,10 +2,6 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import {
-  evaluateSessionSignalOutcomes,
-  evaluateSignalOutcomes,
-} from '../domain/signal-outcomes.ts'
-import {
   assessSignalConditions,
   calculateEMA20,
   calculateRVOL,
@@ -13,6 +9,7 @@ import {
   calculateWilderATR,
   checkStopScenarios,
 } from '../domain/signal-indicators.ts'
+import { evaluateSessionSignalOutcomes, evaluateSignalOutcomes } from '../domain/signal-outcomes.ts'
 import { jakartaTimeToIso } from '../domain/trading-sessions.ts'
 
 // ---------------------------------------------------------------------------

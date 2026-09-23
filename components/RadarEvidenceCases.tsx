@@ -10,15 +10,12 @@ import {
   CheckCircle2,
   HelpCircle,
   RefreshCw,
-  Search,
   ShieldAlert,
-  SlidersHorizontal,
-  Volume2,
 } from 'lucide-react'
 
 import { runMarketScanAction } from '@/app/actions'
 import { Button } from '@/components/ui'
-import type { CandidateRadarCase, MarketScanResult } from '@/lib/server/services/market-scan'
+import type { MarketScanResult } from '@/lib/server/services/market-scan'
 
 export function RadarEvidenceCases() {
   const [data, setData] = useState<MarketScanResult | null>(null)

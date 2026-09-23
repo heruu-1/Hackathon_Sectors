@@ -50,8 +50,7 @@ async function executeSectorsRequest(
   timeoutMs: number = 10_000,
 ) {
   try {
-    const { requestSectorsShared, SectorsProviderError } =
-      await import('./server/providers/transport.ts')
+    const { requestSectorsShared } = await import('./server/providers/transport.ts')
     const { capabilityId, params } = detectCapabilityId(url)
     return await requestSectorsShared(url, {
       capabilityId,

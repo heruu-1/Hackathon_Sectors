@@ -1,9 +1,9 @@
 import crypto from 'node:crypto'
 
-import type { IntradayBar } from '../../contracts/signal-analysis.ts'
+import { isBarInContinuousTrading } from '../../../domain/trading-sessions.ts'
 import type { DataEnvelope, DataIssue } from '../../contracts/market.ts'
 import { createEmptyEnvelope, createEnvelope, createErrorEnvelope } from '../../contracts/market.ts'
-import { isBarInContinuousTrading } from '../../../domain/trading-sessions.ts'
+import type { IntradayBar } from '../../contracts/signal-analysis.ts'
 
 export interface YahooChartResponse {
   chart?: {
@@ -171,7 +171,16 @@ export function parseYahooChartResponse(
     const v = volumes[i]
 
     // Empty bar check: preserve null without imputing 0 or interpolating
-    if (o === null || h === null || l === null || c === null || o === undefined || h === undefined || l === undefined || c === undefined) {
+    if (
+      o === null ||
+      h === null ||
+      l === null ||
+      c === null ||
+      o === undefined ||
+      h === undefined ||
+      l === undefined ||
+      c === undefined
+    ) {
       nullBars++
       continue
     }

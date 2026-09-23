@@ -22,8 +22,8 @@ import {
   getSnapshotsForTickerAction,
   saveResearchNoteAction,
 } from '@/app/actions'
-import { Button } from '@/components/ui'
 import { SignalEvaluationPanel } from '@/components/SignalEvaluationPanel'
+import { Button } from '@/components/ui'
 import { type SnapshotDiffResult, generateSnapshotMarkdown } from '@/domain/snapshot-diff'
 import type { AnalysisSnapshot } from '@/lib/contracts/analysis'
 
@@ -527,21 +527,22 @@ export function ResearchWorkspace({
       <SignalEvaluationPanel ticker={ticker} companyName={companyName} />
 
       {/* 3b. Legacy Evaluation Archive (Daily Trading Days Based) */}
-      <details className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-4 shadow-sm group">
-        <summary className="cursor-pointer text-xs font-semibold text-[var(--rasi-muted)] hover:text-[var(--rasi-text)] flex items-center justify-between">
+      <details className="group rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-4 shadow-sm">
+        <summary className="flex cursor-pointer items-center justify-between text-xs font-semibold text-[var(--rasi-muted)] hover:text-[var(--rasi-text)]">
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4 text-[var(--rasi-muted)]" />
             <span>Evaluasi lama — berbasis hari bursa (Legacy)</span>
           </div>
-          <span className="text-[11px] text-[var(--rasi-muted)] group-open:rotate-180 transition-transform">
+          <span className="text-[11px] text-[var(--rasi-muted)] transition-transform group-open:rotate-180">
             ▼
           </span>
         </summary>
 
-        <div className="mt-4 pt-3 border-t border-[var(--border-subtle)] space-y-3">
+        <div className="mt-4 space-y-3 border-t border-[var(--border-subtle)] pt-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-[11px] text-[var(--rasi-muted)] leading-relaxed">
-              Data di bawah ini dihitung dari deret harga harian (hari bursa), sebelum adopsi sistem sesi intraday BEI (Sesi I dan Sesi II).
+            <p className="text-[11px] leading-relaxed text-[var(--rasi-muted)]">
+              Data di bawah ini dihitung dari deret harga harian (hari bursa), sebelum adopsi sistem
+              sesi intraday BEI (Sesi I dan Sesi II).
             </p>
             {currentSnapshot && (
               <Button
@@ -564,14 +565,30 @@ export function ResearchWorkspace({
               <table className="w-full text-left text-xs">
                 <thead className="border-b border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] font-semibold text-[var(--rasi-muted)]">
                   <tr>
-                    <th scope="col" className="px-3 py-2">Aturan</th>
-                    <th scope="col" className="px-3 py-2">Tgl Sinyal</th>
-                    <th scope="col" className="px-3 py-2 text-right">Harga Awal</th>
-                    <th scope="col" className="px-3 py-2 text-center">Horizon</th>
-                    <th scope="col" className="px-3 py-2">Tgl Target</th>
-                    <th scope="col" className="px-3 py-2 text-right">Harga aktual akhir horizon</th>
-                    <th scope="col" className="px-3 py-2 text-right">Return Hari</th>
-                    <th scope="col" className="px-3 py-2 text-center">Status</th>
+                    <th scope="col" className="px-3 py-2">
+                      Aturan
+                    </th>
+                    <th scope="col" className="px-3 py-2">
+                      Tgl Sinyal
+                    </th>
+                    <th scope="col" className="px-3 py-2 text-right">
+                      Harga Awal
+                    </th>
+                    <th scope="col" className="px-3 py-2 text-center">
+                      Horizon
+                    </th>
+                    <th scope="col" className="px-3 py-2">
+                      Tgl Target
+                    </th>
+                    <th scope="col" className="px-3 py-2 text-right">
+                      Harga aktual akhir horizon
+                    </th>
+                    <th scope="col" className="px-3 py-2 text-right">
+                      Return Hari
+                    </th>
+                    <th scope="col" className="px-3 py-2 text-center">
+                      Status
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--rasi-border)] text-[var(--rasi-text)]">

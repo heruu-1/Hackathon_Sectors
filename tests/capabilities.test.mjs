@@ -3,8 +3,6 @@ import test from 'node:test'
 
 import {
   BrokerSummaryItemSchema,
-  CAPABILITIES,
-  CompanyReportValuationSchema,
   DailyPriceRowSchema,
   QuarterlyFinancialItemSchema,
   calculateCapabilityCost,

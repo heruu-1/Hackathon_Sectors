@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 
 import { getBrokerActivityAction, getBrokerListAction } from '@/app/actions'
 import { BrokerActivityExplorer } from '@/components/BrokerActivityExplorer'
+import { getStableBrokerDateRange } from '@/lib/server/date'
 
 export const metadata: Metadata = {
   title: 'Penelusuran Broker (F04) — RASI Market Intelligence',
@@ -10,12 +11,14 @@ export const metadata: Metadata = {
 }
 
 export default async function BrokerPage() {
-  const endDate = new Date().toISOString().split('T')[0]
-  const startDate = new Date(Date.now() - 4 * 86_400_000).toISOString().split('T')[0]
+  const { startDate, endDate } = getStableBrokerDateRange()
 
   const [registryRes, summaryRes] = await Promise.all([
     getBrokerListAction().catch(() => ({ success: false, data: undefined })),
-    getBrokerActivityAction('YP', startDate, endDate).catch(() => ({ success: false, data: undefined })),
+    getBrokerActivityAction('YP', startDate, endDate).catch(() => ({
+      success: false,
+      data: undefined,
+    })),
   ])
 
   return (
@@ -31,10 +34,7 @@ export default async function BrokerPage() {
         </p>
       </div>
 
-      <BrokerActivityExplorer
-        initialRegistry={registryRes.data}
-        initialSummary={summaryRes.data}
-      />
+      <BrokerActivityExplorer initialRegistry={registryRes.data} initialSummary={summaryRes.data} />
     </div>
   )
 }

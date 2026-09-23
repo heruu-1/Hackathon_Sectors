@@ -50,7 +50,6 @@ import {
   fetchUniverseCompanies,
 } from '../providers/sectors.ts'
 import { type CompanySegmentsData, fetchCompanySegments } from '../providers/segments.ts'
-import { requestSectorsShared } from '../providers/transport.ts'
 import { consumeQuota } from '../quota.ts'
 import { addHistoryEntry } from '../repositories/history.ts'
 import { getLatestSnapshotByTicker, insertSnapshot } from '../repositories/snapshots.ts'

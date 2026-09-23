@@ -200,7 +200,11 @@ export function evaluateSessionSignalOutcomes(params: {
     // Target session completed in real time. Search for closing bar in completedBars
     const sessionBars = completedBars.filter((b) => {
       const check = isBarInContinuousTrading(b.startAt, b.endAt)
-      return check.isValidContinuous && check.dateStr === target.targetDate && check.session === target.targetSession
+      return (
+        check.isValidContinuous &&
+        check.dateStr === target.targetDate &&
+        check.session === target.targetSession
+      )
     })
 
     // Find the last completed bar of this target session (within 5 min before targetEndAt)
@@ -220,9 +224,13 @@ export function evaluateSessionSignalOutcomes(params: {
       const buyFee = context.initialRiskParams?.buyFee ?? 0.0015
       const sellFee = context.initialRiskParams?.sellFee ?? 0.0025
 
-      const grossReturn = refPrice > 0 ? Number(((actualPrice - refPrice) / refPrice).toFixed(4)) : null
+      const grossReturn =
+        refPrice > 0 ? Number(((actualPrice - refPrice) / refPrice).toFixed(4)) : null
       const costBasis = refPrice * (1 + buyFee)
-      const netReturn = costBasis > 0 ? Number((((actualPrice * (1 - sellFee)) - costBasis) / costBasis).toFixed(4)) : null
+      const netReturn =
+        costBasis > 0
+          ? Number(((actualPrice * (1 - sellFee) - costBasis) / costBasis).toFixed(4))
+          : null
 
       return {
         horizon,

@@ -4,21 +4,11 @@ import { useEffect, useState } from 'react'
 
 import Link from 'next/link'
 
-import {
-  ChevronRight,
-  ExternalLink,
-  Layers,
-  Minus,
-  RefreshCw,
-  Search,
-  TrendingDown,
-  TrendingUp,
-} from 'lucide-react'
+import { Layers, Minus, RefreshCw, TrendingDown, TrendingUp } from 'lucide-react'
 
 import { getMarketOverviewAction } from '@/app/actions'
 import { Button } from '@/components/ui'
 import type { MarketOverviewData } from '@/domain/market-overview'
-import type { SectorSummary, UniverseCompany } from '@/domain/universe'
 
 export interface MarketOverviewProps {
   initialData?: MarketOverviewData

@@ -63,13 +63,7 @@ export default function StockDetail({ ticker, initialData }: StockDetailProps) {
     'research',
   ].includes(searchParams.get('tab') ?? '')
     ? (searchParams.get('tab') as
-        | 'fundamental'
-        | 'valuation'
-        | 'ownership'
-        | 'broker'
-        | 'news'
-        | 'insider'
-        | 'research')
+        'fundamental' | 'valuation' | 'ownership' | 'broker' | 'news' | 'insider' | 'research')
     : 'fundamental'
 
   const { mode, setMode } = useThemePreference()

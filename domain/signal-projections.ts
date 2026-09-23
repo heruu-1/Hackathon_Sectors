@@ -7,13 +7,13 @@ import type {
   SessionId,
   SignalContext,
 } from '../lib/contracts/signal-analysis.ts'
+import { calculateTrailingStop } from './trade-risk.ts'
 import {
   computeTargetSessions,
   getNextTradingDay,
   identifySession,
   isBarInContinuousTrading,
 } from './trading-sessions.ts'
-import { calculateTrailingStop } from './trade-risk.ts'
 
 export const PRNG_VERSION = 'mulberry32-boxmuller-v1'
 
@@ -177,8 +177,7 @@ export function calibrateIntradayVolatilities(
   const calcStd = (arr: number[]): number => {
     if (arr.length < 2) return 0
     const mean = arr.reduce((a, b) => a + b, 0) / arr.length
-    const variance =
-      arr.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / (arr.length - 1)
+    const variance = arr.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / (arr.length - 1)
     return Math.sqrt(variance)
   }
 
@@ -323,8 +322,7 @@ export function buildRemainingSimulationSteps(params: {
     // Determine number of 5m bars in this session
     const [y, m, d] = sessionItem.dateStr.split('-').map(Number)
     const isFriday = new Date(Date.UTC(y, m - 1, d)).getUTCDay() === 5
-    const barCount =
-      sessionItem.session === 'S1' ? (isFriday ? 30 : 36) : isFriday ? 22 : 28
+    const barCount = sessionItem.session === 'S1' ? (isFriday ? 30 : 36) : isFriday ? 22 : 28
 
     const barSigma =
       sessionItem.session === 'S1'
@@ -371,11 +369,7 @@ export function runSignalProjections(params: {
   options?: RunSimulationOptions
 }): ProjectionResult {
   const { context, asOfIso, asOfPrice, riskPlan, calibration, options = {} } = params
-  const {
-    numPaths = 100000,
-    seed = 42,
-    volMultiplier = 1.0,
-  } = options
+  const { numPaths = 100000, seed = 42, volMultiplier = 1.0 } = options
 
   if (!calibration.isSufficient) {
     return {
@@ -619,9 +613,7 @@ export function runSignalProjections(params: {
 
   // Strategy stats
   const winRatePct = Number(((strategyWins / numPaths) * 100).toFixed(1))
-  const expectedReturnNetPct = Number(
-    ((totalStrategyNetReturn / numPaths) * 100).toFixed(2),
-  )
+  const expectedReturnNetPct = Number(((totalStrategyNetReturn / numPaths) * 100).toFixed(2))
   const avgRMultiple = Number((totalRMultiple / numPaths).toFixed(2))
 
   // Sensitivities (analytical approximation based on standard Brownian motion scaling)
@@ -633,9 +625,7 @@ export function runSignalProjections(params: {
   const volMinus25_pSl = Math.max(0, Number((pSlBeforeTp1 * 0.9).toFixed(4)))
 
   // 2-tick slippage changes net risk and stop execution
-  const slip2TicksRisk = Number(
-    (costBasis - (SL - 2 * tick) * (1 - sellFee)).toFixed(4),
-  )
+  const slip2TicksRisk = Number((costBasis - (SL - 2 * tick) * (1 - sellFee)).toFixed(4))
   const slip2_pTp1 = Number((pTp1BeforeSl * 0.98).toFixed(4))
   const slip2_pSl = Number((pSlBeforeTp1 * 1.02).toFixed(4))
 

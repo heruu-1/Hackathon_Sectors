@@ -12,22 +12,15 @@ export type SignalOutcomeStatus =
   | 'CORPORATE_ACTION_SUSPENDED'
 
 export type TechnicalConditionAssessment =
-  | 'STRONG_BULLISH'
-  | 'BULLISH'
-  | 'NEUTRAL'
-  | 'BEARISH'
-  | 'STRONG_BEARISH'
+  'STRONG_BULLISH' | 'BULLISH' | 'NEUTRAL' | 'BEARISH' | 'STRONG_BEARISH'
 
 export type StopScenarioStatus =
-  | 'UNTRIGGERED'
-  | 'SL_TRIGGERED'
-  | 'TRAILING_TRIGGERED'
-  | 'TIME_STOP_TRIGGERED'
+  'UNTRIGGERED' | 'SL_TRIGGERED' | 'TRAILING_TRIGGERED' | 'TIME_STOP_TRIGGERED'
 
 export interface IntradayBar {
   ticker: string
   startAt: string // ISO string (e.g. 2026-09-22T09:00:00+07:00)
-  endAt: string   // ISO string (e.g. 2026-09-22T09:05:00+07:00)
+  endAt: string // ISO string (e.g. 2026-09-22T09:05:00+07:00)
   open: number
   high: number
   low: number
@@ -93,9 +86,9 @@ export interface RiskPlan {
   initialATR: number
   tick: number
   costBasis: number // C = entry * (1 + buyFee)
-  stopLoss: number  // SL = floorToTick(entry - 1.5 * initialATR)
+  stopLoss: number // SL = floorToTick(entry - 1.5 * initialATR)
   assumedStopExecution: number // SL - stopSlippage
-  netRiskPerShare: number      // R = C - (SL - stopSlippage) * (1 - sellFee)
+  netRiskPerShare: number // R = C - (SL - stopSlippage) * (1 - sellFee)
   takeProfit1: number // TP1 = ceilToTick((C + 1.25 * R) / (1 - sellFee))
   takeProfit2: number // TP2 = ceilToTick((C + 2.0 * R) / (1 - sellFee))
   breakEvenPrice: number // BEP = ceilToTick(C / (1 - sellFee) + stopSlippage)

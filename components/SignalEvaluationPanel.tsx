@@ -1,20 +1,17 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import type { SignalAnalysisReport } from '@/lib/contracts/signal-analysis'
-import { getSignalAnalysisAction, evaluateSignalAnalysisAction } from '@/app/actions'
-import { ActualOutcomesTable } from './signal-evaluation/ActualOutcomesTable'
-import { RiskPlanCard } from './signal-evaluation/RiskPlanCard'
-import { ProjectionsCard } from './signal-evaluation/ProjectionsCard'
-import { MethodologyDisclosure } from './signal-evaluation/MethodologyDisclosure'
+
+import { AlertTriangle, Layers, RefreshCw, ShieldCheck, TrendingUp } from 'lucide-react'
+
+import { evaluateSignalAnalysisAction, getSignalAnalysisAction } from '@/app/actions'
 import { Button } from '@/components/ui/Button'
-import {
-  TrendingUp,
-  RefreshCw,
-  ShieldCheck,
-  AlertTriangle,
-  Layers,
-} from 'lucide-react'
+import type { SignalAnalysisReport } from '@/lib/contracts/signal-analysis'
+
+import { ActualOutcomesTable } from './signal-evaluation/ActualOutcomesTable'
+import { MethodologyDisclosure } from './signal-evaluation/MethodologyDisclosure'
+import { ProjectionsCard } from './signal-evaluation/ProjectionsCard'
+import { RiskPlanCard } from './signal-evaluation/RiskPlanCard'
 
 interface SignalEvaluationPanelProps {
   ticker: string
@@ -97,21 +94,23 @@ export function SignalEvaluationPanel({ ticker, companyName }: SignalEvaluationP
   const formatDateTime = (iso: string) => {
     try {
       const d = new Date(iso)
-      return new Intl.DateTimeFormat('id-ID', {
-        timeZone: 'Asia/Jakarta',
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      }).format(d) + ' WIB'
+      return (
+        new Intl.DateTimeFormat('id-ID', {
+          timeZone: 'Asia/Jakarta',
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        }).format(d) + ' WIB'
+      )
     } catch {
       return iso
     }
   }
 
   return (
-    <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6 shadow-md space-y-5">
+    <div className="space-y-5 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6 shadow-md">
       {/* 1. Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-4">
         <div className="flex items-center gap-2">
@@ -121,7 +120,8 @@ export function SignalEvaluationPanel({ ticker, companyName }: SignalEvaluationP
               Evaluasi Sinyal, Risiko & Sesi Intraday
             </h2>
             <p className="text-xs text-[var(--rasi-muted)]">
-              {cleanTicker} {companyName ? `(${companyName})` : ''} — Evaluasi 1, 3, dan 5 sesi perdagangan BEI
+              {cleanTicker} {companyName ? `(${companyName})` : ''} — Evaluasi 1, 3, dan 5 sesi
+              perdagangan BEI
             </p>
           </div>
         </div>
@@ -142,8 +142,8 @@ export function SignalEvaluationPanel({ ticker, companyName }: SignalEvaluationP
 
       {/* Error Alert */}
       {error && (
-        <div className="rounded-lg border border-rose-500/20 bg-rose-500/10 p-3.5 text-xs text-rose-400 flex items-start gap-2.5">
-          <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-rose-500" />
+        <div className="flex items-start gap-2.5 rounded-lg border border-rose-500/20 bg-rose-500/10 p-3.5 text-xs text-rose-400">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-rose-500" />
           <div>
             <span className="font-bold">Gagal Mengevaluasi Sinyal:</span> {error}
           </div>
@@ -152,22 +152,24 @@ export function SignalEvaluationPanel({ ticker, companyName }: SignalEvaluationP
 
       {/* Loading Skeleton */}
       {loading && !report && (
-        <div className="py-10 text-center text-xs text-[var(--rasi-muted)] space-y-2">
-          <div className="animate-spin inline-block w-6 h-6 border-2 border-[var(--rasi-primary)] border-t-transparent rounded-full" />
+        <div className="space-y-2 py-10 text-center text-xs text-[var(--rasi-muted)]">
+          <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-[var(--rasi-primary)] border-t-transparent" />
           <p>Memeriksa riwayat evaluasi sinyal tersimpan…</p>
         </div>
       )}
 
       {/* Empty State */}
       {!loading && !report && !error && (
-        <div className="rounded-xl border border-dashed border-[var(--rasi-border)] py-10 px-4 text-center space-y-3">
-          <Layers className="h-8 w-8 mx-auto text-[var(--rasi-muted)]/50" />
+        <div className="space-y-3 rounded-xl border border-dashed border-[var(--rasi-border)] px-4 py-10 text-center">
+          <Layers className="mx-auto h-8 w-8 text-[var(--rasi-muted)]/50" />
           <div className="space-y-1">
             <h3 className="text-sm font-semibold text-[var(--rasi-text)]">
               Belum Ada Evaluasi Sesi untuk {cleanTicker}
             </h3>
-            <p className="text-xs text-[var(--rasi-muted)] max-w-md mx-auto leading-relaxed">
-              Klik &quot;Evaluasi Sinyal Terkini&quot; untuk menjalankan evaluasi hasil 1, 3, dan 5 sesi perdagangan ke depan, simulasi risiko (SL, TP1, TP2, BEP), dan proyeksi Geometric Brownian Motion (GBM).
+            <p className="mx-auto max-w-md text-xs leading-relaxed text-[var(--rasi-muted)]">
+              Klik &quot;Evaluasi Sinyal Terkini&quot; untuk menjalankan evaluasi hasil 1, 3, dan 5
+              sesi perdagangan ke depan, simulasi risiko (SL, TP1, TP2, BEP), dan proyeksi Geometric
+              Brownian Motion (GBM).
             </p>
           </div>
           <Button variant="primary" size="sm" onClick={handleEvaluate} pending={evaluating}>
@@ -184,7 +186,7 @@ export function SignalEvaluationPanel({ ticker, companyName }: SignalEvaluationP
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
               <span>
                 Aturan:{' '}
-                <strong className="text-[var(--rasi-primary)] font-mono">
+                <strong className="font-mono text-[var(--rasi-primary)]">
                   {report.context.ruleLabel}
                 </strong>
               </span>
@@ -204,22 +206,22 @@ export function SignalEvaluationPanel({ ticker, companyName }: SignalEvaluationP
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center rounded bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-400 border border-amber-500/20">
+              <span className="inline-flex items-center rounded border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-400">
                 Feed Tertunda ~10m (Yahoo)
               </span>
             </div>
           </div>
 
           {/* 3. Summary Bar */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {/* Technical Condition */}
-            <div className="rounded-lg border border-[var(--rasi-border)] bg-[var(--surface-card)] p-3 space-y-1">
+            <div className="space-y-1 rounded-lg border border-[var(--rasi-border)] bg-[var(--surface-card)] p-3">
               <span className="text-[11px] font-semibold text-[var(--rasi-muted)]">
                 Kondisi Teknis:
               </span>
               <div className="flex items-center gap-2">
                 <span
-                  className={`inline-block w-2 h-2 rounded-full ${
+                  className={`inline-block h-2 w-2 rounded-full ${
                     report.assessment.condition.includes('BULLISH')
                       ? 'bg-emerald-500'
                       : report.assessment.condition.includes('BEARISH')
@@ -227,7 +229,7 @@ export function SignalEvaluationPanel({ ticker, companyName }: SignalEvaluationP
                         : 'bg-amber-500'
                   }`}
                 />
-                <span className="font-semibold text-xs text-[var(--rasi-text)]">
+                <span className="text-xs font-semibold text-[var(--rasi-text)]">
                   {report.assessment.condition === 'STRONG_BULLISH'
                     ? 'Sangat Kuat (Bullish)'
                     : report.assessment.condition === 'BULLISH'
@@ -237,18 +239,20 @@ export function SignalEvaluationPanel({ ticker, companyName }: SignalEvaluationP
                         : 'Konsolidasi (Netral)'}
                 </span>
               </div>
-              <p className="text-[10px] text-[var(--rasi-muted)] line-clamp-1">
+              <p className="line-clamp-1 text-[10px] text-[var(--rasi-muted)]">
                 {report.assessment.summary}
               </p>
             </div>
 
             {/* Price Change */}
-            <div className="rounded-lg border border-[var(--rasi-border)] bg-[var(--surface-card)] p-3 space-y-1">
+            <div className="space-y-1 rounded-lg border border-[var(--rasi-border)] bg-[var(--surface-card)] p-3">
               <span className="text-[11px] font-semibold text-[var(--rasi-muted)]">
                 Perubahan Terhadap Acuan:
               </span>
               {(() => {
-                const latestActual = report.outcomes.find((o) => o.status === 'MATURED')?.actualPrice
+                const latestActual = report.outcomes.find(
+                  (o) => o.status === 'MATURED',
+                )?.actualPrice
                 const ref = report.context.referencePrice
                 if (latestActual) {
                   const gross = (latestActual - ref) / ref
@@ -259,7 +263,8 @@ export function SignalEvaluationPanel({ ticker, companyName }: SignalEvaluationP
                           gross >= 0 ? 'text-emerald-500' : 'text-rose-500'
                         }`}
                       >
-                        {gross >= 0 ? '+' : ''}{(gross * 100).toFixed(2)}%
+                        {gross >= 0 ? '+' : ''}
+                        {(gross * 100).toFixed(2)}%
                       </span>
                       <span className="text-[10px] text-[var(--rasi-muted)]">
                         (Rp {latestActual.toLocaleString('id-ID')})
@@ -268,29 +273,27 @@ export function SignalEvaluationPanel({ ticker, companyName }: SignalEvaluationP
                   )
                 }
                 return (
-                  <p className="text-xs font-mono text-[var(--rasi-muted)]">
+                  <p className="font-mono text-xs text-[var(--rasi-muted)]">
                     Menunggu sesi selesai
                   </p>
                 )
               })()}
-              <p className="text-[10px] text-[var(--rasi-muted)]">
-                Berdasarkan sesi termutakhir
-              </p>
+              <p className="text-[10px] text-[var(--rasi-muted)]">Berdasarkan sesi termutakhir</p>
             </div>
 
             {/* Stop Scenario Status */}
-            <div className="rounded-lg border border-[var(--rasi-border)] bg-[var(--surface-card)] p-3 space-y-1">
+            <div className="space-y-1 rounded-lg border border-[var(--rasi-border)] bg-[var(--surface-card)] p-3">
               <span className="text-[11px] font-semibold text-[var(--rasi-muted)]">
                 Status Skenario Stop:
               </span>
-              <p className="font-semibold text-xs">
+              <p className="text-xs font-semibold">
                 {report.assessment.stopStatus === 'UNTRIGGERED' ? (
-                  <span className="text-emerald-500 flex items-center gap-1">
+                  <span className="flex items-center gap-1 text-emerald-500">
                     <ShieldCheck className="h-3.5 w-3.5" />
                     Batas Stop Terjaga (Aman)
                   </span>
                 ) : (
-                  <span className="text-rose-500 flex items-center gap-1">
+                  <span className="flex items-center gap-1 text-rose-500">
                     <AlertTriangle className="h-3.5 w-3.5" />
                     Stop Loss Terpicu
                   </span>
@@ -308,7 +311,7 @@ export function SignalEvaluationPanel({ ticker, companyName }: SignalEvaluationP
               <button
                 type="button"
                 onClick={() => setActiveTab('actual')}
-                className={`pb-2.5 px-4 transition-colors border-b-2 ${
+                className={`border-b-2 px-4 pb-2.5 transition-colors ${
                   activeTab === 'actual'
                     ? 'border-[var(--rasi-primary)] text-[var(--rasi-primary)]'
                     : 'border-transparent text-[var(--rasi-muted)] hover:text-[var(--rasi-text)]'
@@ -320,7 +323,7 @@ export function SignalEvaluationPanel({ ticker, companyName }: SignalEvaluationP
               <button
                 type="button"
                 onClick={() => setActiveTab('risk')}
-                className={`pb-2.5 px-4 transition-colors border-b-2 ${
+                className={`border-b-2 px-4 pb-2.5 transition-colors ${
                   activeTab === 'risk'
                     ? 'border-[var(--rasi-primary)] text-[var(--rasi-primary)]'
                     : 'border-transparent text-[var(--rasi-muted)] hover:text-[var(--rasi-text)]'
@@ -332,7 +335,7 @@ export function SignalEvaluationPanel({ ticker, companyName }: SignalEvaluationP
               <button
                 type="button"
                 onClick={() => setActiveTab('projection')}
-                className={`pb-2.5 px-4 transition-colors border-b-2 ${
+                className={`border-b-2 px-4 pb-2.5 transition-colors ${
                   activeTab === 'projection'
                     ? 'border-[var(--rasi-primary)] text-[var(--rasi-primary)]'
                     : 'border-transparent text-[var(--rasi-muted)] hover:text-[var(--rasi-text)]'
@@ -344,17 +347,11 @@ export function SignalEvaluationPanel({ ticker, companyName }: SignalEvaluationP
 
             {/* Tab Contents */}
             <div>
-              {activeTab === 'actual' && (
-                <ActualOutcomesTable outcomes={report.outcomes} />
-              )}
+              {activeTab === 'actual' && <ActualOutcomesTable outcomes={report.outcomes} />}
 
-              {activeTab === 'risk' && (
-                <RiskPlanCard plan={report.riskPlan} ticker={cleanTicker} />
-              )}
+              {activeTab === 'risk' && <RiskPlanCard plan={report.riskPlan} ticker={cleanTicker} />}
 
-              {activeTab === 'projection' && (
-                <ProjectionsCard projection={report.projection} />
-              )}
+              {activeTab === 'projection' && <ProjectionsCard projection={report.projection} />}
             </div>
           </div>
 
