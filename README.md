@@ -165,10 +165,11 @@ Data DTO Aman ke UI
 
 ## 🧪 Pengujian & Verifikasi
 
-Proyek memiliki 60 tes unit otomatis yang mencakup kontrak data, sanitasi env, perhitungan indikator, isolasi akun, adapter provider, dan dedup idempotensi:
+> **Catatan Status Deploy Readiness (September 2026):**
+> Klaim lama "60 tes" adalah bukti historis pada masa awal pengembangan. Saat ini pada baseline HEAD `78fcbe8`, terdapat **176 tes unit** yang mencakup validasi kontrak, sesi bursa, kalender perdagangan, isolasi akun, simulasi sinyal, dan provider. Rencana dan checklist kesiapan rilis produksi terdokumentasi di [`tasks/deploy-readiness-2026-09/`](tasks/deploy-readiness-2026-09/).
 
 ```powershell
-# Jalankan seluruh test suites (60 tes)
+# Jalankan seluruh test suites (176+ tes)
 pnpm test
 
 # Jalankan typecheck, lint, format check, dan build
