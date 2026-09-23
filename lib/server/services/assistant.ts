@@ -12,6 +12,7 @@ import {
 } from '../../contracts/assistant.ts'
 import { type Result, errorResult, successResult } from '../../contracts/result.ts'
 import { getNewsSentimentLabel, getStatusLabel } from '../../presentation/stock.ts'
+import { isFeatureEnabled } from '../env.ts'
 import { withIdempotency } from '../idempotency.ts'
 import { type LiveMarketQuote, fetchLiveMarketQuote } from '../providers/market.ts'
 import { consumeQuota } from '../quota.ts'
@@ -194,6 +195,10 @@ export async function sendMessage(
   userId: string,
   rawInput: AssistantRequest,
 ): Promise<Result<AssistantResponseDTO>> {
+  if (!isFeatureEnabled('RASI_ASSISTANT_ENABLED')) {
+    return errorResult('FEATURE_DISABLED', 'Fitur asisten AI saat ini dinonaktifkan.')
+  }
+
   if (!userId) {
     return errorResult('AUTH_REQUIRED', 'Anda harus masuk untuk menggunakan asisten.')
   }
@@ -318,10 +323,7 @@ export async function sendMessage(
 
     // 6. Invoke Gemini or fallback
     const key = process.env.GEMINI_API_KEY?.trim()
-    const primaryModel = process.env.GEMINI_MODEL?.trim() || 'gemini-3.5-flash-lite'
-    const candidateModels = Array.from(
-      new Set([primaryModel, 'gemini-flash-lite-latest', 'gemini-3.1-flash-lite']),
-    )
+    const modelToUse = 'gemini-3.5-flash-lite'
 
     let answer = ''
     let proposedAction: ProposedAction | null = null
@@ -372,40 +374,37 @@ Keluarkan respons dalam format JSON dengan properti:
         generationConfig: { responseMimeType: 'application/json' },
       }
 
-      for (const modelToUse of candidateModels) {
-        try {
-          const res = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${modelToUse}:generateContent?key=${key}`,
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload),
-              signal: AbortSignal.timeout(25_000),
-            },
-          )
+      try {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${modelToUse}:generateContent?key=${key}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            signal: AbortSignal.timeout(25_000),
+          },
+        )
 
-          if (res.ok) {
-            const data = (await res.json()) as {
-              candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>
-            }
-            const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text
-            if (rawText) {
-              const parsed = GeminiAssistantOutputSchema.safeParse(JSON.parse(rawText))
-              if (parsed.success) {
-                answer = parsed.data.answer
-                proposedAction = parsed.data.proposedAction ?? null
-                if (parsed.data.warnings && parsed.data.warnings.length > 0) {
-                  warnings = parsed.data.warnings
-                }
-                analysisSource = 'GEMINI'
-                usedModel = modelToUse
-                break
+        if (res.ok) {
+          const data = (await res.json()) as {
+            candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>
+          }
+          const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text
+          if (rawText) {
+            const parsed = GeminiAssistantOutputSchema.safeParse(JSON.parse(rawText))
+            if (parsed.success) {
+              answer = parsed.data.answer
+              proposedAction = parsed.data.proposedAction ?? null
+              if (parsed.data.warnings && parsed.data.warnings.length > 0) {
+                warnings = parsed.data.warnings
               }
+              analysisSource = 'GEMINI'
+              usedModel = modelToUse
             }
           }
-        } catch {
-          // Try next candidate model
         }
+      } catch {
+        // Fallback to rule-based answer
       }
     }
 

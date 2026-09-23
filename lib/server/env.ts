@@ -31,7 +31,7 @@ export const ServerEnvSchema = z
     TEST_DATABASE_URL: z.string().trim().optional(),
     SECTORS_API_KEY: z.string().trim().optional(),
     GEMINI_API_KEY: z.string().trim().optional(),
-    GEMINI_MODEL: z.string().trim().default('gemini-3.5-flash-lite'),
+    GEMINI_MODEL: z.enum(['gemini-3.5-flash-lite']).default('gemini-3.5-flash-lite'),
     BETTER_AUTH_SECRET: z
       .string()
       .trim()
@@ -57,6 +57,9 @@ export const ServerEnvSchema = z
       .optional()
       .transform((v) => v === 'true' || v === '1'),
     INTRADAY_PROVIDER: z.enum(['yahoo']).default('yahoo'),
+    SIMULATION_MAX_PATHS: z.coerce.number().int().positive().default(25000),
+    PROVIDER_TIMEOUT_MS: z.coerce.number().int().positive().default(10000),
+    CACHE_TTL_SECONDS: z.coerce.number().int().positive().default(300),
   })
   .superRefine((data, ctx) => {
     const isProd = data.NODE_ENV === 'production'
@@ -101,7 +104,26 @@ export const ServerEnvSchema = z
       })
     }
 
-    // 4. If Assistant is enabled, GEMINI_API_KEY and GEMINI_MODEL must be valid
+    // 4. Analysis feature validation
+    if (data.RASI_ANALYSIS_ENABLED) {
+      if (!data.SECTORS_API_KEY || isPlaceholder(data.SECTORS_API_KEY)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['SECTORS_API_KEY'],
+          message: 'SECTORS_API_KEY diperlukan saat RASI_ANALYSIS_ENABLED bernilai true.',
+        })
+      }
+      if (isProd && data.SECTORS_DAILY_CREDIT_BUDGET <= 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['SECTORS_DAILY_CREDIT_BUDGET'],
+          message:
+            'SECTORS_DAILY_CREDIT_BUDGET harus lebih besar dari 0 saat fitur analisis diaktifkan di produksi.',
+        })
+      }
+    }
+
+    // 5. Assistant feature validation
     if (data.RASI_ASSISTANT_ENABLED) {
       if (!data.GEMINI_API_KEY || isPlaceholder(data.GEMINI_API_KEY)) {
         ctx.addIssue({
@@ -110,11 +132,23 @@ export const ServerEnvSchema = z
           message: 'GEMINI_API_KEY diperlukan saat RASI_ASSISTANT_ENABLED bernilai true.',
         })
       }
-      if (!data.GEMINI_MODEL) {
+      if (isProd && data.GEMINI_DAILY_REQUEST_BUDGET <= 0) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          path: ['GEMINI_MODEL'],
-          message: 'GEMINI_MODEL wajib ditentukan secara eksplisit saat asisten diaktifkan.',
+          path: ['GEMINI_DAILY_REQUEST_BUDGET'],
+          message:
+            'GEMINI_DAILY_REQUEST_BUDGET harus lebih besar dari 0 saat asisten diaktifkan di produksi.',
+        })
+      }
+    }
+
+    // 6. Signal Analysis validation
+    if (data.SIGNAL_ANALYSIS_ENABLED) {
+      if (!data.INTRADAY_PROVIDER) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['INTRADAY_PROVIDER'],
+          message: 'INTRADAY_PROVIDER wajib ditentukan saat SIGNAL_ANALYSIS_ENABLED bernilai true.',
         })
       }
     }
@@ -123,6 +157,17 @@ export const ServerEnvSchema = z
 export type ServerEnv = z.infer<typeof ServerEnvSchema>
 
 let cachedEnv: ServerEnv | null = null
+
+export function resetServerEnvCache(): void {
+  cachedEnv = null
+}
+
+export function isFeatureEnabled(
+  flag: 'RASI_ANALYSIS_ENABLED' | 'RASI_ASSISTANT_ENABLED' | 'SIGNAL_ANALYSIS_ENABLED',
+): boolean {
+  const val = process.env[flag]?.trim()
+  return val === 'true' || val === '1'
+}
 
 export function getServerEnv(
   envSource: Record<string, string | undefined> = process.env,
@@ -163,5 +208,10 @@ export function getSanitizedEnvSummary(env: Partial<ServerEnv> = process.env) {
     GEMINI_DAILY_REQUEST_BUDGET: env.GEMINI_DAILY_REQUEST_BUDGET ?? 0,
     RASI_ANALYSIS_ENABLED: env.RASI_ANALYSIS_ENABLED ? 'true' : 'false',
     RASI_ASSISTANT_ENABLED: env.RASI_ASSISTANT_ENABLED ? 'true' : 'false',
+    SIGNAL_ANALYSIS_ENABLED: env.SIGNAL_ANALYSIS_ENABLED ? 'true' : 'false',
+    INTRADAY_PROVIDER: env.INTRADAY_PROVIDER ?? 'yahoo',
+    SIMULATION_MAX_PATHS: env.SIMULATION_MAX_PATHS ?? 25000,
+    PROVIDER_TIMEOUT_MS: env.PROVIDER_TIMEOUT_MS ?? 10000,
+    CACHE_TTL_SECONDS: env.CACHE_TTL_SECONDS ?? 300,
   }
 }

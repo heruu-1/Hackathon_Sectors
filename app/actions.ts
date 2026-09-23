@@ -1385,6 +1385,12 @@ export async function evaluateSignalAnalysisAction(
     }
 
     const { ticker, contextId, requestKey } = parsed.data
+
+    const { isFeatureEnabled } = await import('@/lib/server/env')
+    if (!isFeatureEnabled('SIGNAL_ANALYSIS_ENABLED')) {
+      return errorResult('FEATURE_DISABLED', 'Fitur evaluasi sinyal saat ini dinonaktifkan.')
+    }
+
     const { getOptionalSession } = await import('@/lib/server/session')
     const session = await getOptionalSession()
     const userId = session?.id ?? 'guest-user'

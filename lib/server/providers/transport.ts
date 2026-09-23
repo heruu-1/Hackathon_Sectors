@@ -14,7 +14,7 @@ export class SectorsProviderError extends Error {
 }
 
 export function validateApiKey(apiKey?: string): string {
-  const key = apiKey?.trim() || process.env.SECTORS_API_KEY?.trim()
+  const key = apiKey !== undefined ? apiKey.trim() : process.env.SECTORS_API_KEY?.trim()
   if (!key || key === 'your_sectors_api_key_here') {
     throw new SectorsProviderError(
       'SECTORS_API_KEY belum diisi pada konfigurasi server.',

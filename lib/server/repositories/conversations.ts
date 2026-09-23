@@ -1,12 +1,12 @@
 import { and, desc, eq } from 'drizzle-orm'
 
-import { db } from '@/db'
-import { conversationMessages, conversations } from '@/db/schema'
+import { db } from '../../../db/index.ts'
+import { conversationMessages, conversations } from '../../../db/schema.ts'
 import type {
   ConversationDTO,
   ConversationMessageDTO,
   ProposedAction,
-} from '@/lib/contracts/assistant'
+} from '../../contracts/assistant.ts'
 
 const inMemoryConversations = new Map<string, ConversationDTO>()
 const inMemoryMessages = new Map<string, ConversationMessageDTO[]>()

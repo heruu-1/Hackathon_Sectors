@@ -20,6 +20,7 @@ import type {
   SignalDataQuality,
   SignalModelParams,
 } from '../../contracts/signal-analysis.ts'
+import { isFeatureEnabled } from '../env.ts'
 import { fetchIntradayPrices } from '../providers/intraday.ts'
 import { fetchDailyPrices } from '../providers/sectors.ts'
 import {
@@ -63,6 +64,10 @@ export async function evaluateSignalAnalysis(params: {
   ticker: string
   contextId?: string
 }): Promise<SignalAnalysisReport> {
+  if (!isFeatureEnabled('SIGNAL_ANALYSIS_ENABLED')) {
+    throw new Error('Fitur evaluasi sinyal saat ini dinonaktifkan.')
+  }
+
   const cleanTicker = params.ticker.trim().toUpperCase().replace(/\.JK$/, '')
 
   // 1. Resolve or create signal context

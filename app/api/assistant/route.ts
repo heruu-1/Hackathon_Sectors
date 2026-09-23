@@ -1,4 +1,5 @@
 import { auth } from '@/lib/auth'
+import { isFeatureEnabled } from '@/lib/server/env'
 import { sendMessage } from '@/lib/server/services/assistant'
 
 export async function GET() {
@@ -15,6 +16,10 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  if (!isFeatureEnabled('RASI_ASSISTANT_ENABLED')) {
+    return Response.json({ error: 'Fitur asisten AI saat ini dinonaktifkan.' }, { status: 503 })
+  }
+
   let session: Awaited<ReturnType<typeof auth.api.getSession>> = null
   try {
     session = await auth.api.getSession({ headers: request.headers })
@@ -77,6 +82,7 @@ export async function POST(request: Request) {
         VALIDATION_ERROR: 400,
         AUTH_REQUIRED: 401,
         NOT_FOUND: 404,
+        FEATURE_DISABLED: 503,
         RATE_LIMITED: 429,
         BUDGET_EXHAUSTED: 429,
         CONFIG_UNAVAILABLE: 503,

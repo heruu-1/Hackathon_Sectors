@@ -14,7 +14,8 @@
     "db:migrate": "node scripts/migrate-unified.mjs",
     "db:migrate:check": "node scripts/migrate-unified.mjs --check",
     "db:seed": "node scripts/seed.mjs",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "predeploy": "node scripts/predeploy.mjs"
   },
   "pnpm": {
     "overrides": {

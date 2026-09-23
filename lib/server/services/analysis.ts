@@ -35,6 +35,7 @@ import type {
 import { type Result, errorResult, successResult } from '../../contracts/result.ts'
 import { TickerSchema } from '../../contracts/watchlist.ts'
 import { getOrSetCache } from '../cache.ts'
+import { isFeatureEnabled } from '../env.ts'
 import { withIdempotency } from '../idempotency.ts'
 import { analyzeNewsImpact, fallbackAnalyzeNews } from '../providers/gemini.ts'
 import { type RawQuarterlyFinancial, fetchQuarterlyFinancials } from '../providers/quarterly.ts'
@@ -316,6 +317,10 @@ export interface CreateAnalysisInput {
 export async function createAnalysis(
   input: CreateAnalysisInput,
 ): Promise<Result<AnalysisSnapshot>> {
+  if (!isFeatureEnabled('RASI_ANALYSIS_ENABLED')) {
+    return errorResult('FEATURE_DISABLED', 'Fitur analisis mendalam saat ini dinonaktifkan.')
+  }
+
   if (!input.userId) {
     return errorResult('AUTH_REQUIRED', 'Anda harus masuk untuk membuat analisis.')
   }
