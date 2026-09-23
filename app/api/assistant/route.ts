@@ -24,10 +24,16 @@ export async function POST(request: Request) {
   try {
     session = await auth.api.getSession({ headers: request.headers })
   } catch {
-    // Gracefully proceed with guest session if auth check fails
+    // Session retrieval failed
   }
 
-  const userId = session?.user?.id ?? 'guest-user'
+  const userId = session?.user?.id
+  if (!userId) {
+    return Response.json(
+      { error: 'Autentikasi diperlukan. Silakan masuk terlebih dahulu.', code: 'AUTH_REQUIRED' },
+      { status: 401 },
+    )
+  }
 
   let body: {
     message?: unknown

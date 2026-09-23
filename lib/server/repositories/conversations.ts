@@ -29,6 +29,9 @@ export async function getUserConversations(userId: string): Promise<Conversation
       updatedAt: r.updatedAt.toISOString(),
     }))
   } catch {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('DATABASE_UNAVAILABLE: Gagal mengakses data percakapan di database.')
+    }
     return Array.from(inMemoryConversations.values()).filter((c) => c.userId === userId)
   }
 }
@@ -59,7 +62,12 @@ export async function getConversation(
       messages,
     }
   } catch {
-    return inMemoryConversations.get(conversationId) ?? null
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('DATABASE_UNAVAILABLE: Gagal mengakses data percakapan di database.')
+    }
+    const conv = inMemoryConversations.get(conversationId)
+    if (!conv || conv.userId !== userId) return null
+    return conv
   }
 }
 
@@ -95,6 +103,9 @@ export async function createConversation(
       messages: [],
     }
   } catch {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('DATABASE_UNAVAILABLE: Gagal menyimpan percakapan baru ke database.')
+    }
     const conv: ConversationDTO = {
       id,
       userId,
@@ -119,6 +130,11 @@ export async function deleteConversation(userId: string, conversationId: string)
 
     return rows.length > 0
   } catch {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('DATABASE_UNAVAILABLE: Gagal menghapus percakapan dari database.')
+    }
+    const existing = inMemoryConversations.get(conversationId)
+    if (!existing || existing.userId !== userId) return false
     inMemoryConversations.delete(conversationId)
     inMemoryMessages.delete(conversationId)
     return true
@@ -149,6 +165,9 @@ export async function getConversationMessages(
       createdAt: r.createdAt.toISOString(),
     }))
   } catch {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('DATABASE_UNAVAILABLE: Gagal memuat pesan percakapan dari database.')
+    }
     return (inMemoryMessages.get(conversationId) ?? []).slice(-limit)
   }
 }
@@ -201,6 +220,9 @@ export async function addConversationMessage(
       createdAt: inserted.createdAt.toISOString(),
     }
   } catch {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('DATABASE_UNAVAILABLE: Gagal menyimpan pesan percakapan ke database.')
+    }
     const msg: ConversationMessageDTO = {
       id,
       conversationId,

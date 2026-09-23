@@ -165,7 +165,13 @@ export async function consumeQuota(
       remainingMinute: Math.max(0, config.perMinute - minuteRow.count),
     })
   } catch {
-    // Fallback to in-memory quota tracking when database is unreachable
+    if (process.env.NODE_ENV === 'production') {
+      return errorResult(
+        'DATABASE_UNAVAILABLE',
+        'Layanan kuota database tidak dapat diakses saat ini.',
+      )
+    }
+    // Fallback to in-memory quota tracking when database is unreachable in non-prod
     return consumeInMemoryQuota(subject, operation, config, now)
   }
 }

@@ -1393,7 +1393,10 @@ export async function evaluateSignalAnalysisAction(
 
     const { getOptionalSession } = await import('@/lib/server/session')
     const session = await getOptionalSession()
-    const userId = session?.id ?? 'guest-user'
+    if (!session?.id) {
+      return errorResult('AUTH_REQUIRED', 'Anda harus masuk untuk menjalankan evaluasi sinyal.')
+    }
+    const userId = session.id
 
     // Rate limiting: 2 per minute, 20 per day
     const { consumeQuota } = await import('@/lib/server/quota')
