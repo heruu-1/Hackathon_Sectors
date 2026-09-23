@@ -165,42 +165,56 @@ Data DTO Aman ke UI
 
 ## 🧪 Pengujian & Verifikasi
 
-> **Catatan Status Deploy Readiness (September 2026):**
-> Klaim lama "60 tes" adalah bukti historis pada masa awal pengembangan. Saat ini pada baseline HEAD `78fcbe8`, terdapat **176 tes unit** yang mencakup validasi kontrak, sesi bursa, kalender perdagangan, isolasi akun, simulasi sinyal, dan provider. Rencana dan checklist kesiapan rilis produksi terdokumentasi di [`tasks/deploy-readiness-2026-09/`](tasks/deploy-readiness-2026-09/).
+> **Status Kesiapan Deploy Produksi (Deploy Readiness 2026-09):**
+> Telah melalui audit menyeluruh dan hardening pada branch `fix/deploy-readiness` dengan **218 subtests** passing (100% pass rate) yang memverifikasi isolasi akun pengguna fail-closed, kalender bursa 2026 BEI/KSEI lengkap, integritas ledger migrasi database, determinisme simulasi posisi sinyal, dan keamanan redirect. Rencana, checklist, dan bukti verifikasi terdokumentasi di [`tasks/deploy-readiness-2026-09/`](tasks/deploy-readiness-2026-09/).
 
 ```powershell
-# Jalankan seluruh test suites (176+ tes)
+# Jalankan seluruh rangkaian tes (218 subtests)
 pnpm test
 
-# Jalankan typecheck, lint, format check, dan build
-pnpm typecheck
-pnpm lint
-pnpm format:check
-pnpm build
+# Jalankan gerbang rilis penuh (format, lint, typecheck, tests, build)
+node scripts/predeploy.mjs
+
+# Atau jalankan gerbang individual:
+pnpm run format:check
+pnpm run lint
+pnpm run typecheck
+pnpm run build
 ```
 
-Endpoint pemantauan kesehatan aplikasi tersedia di:
+Endpoint pemantauan kesehatan aplikasi:
 
-- `GET /api/health` — memverifikasi status aplikasi, konektivitas database, uptime, dan latensi.
+- `GET /api/live` — Liveness probe ringan untuk container orchestrator / platform liveness check (HTTP 200, uptime proses).
+- `GET /api/health` — Readiness probe lengkap yang memverifikasi koneksi database terkelola dan keselarasan ledger migrasi `_rasi_migrations` (HTTP 200 sehat, HTTP 503 fail-closed saat koneksi terputus).
 
 ---
 
-## 🏗️ Deployment (Vercel & Staging)
+## 🏗️ Deployment (Vercel & Managed PostgreSQL)
 
-1. **Persiapan Database:**
-   - Jalankan `node scripts/migrate.mjs` menggunakan `DATABASE_URL` staging/produksi.
-   - Opsional: jalankan `node scripts/seed.mjs` jika ingin mengisi snapshot data awal.
+1. **Persiapan Database & Migrasi:**
+   - Jalankan pemeriksaan ledger migrasi:
+     ```bash
+     DATABASE_URL="$DATABASE_MIGRATION_URL" node scripts/migrate-unified.mjs --check
+     ```
+   - Terapkan migrasi terpadu dengan advisory lock:
+     ```bash
+     DATABASE_URL="$DATABASE_MIGRATION_URL" node scripts/migrate-unified.mjs
+     ```
+   - Opsional: jalankan seeder untuk mengisi snapshot awal jika diperlukan:
+     ```bash
+     pnpm db:seed
+     ```
 2. **Konfigurasi Environment:**
-   - Isi seluruh variabel wajib di Vercel Dashboard → Project Settings → Environment Variables.
-   - Pastikan `BETTER_AUTH_URL` sesuai domain produksi dan `BETTER_AUTH_SECRET` memiliki panjang minimal 32 karakter acak.
+   - Isi seluruh variabel wajib di Vercel Dashboard → Project Settings → Environment Variables (`DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `SECTORS_API_KEY`, `GEMINI_API_KEY`).
+   - Gunakan `GEMINI_MODEL="gemini-3.5-flash-lite"` sesuai allowlist model yang didukung.
 3. **Deploy:**
-   - Push ke branch `main`. CI GitHub Actions akan menjalankan linting, format check, typecheck, seluruh 60 unit tests, dan production build secara otomatis.
-   - Vercel akan membangun dan meluncurkan aplikasi.
-4. **Verifikasi Pasca-Deploy:**
-   - Buka `https://<domain>/api/health` dan pastikan status `"ok"` dan database `"connected"`.
-   - Uji login Google OAuth di `/masuk`.
-   - Uji pencarian ticker saham (misal: BBCA, TLKM).
-   - Uji penambahan saham ke Watchlist dan pembukaan percakapan di Asisten.
+   - Merge `fix/deploy-readiness` ke `main`. CI GitHub Actions akan menjalankan seluruh 7 gerbang verifikasi rilis dengan disposable PostgreSQL secara otomatis.
+   - Vercel akan mem-build rute dan meluncurkan aplikasi ke lingkungan produksi.
+4. **Verifikasi Pasca-Deploy (Smoke Test):**
+   - Periksa `https://<domain>/api/live` (status `"LIVE"`).
+   - Periksa `https://<domain>/api/health` (status `"HEALTHY"` dan `database: "UP"`).
+   - Uji alur masuk Google OAuth di `/masuk`.
+   - Uji isolasi percakapan Asisten (mengharuskan autentikasi aktif, tanpa identitas tamu bersama).
 
 ---
 
