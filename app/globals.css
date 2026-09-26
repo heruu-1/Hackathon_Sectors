@@ -68,8 +68,8 @@
   --color-rasi-cyan: var(--rasi-cyan);
   --color-rasi-mint: var(--rasi-mint);
   --color-rasi-accent-violet: var(--rasi-accent-violet);
-  --font-sans: var(--font-roboto), Arial, Helvetica, sans-serif;
-  --font-mono: var(--font-roboto-mono), 'Cascadia Mono', Consolas, monospace;
+  --font-sans: var(--font-plus-jakarta-sans), Arial, Helvetica, sans-serif;
+  --font-mono: var(--font-plus-jakarta-sans), monospace;
 }
 
 /* ──────────────────────────────────────────────────────────────────
@@ -245,7 +245,7 @@ html {
 body {
   background: var(--rasi-bg);
   color: var(--rasi-text);
-  font-family: var(--font-roboto), Arial, Helvetica, sans-serif;
+  font-family: var(--font-plus-jakarta-sans), Arial, Helvetica, sans-serif;
   margin: 0;
   padding: 0;
 }
@@ -264,7 +264,7 @@ dialog {
 }
 
 .font-mono {
-  font-family: var(--font-roboto-mono), monospace;
+  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
 }
 

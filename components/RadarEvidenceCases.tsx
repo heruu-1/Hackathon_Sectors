@@ -77,7 +77,7 @@ export function RadarEvidenceCases() {
 
   if (error || !data) {
     return (
-      <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-card)] p-8 text-center shadow-sm">
+      <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-card)] p-8 text-center shadow-[var(--rasi-card-shadow)]">
         <AlertTriangle className="mx-auto h-8 w-8 text-[var(--rasi-danger)]" />
         <p className="mt-2 text-sm font-semibold text-[var(--rasi-text)]">
           Gagal memuat Radar Kasus Bukti
@@ -106,12 +106,12 @@ export function RadarEvidenceCases() {
   return (
     <div className="space-y-6">
       {/* Header Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-card)] p-5 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-card)] p-5 shadow-[var(--rasi-card-shadow)]">
         <div>
           <div className="flex items-center gap-2">
             <ShieldAlert className="h-5 w-5 text-[var(--rasi-primary)]" />
             <h2 className="text-base font-bold text-[var(--rasi-text)]">
-              Radar Bukti (F02) — Deteksi Anomali & Pertentangan Bukti
+              Radar Bukti — Deteksi Anomali & Pertentangan Bukti
             </h2>
           </div>
           <p className="mt-1 text-xs text-[var(--rasi-muted)]">
@@ -159,7 +159,7 @@ export function RadarEvidenceCases() {
           {filteredCases.map((item) => (
             <div
               key={item.ticker}
-              className="rasi-ambient-top-cyan flex flex-col justify-between rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-card)] p-5 shadow-[var(--rasi-card-shadow)] transition-all hover:border-[var(--rasi-accent)]/50 hover:shadow-md"
+              className="rasi-ambient-top-cyan flex flex-col justify-between rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-card)] p-5 shadow-[var(--rasi-card-shadow)] transition-all hover:border-[var(--rasi-accent)]/50 hover:shadow-[var(--rasi-card-shadow)]"
             >
               <div>
                 {/* Header */}

@@ -1,20 +1,13 @@
 import type { Metadata } from 'next'
-import { Roboto, Roboto_Mono } from 'next/font/google'
+import { Plus_Jakarta_Sans } from 'next/font/google'
 
 import { ResearchShell } from '@/components/ResearchShell'
 import { ThemePreferenceProvider } from '@/components/ThemePreferenceProvider'
 
 import './globals.css'
 
-const roboto = Roboto({
-  variable: '--font-roboto',
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '700', '900'],
-  display: 'swap',
-})
-
-const robotoMono = Roboto_Mono({
-  variable: '--font-roboto-mono',
+const plusJakartaSans = Plus_Jakarta_Sans({
+  variable: '--font-plus-jakarta-sans',
   subsets: ['latin'],
   display: 'swap',
 })
@@ -30,7 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="id"
       data-rasi-theme="dark"
-      className={`${roboto.variable} ${robotoMono.variable} h-full font-sans antialiased`}
+      className={`${plusJakartaSans.variable} h-full font-sans antialiased`}
       suppressHydrationWarning
     >
       <head>
@@ -41,7 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
       </head>
-      <body className={`${roboto.className} min-h-full font-sans`}>
+      <body className={`${plusJakartaSans.className} min-h-full font-sans`}>
         <ThemePreferenceProvider>
           <ResearchShell>{children}</ResearchShell>
         </ThemePreferenceProvider>

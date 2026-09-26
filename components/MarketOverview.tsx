@@ -62,7 +62,7 @@ export function MarketOverview({ initialData }: MarketOverviewProps = {}) {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-card)] p-6 shadow-sm">
+      <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-card)] p-6 shadow-[var(--rasi-card-shadow)]">
         <div className="flex items-center justify-between border-b border-[var(--rasi-border)] pb-4">
           <div className="h-6 w-48 animate-pulse rounded bg-[var(--rasi-border)]" />
           <div className="h-8 w-24 animate-pulse rounded bg-[var(--rasi-border)]" />
@@ -83,7 +83,7 @@ export function MarketOverview({ initialData }: MarketOverviewProps = {}) {
 
   if (error || !data) {
     return (
-      <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-card)] p-6 text-center shadow-sm">
+      <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-card)] p-6 text-center shadow-[var(--rasi-card-shadow)]">
         <p className="text-sm text-[var(--rasi-danger)]">{error || 'Data pasar belum tersedia.'}</p>
         <Button variant="secondary" size="sm" className="mt-4" onClick={() => loadData(true)}>
           <RefreshCw className="mr-2 h-4 w-4" /> Coba Lagi
@@ -105,7 +105,7 @@ export function MarketOverview({ initialData }: MarketOverviewProps = {}) {
         <div>
           <div className="flex items-center gap-2">
             <Layers className="h-5 w-5 text-[var(--rasi-primary)]" />
-            <h2 className="text-lg font-bold text-[var(--rasi-text)]">Peta Pasar & Sektor (F01)</h2>
+            <h2 className="text-lg font-bold text-[var(--rasi-text)]">Peta Pasar & Sektor</h2>
           </div>
           <p className="mt-1 text-xs text-[var(--rasi-muted)]">
             Cutoff Data:{' '}

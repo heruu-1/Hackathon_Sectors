@@ -184,7 +184,7 @@ export const TradingViewChart = memo(function TradingViewChart({
 
   return (
     <div
-      className="tradingview-chart-wrapper w-full overflow-hidden rounded-2xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] shadow-xs"
+      className="tradingview-chart-wrapper w-full overflow-hidden rounded-2xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] shadow-[var(--rasi-card-shadow)]"
       style={{ minHeight: `${numericHeight}px`, height: `${numericHeight}px` }}
     >
       {errorPanel}

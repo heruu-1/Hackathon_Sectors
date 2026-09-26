@@ -298,7 +298,7 @@ function ScreenerContent() {
       </div>
 
       {/* Toolbar: Filter Button, Presets, and Active Chips */}
-      <div className="relative space-y-3 overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-5 shadow-xl shadow-black/40">
+      <div className="relative space-y-3 overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-5 shadow-[var(--rasi-card-shadow)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <Button
@@ -460,7 +460,7 @@ function ScreenerContent() {
       )}
 
       {/* Results Table */}
-      <div className="overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] shadow-2xl shadow-black/40">
+      <div className="overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] shadow-[var(--rasi-card-shadow)]">
         {loading ? (
           <div className="flex min-h-[240px] items-center justify-center p-12 text-sm text-[var(--rasi-muted)]">
             <Loader2 className="mr-2 h-5 w-5 animate-spin text-[var(--rasi-primary)]" /> Mencari

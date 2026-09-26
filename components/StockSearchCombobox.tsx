@@ -220,7 +220,7 @@ export function StockSearchCombobox({
           id={id ? `${id}-listbox` : 'stock-combobox-listbox'}
           role="listbox"
           aria-label="Rekomendasi saham"
-          className={`absolute top-full z-50 mt-1.5 max-h-72 overflow-y-auto rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] shadow-xl ${alignClasses}`}
+          className={`absolute top-full z-50 mt-1.5 max-h-72 overflow-y-auto rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] shadow-[var(--rasi-card-shadow)] ${alignClasses}`}
         >
           {/* Header indicator */}
           <div className="flex items-center justify-between border-b border-[var(--rasi-border)] px-3 py-1.5 text-[11px] font-semibold text-[var(--rasi-muted)]">

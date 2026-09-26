@@ -19,7 +19,7 @@ export default function SettingsPage() {
 
       <div className="space-y-4">
         {/* Theme Settings */}
-        <div className="rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-5">
+        <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-5 shadow-[var(--rasi-card-shadow)]">
           <h2 className="font-semibold text-[var(--rasi-text)]"> Warna tampilan </h2>
           <p className="mt-1 text-xs text-[var(--rasi-muted)]">
             Pilih terang, gelap, atau ikuti pengaturan perangkat.
@@ -44,7 +44,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Mode Settings: Pemula vs Detail */}
-        <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-5 shadow-xl shadow-black/40">
+        <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-5 shadow-[var(--rasi-card-shadow)]">
           <h2 className="font-semibold text-[var(--rasi-text)]"> Pilihan penjelasan </h2>
           <p className="mt-1 text-xs text-[var(--rasi-muted)]">
             Pilih “Dengan penjelasan” untuk melihat arti istilah, atau “Langsung ke data” jika sudah

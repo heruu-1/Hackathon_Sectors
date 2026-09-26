@@ -90,7 +90,7 @@ export function ActionMenu({
         <div
           role="menu"
           aria-label={ariaLabel}
-          className="absolute right-0 z-40 mt-1 min-w-[180px] overflow-hidden rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] py-1 shadow-xl shadow-black/40"
+          className="absolute right-0 z-40 mt-1 min-w-[180px] overflow-hidden rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] py-1 shadow-[var(--rasi-card-shadow)]"
         >
           {items.map((item, index) => {
             const Icon = item.icon

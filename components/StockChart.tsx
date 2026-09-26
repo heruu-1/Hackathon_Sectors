@@ -270,7 +270,7 @@ export function StockChart({ dailyRows, symbol }: StockChartProps) {
 
       {/* VIEW 2: RASI INTERNAL SVG CHART */}
       {viewSource === 'rasi' && (
-        <div className="relative overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-5 shadow-2xl shadow-black/40 sm:p-6">
+        <div className="relative overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-5 shadow-[var(--rasi-card-shadow)] sm:p-6">
           {/* Header with Title & Quick Controls */}
           <div className="flex flex-col justify-between gap-4 border-b border-[var(--rasi-border)] pb-5 sm:flex-row sm:items-center">
             <div>
@@ -769,7 +769,7 @@ export function StockChart({ dailyRows, symbol }: StockChartProps) {
       )}
 
       {/* Accessible Historical Data Table */}
-      <div className="overflow-hidden rounded-2xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] shadow-xs">
+      <div className="overflow-hidden rounded-2xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] shadow-[var(--rasi-card-shadow)]">
         <div className="flex items-center justify-between border-b border-[var(--rasi-border)] px-5 py-4">
           <div>
             <h4 className="text-sm font-bold text-[var(--rasi-text)]">

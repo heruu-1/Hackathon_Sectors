@@ -295,7 +295,7 @@ export default function RadarPage() {
                 : 'border-transparent text-[var(--rasi-muted)] hover:text-[var(--rasi-text)]'
             }`}
           >
-            <ShieldAlert className="h-4 w-4" /> Radar Bukti (F02)
+            <ShieldAlert className="h-4 w-4" /> Radar Bukti
           </button>
           <button
             type="button"
@@ -617,7 +617,7 @@ export default function RadarPage() {
               </p>
 
               {loading && !data ? (
-                <div className="flex min-h-[160px] items-center justify-center rounded-xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-8 text-sm text-[var(--rasi-muted)] shadow-xl shadow-black/40">
+                <div className="flex min-h-[160px] items-center justify-center rounded-xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-8 text-sm text-[var(--rasi-muted)] shadow-[var(--rasi-card-shadow)]">
                   <Loader2 className="mr-2 h-4 w-4 animate-spin text-[var(--rasi-primary)]" />{' '}
                   Memeriksa laporan jual beli saham…{' '}
                 </div>
@@ -724,12 +724,12 @@ export default function RadarPage() {
           </div>
 
           {loadingHistory ? (
-            <div className="flex min-h-[160px] items-center justify-center rounded-xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-8 text-sm text-[var(--rasi-muted)] shadow-xl shadow-black/40">
+            <div className="flex min-h-[160px] items-center justify-center rounded-xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-8 text-sm text-[var(--rasi-muted)] shadow-[var(--rasi-card-shadow)]">
               <Loader2 className="mr-2 h-4 w-4 animate-spin text-[var(--rasi-primary)]" />
               Memuat riwayat radar…
             </div>
           ) : historyList.length === 0 ? (
-            <div className="rounded-xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-12 text-center shadow-xl shadow-black/40">
+            <div className="rounded-xl border border-[var(--border-subtle)] bg-gradient-to-br from-[var(--bg-main)] via-[var(--surface-card)] to-[var(--bg-main)] p-12 text-center shadow-[var(--rasi-card-shadow)]">
               <History className="mx-auto h-8 w-8 text-[var(--rasi-muted)]" />
               <p className="mt-3 text-sm font-semibold text-[var(--rasi-text)]">
                 {' '}

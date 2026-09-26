@@ -351,7 +351,7 @@ export function ResearchShell({ children }: { children: ReactNode }) {
             ) : (
               <div
                 role="tooltip"
-                className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 z-50 hidden items-center whitespace-nowrap rounded-md border border-[var(--rasi-border)] bg-[var(--rasi-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--rasi-text)] shadow-xl ring-1 ring-black/5 group-hover:flex animate-in fade-in-0 zoom-in-95 duration-100"
+                className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 z-50 hidden items-center whitespace-nowrap rounded-md border border-[var(--rasi-border)] bg-[var(--rasi-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--rasi-text)] shadow-[var(--rasi-card-shadow)] ring-1 ring-black/5 group-hover:flex animate-in fade-in-0 zoom-in-95 duration-100"
               >
                 RASI (Beranda)
                 <span
@@ -371,7 +371,7 @@ export function ResearchShell({ children }: { children: ReactNode }) {
             {collapsed && (
               <div
                 role="tooltip"
-                className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 z-50 hidden items-center whitespace-nowrap rounded-md border border-[var(--rasi-border)] bg-[var(--rasi-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--rasi-text)] shadow-xl ring-1 ring-black/5 group-hover:flex animate-in fade-in-0 zoom-in-95 duration-100"
+                className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 z-50 hidden items-center whitespace-nowrap rounded-md border border-[var(--rasi-border)] bg-[var(--rasi-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--rasi-text)] shadow-[var(--rasi-card-shadow)] ring-1 ring-black/5 group-hover:flex animate-in fade-in-0 zoom-in-95 duration-100"
               >
                 Kembangkan Sidebar
                 <span
@@ -407,7 +407,7 @@ export function ResearchShell({ children }: { children: ReactNode }) {
                 ) : (
                   <div
                     role="tooltip"
-                    className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 z-50 hidden items-center whitespace-nowrap rounded-md border border-[var(--rasi-border)] bg-[var(--rasi-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--rasi-text)] shadow-xl ring-1 ring-black/5 group-hover:flex animate-in fade-in-0 zoom-in-95 duration-100"
+                    className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 z-50 hidden items-center whitespace-nowrap rounded-md border border-[var(--rasi-border)] bg-[var(--rasi-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--rasi-text)] shadow-[var(--rasi-card-shadow)] ring-1 ring-black/5 group-hover:flex animate-in fade-in-0 zoom-in-95 duration-100"
                   >
                     {label}
                     <span
@@ -439,7 +439,7 @@ export function ResearchShell({ children }: { children: ReactNode }) {
             ) : (
               <div
                 role="tooltip"
-                className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 z-50 hidden items-center whitespace-nowrap rounded-md border border-[var(--rasi-border)] bg-[var(--rasi-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--rasi-text)] shadow-xl ring-1 ring-black/5 group-hover:flex animate-in fade-in-0 zoom-in-95 duration-100"
+                className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 z-50 hidden items-center whitespace-nowrap rounded-md border border-[var(--rasi-border)] bg-[var(--rasi-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--rasi-text)] shadow-[var(--rasi-card-shadow)] ring-1 ring-black/5 group-hover:flex animate-in fade-in-0 zoom-in-95 duration-100"
               >
                 Pengaturan
                 <span
@@ -450,10 +450,63 @@ export function ResearchShell({ children }: { children: ReactNode }) {
             )}
           </Link>
 
-          {!collapsed && (
-            <p className="mt-2 px-3 text-[11px] leading-relaxed text-[var(--rasi-muted)]">
-              {' '}
-              Data saham bisa dilihat tanpa masuk.{' '}
+          {session?.user ? (
+            <button
+              type="button"
+              onClick={() => void authClient.signOut()}
+              className={`group relative flex min-h-[44px] w-full items-center rounded-lg text-sm font-medium transition-colors ${
+                collapsed ? 'justify-center px-0' : 'gap-3 px-3'
+              } text-[var(--rasi-danger)] hover:bg-red-50 dark:hover:bg-[#25080c]`}
+            >
+              <LogOut className="h-5 w-5 shrink-0" aria-hidden="true" />
+              {!collapsed ? (
+                <span className="flex flex-col items-start truncate leading-tight">
+                  <span className="block font-semibold">Keluar</span>
+                  <span className="block text-[10px] text-[var(--rasi-muted)] truncate max-w-[150px]">
+                    {session.user.name || session.user.email}
+                  </span>
+                </span>
+              ) : (
+                <div
+                  role="tooltip"
+                  className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 z-50 hidden items-center whitespace-nowrap rounded-md border border-[var(--rasi-border)] bg-[var(--rasi-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--rasi-text)] shadow-[var(--rasi-card-shadow)] ring-1 ring-black/5 group-hover:flex animate-in fade-in-0 zoom-in-95 duration-100"
+                >
+                  Keluar
+                  <span
+                    aria-hidden="true"
+                    className="absolute -left-1 top-1/2 -translate-y-1/2 h-2 w-2 -rotate-45 border-t border-l border-[var(--rasi-border)] bg-[var(--rasi-surface)]"
+                  />
+                </div>
+              )}
+            </button>
+          ) : (
+            <Link
+              href="/masuk"
+              className={`group relative flex min-h-[44px] items-center rounded-lg text-sm font-medium transition-colors ${
+                collapsed ? 'justify-center px-0' : 'gap-3 px-3'
+              } text-[var(--rasi-primary)] hover:bg-[var(--rasi-primary)]/10`}
+            >
+              <User className="h-5 w-5 shrink-0" aria-hidden="true" />
+              {!collapsed ? (
+                <span>Masuk</span>
+              ) : (
+                <div
+                  role="tooltip"
+                  className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 z-50 hidden items-center whitespace-nowrap rounded-md border border-[var(--rasi-border)] bg-[var(--rasi-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--rasi-text)] shadow-[var(--rasi-card-shadow)] ring-1 ring-black/5 group-hover:flex animate-in fade-in-0 zoom-in-95 duration-100"
+                >
+                  Masuk
+                  <span
+                    aria-hidden="true"
+                    className="absolute -left-1 top-1/2 -translate-y-1/2 h-2 w-2 -rotate-45 border-t border-l border-[var(--rasi-border)] bg-[var(--rasi-surface)]"
+                  />
+                </div>
+              )}
+            </Link>
+          )}
+
+          {!collapsed && !session?.user && (
+            <p className="mt-2 px-3 text-[11px] leading-relaxed text-[var(--rasi-muted)] text-center">
+              Data saham bisa dilihat tanpa masuk.
             </p>
           )}
         </div>
@@ -465,42 +518,18 @@ export function ResearchShell({ children }: { children: ReactNode }) {
           collapsed ? 'lg:pl-[76px]' : ''
         }`}
       >
-        {/* Top Header */}
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-[var(--rasi-border)] bg-[var(--rasi-surface)]/90 backdrop-blur-md px-4 sm:px-6">
+        {/* Top Header (Mobile Only) */}
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-[var(--rasi-border)] bg-[var(--rasi-surface)]/90 backdrop-blur-md px-4 sm:px-6 lg:hidden">
           <div className="flex items-center gap-3">
             <IconButton
               icon={Menu}
               aria-label="Buka menu navigasi"
-              className="lg:hidden"
               onClick={() => setMobileOpen(true)}
             />
-            <div className="flex items-center gap-2.5 lg:hidden">
+            <div className="flex items-center gap-2.5">
               <RasiSymbol size={24} variant="cyan" />
               <span className="text-sm font-extrabold tracking-[0.16em]">RASI</span>
             </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {session?.user ? (
-              <div className="flex items-center gap-2">
-                <span className="hidden items-center gap-1.5 text-xs font-medium text-[var(--rasi-muted)] sm:inline-flex">
-                  <User className="h-3.5 w-3.5" aria-hidden="true" />
-                  {session.user.name || session.user.email}
-                </span>
-                <IconButton
-                  icon={LogOut}
-                  aria-label="Keluar dari akun"
-                  size="sm"
-                  variant="ghost"
-                  title="Keluar dari akun"
-                  onClick={() => void authClient.signOut()}
-                />
-              </div>
-            ) : (
-              <ButtonLink href="/masuk" variant="primary" size="sm">
-                Masuk
-              </ButtonLink>
-            )}
           </div>
         </header>
 
@@ -520,7 +549,7 @@ export function ResearchShell({ children }: { children: ReactNode }) {
             />
 
             {/* Panel */}
-            <div className="relative flex w-full max-w-xs flex-1 flex-col bg-[var(--rasi-surface)] text-[var(--rasi-text)] shadow-xl">
+            <div className="relative flex w-full max-w-xs flex-1 flex-col bg-[var(--rasi-surface)] text-[var(--rasi-text)] shadow-[var(--rasi-card-shadow)]">
               <div className="flex h-16 items-center justify-between border-b border-[var(--rasi-border)] px-4">
                 <div className="flex items-center gap-2.5 font-bold">
                   <RasiSymbol size={26} variant="cyan" />

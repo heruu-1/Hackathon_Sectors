@@ -562,7 +562,7 @@ function AssistantContent() {
               <div
                 key={c.id}
                 onClick={() => openSavedConversation(c.id)}
-                className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-[var(--rasi-border)] bg-[var(--surface-card)] p-3 shadow-xs transition-colors hover:border-[var(--rasi-border-hover)] hover:bg-[var(--rasi-surface-2)]"
+                className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-[var(--rasi-border)] bg-[var(--surface-card)] p-3 shadow-[var(--rasi-card-shadow)] transition-colors hover:border-[var(--rasi-border-hover)] hover:bg-[var(--rasi-surface-2)]"
               >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">

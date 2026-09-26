@@ -33,7 +33,7 @@ function SignInContent() {
   }
 
   return (
-    <section className="w-full rounded-2xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-6 shadow-sm sm:p-8">
+    <section className="w-full rounded-2xl border border-[var(--rasi-border)] bg-[var(--rasi-surface)] p-6 shadow-[var(--rasi-card-shadow)] sm:p-8">
       <Link
         href="/"
         className="mb-8 inline-flex min-h-[44px] items-center gap-2 text-sm text-[var(--rasi-muted)] hover:text-[var(--rasi-text)]"

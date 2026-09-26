@@ -93,7 +93,7 @@ export function Dialog({
       onClick={handleBackdropClick}
       aria-labelledby="dialog-title"
       aria-describedby={description ? 'dialog-description' : undefined}
-      className={`fixed inset-0 z-50 m-auto max-h-[85dvh] w-[calc(100%-2rem)] overflow-y-auto rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-0 text-[var(--rasi-text)] shadow-2xl backdrop:bg-slate-950/80 ${maxWidthStyles[maxWidth]} ${className}`}
+      className={`fixed inset-0 z-50 m-auto max-h-[85dvh] w-[calc(100%-2rem)] overflow-y-auto rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-0 text-[var(--rasi-text)] shadow-[var(--rasi-card-shadow)] backdrop:bg-slate-950/80 ${maxWidthStyles[maxWidth]} ${className}`}
     >
       <div className="flex items-start justify-between border-b border-[var(--rasi-border)] px-6 py-4">
         <div>

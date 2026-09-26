@@ -4,7 +4,7 @@ import { getBrokerActivityAction, getBrokerListAction } from '@/app/actions'
 import { BrokerActivityExplorer } from '@/components/BrokerActivityExplorer'
 
 export const metadata: Metadata = {
-  title: 'Penelusuran Broker (F04) — RASI Market Intelligence',
+  title: 'Penelusuran Broker — RASI Market Intelligence',
   description:
     'Telusuri aktivitas transaksi broker, peringkat saham akumulasi dan distribusi, serta perbandingan arah transaksi antara dua broker.',
 }

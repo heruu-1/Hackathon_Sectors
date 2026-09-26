@@ -67,137 +67,45 @@ interface AnimationPoint {
 
 const ANIMATION_POINTS: AnimationPoint[] = [
   // ── Letter 'R' (7 Constellation Stars) ──
-  {
-    id: 'p-r1',
-    letter: { x: 72, y: 70, group: 'R', isAlpha: true, r: 4.4 }, // Alpha-R (Top-Left Star)
-    constellation: { x: 158, y: 79, r: 3.8 }, // S-Node n3
-  },
-  {
-    id: 'p-r2',
-    letter: { x: 72, y: 105, group: 'R', r: 3.2 }, // Mid-Stem Junction
-    constellation: { x: 160, y: 95, r: 2.2 }, // S-Cluster star
-  },
-  {
-    id: 'p-r3',
-    letter: { x: 72, y: 140, group: 'R', r: 3.4 }, // Bottom Stem Foot
-    constellation: { x: 164, y: 144, r: 3.4 }, // S-Node n8
-  },
-  {
-    id: 'p-r4',
-    letter: { x: 106, y: 70, group: 'R', r: 3.2 }, // Loop Top-Right Corner
-    constellation: { x: 168, y: 51, r: 4.2 }, // S-Node n2
-  },
-  {
-    id: 'p-r5',
-    letter: { x: 118, y: 88, group: 'R', isAlpha: true, r: 3.8 }, // Loop Apex Star
-    constellation: { x: 150, y: 40, r: 2.2 }, // Outer Cluster star
-  },
-  {
-    id: 'p-r6',
-    letter: { x: 106, y: 105, group: 'R', r: 3.2 }, // Loop Return Corner
-    constellation: { x: 145, y: 120, r: 2.2 }, // Outer Cluster star
-  },
-  {
-    id: 'p-r7',
-    letter: { x: 120, y: 140, group: 'R', r: 3.6 }, // Diagonal Leg Foot
-    constellation: { x: 158, y: 160, r: 2.2 }, // Bottom Cluster star
-  },
+  { id: 'p-r1', letter: { x: 72, y: 70, group: 'R', isAlpha: true, r: 4.4 }, constellation: { x: 216, y: 79, r: 2.6 } }, // sat1
+  { id: 'p-r2', letter: { x: 72, y: 105, group: 'R', r: 3.2 }, constellation: { x: 160, y: 95, r: 2.2 } },
+  { id: 'p-r3', letter: { x: 72, y: 140, group: 'R', r: 3.4 }, constellation: { x: 150, y: 40, r: 2.2 } },
+  { id: 'p-r4', letter: { x: 106, y: 70, group: 'R', r: 3.2 }, constellation: { x: 145, y: 120, r: 2.2 } },
+  { id: 'p-r5', letter: { x: 118, y: 88, group: 'R', isAlpha: true, r: 3.8 }, constellation: { x: 158, y: 160, r: 2.2 } },
+  { id: 'p-r6', letter: { x: 106, y: 105, group: 'R', r: 3.2 }, constellation: { x: 180, y: 64, r: 2.4 } },
+  { id: 'p-r7', letter: { x: 120, y: 140, group: 'R', r: 3.6 }, constellation: { x: 192, y: 130, r: 2.2 } },
 
   // ── Letter 'A' (5 Constellation Stars) ──
-  {
-    id: 'p-a1',
-    letter: { x: 140, y: 140, group: 'A', r: 3.6 }, // Left Foot
-    constellation: { x: 176, y: 131, r: 2.4 }, // S-Sat 2
-  },
-  {
-    id: 'p-a2',
-    letter: { x: 152, y: 110, group: 'A', r: 3.2 }, // Left Crossbar Node
-    constellation: { x: 180, y: 64, r: 2.4 }, // Ambient star
-  },
-  {
-    id: 'p-a3',
-    letter: { x: 165, y: 70, group: 'A', isAlpha: true, r: 5.8 }, // PRIMARY ALPHA STAR: Crown of RASI!
-    constellation: { x: 195, y: 95, isPrimary: true, r: 5.6 }, // S-Node n4 (Breakout Focal Star)
-  },
-  {
-    id: 'p-a4',
-    letter: { x: 178, y: 110, group: 'A', r: 3.2 }, // Right Crossbar Node
-    constellation: { x: 192, y: 130, r: 2.2 }, // Ambient star
-  },
-  {
-    id: 'p-a5',
-    letter: { x: 190, y: 140, group: 'A', r: 3.6 }, // Right Foot
-    constellation: { x: 205, y: 165, r: 2.2 }, // Ambient star
-  },
+  { id: 'p-a1', letter: { x: 140, y: 140, group: 'A', r: 3.6 }, constellation: { x: 176, y: 131, r: 2.4 } }, // sat2
+  { id: 'p-a2', letter: { x: 152, y: 110, group: 'A', r: 3.2 }, constellation: { x: 205, y: 165, r: 2.2 } },
+  { id: 'p-a3', letter: { x: 165, y: 70, group: 'A', isAlpha: true, r: 5.8 }, constellation: { x: 215, y: 150, r: 2.2 } },
+  { id: 'p-a4', letter: { x: 178, y: 110, group: 'A', r: 3.2 }, constellation: { x: 256, y: 38, r: 2.0 } },
+  { id: 'p-a5', letter: { x: 190, y: 140, group: 'A', r: 3.6 }, constellation: { x: 225, y: 92, r: 2.4 } },
 
-  // ── Letter 'S' (7 Constellation Stars - Matching RASI S Logo Geometry) ──
-  {
-    id: 'p-s1',
-    letter: { x: 252, y: 80, group: 'S', r: 3.4 }, // Top-Right Head
-    constellation: { x: 234, y: 43, r: 3.6 }, // S-Node n0
-  },
-  {
-    id: 'p-s2',
-    letter: { x: 236, y: 70, group: 'S', r: 3.4 }, // Upper Crest
-    constellation: { x: 202, y: 35, r: 4.0 }, // S-Node n1
-  },
-  {
-    id: 'p-s3',
-    letter: { x: 218, y: 82, group: 'S', r: 3.4 }, // Upper Left Turn
-    constellation: { x: 216, y: 79, r: 2.6 }, // S-Sat 1
-  },
-  {
-    id: 'p-s4',
-    letter: { x: 236, y: 105, group: 'S', isAlpha: true, r: 4.8 }, // Alpha-S: Center Pivot Star!
-    constellation: { x: 236, y: 110, r: 4.6 }, // S-Node n5
-  },
-  {
-    id: 'p-s5',
-    letter: { x: 254, y: 126, group: 'S', r: 3.6 }, // Lower Right Turn
-    constellation: { x: 228, y: 139, r: 3.8 }, // S-Node n6
-  },
-  {
-    id: 'p-s6',
-    letter: { x: 236, y: 140, group: 'S', r: 3.4 }, // Lower Crest
-    constellation: { x: 192, y: 155, r: 4.0 }, // S-Node n7
-  },
-  {
-    id: 'p-s7',
-    letter: { x: 218, y: 132, group: 'S', r: 3.2 }, // Lower Left Tail
-    constellation: { x: 215, y: 150, r: 2.2 }, // Ambient star
-  },
+  // ── Letter 'S' (9 Constellation Stars - Matching RASI S Logo Geometry) ──
+  // The 'S' in RASI will be formed exactly by the 9 stars that make up the S-logo in Stage 1!
+  { id: 'p-s1', letter: { x: 252, y: 70, group: 'S', r: 3.4 }, constellation: { x: 234, y: 43, r: 3.6 } },
+  { id: 'p-s2', letter: { x: 236, y: 65, group: 'S', r: 3.4 }, constellation: { x: 202, y: 35, r: 4.0 } },
+  { id: 'p-s3', letter: { x: 222, y: 75, group: 'S', r: 3.4 }, constellation: { x: 168, y: 51, r: 4.2 } },
+  { id: 'p-s4', letter: { x: 218, y: 88, group: 'S', r: 3.4 }, constellation: { x: 158, y: 79, r: 3.8 } },
+  { id: 'p-s5', letter: { x: 236, y: 105, group: 'S', isAlpha: true, r: 4.8 }, constellation: { x: 195, y: 95, isPrimary: true, r: 5.6 } },
+  { id: 'p-s6', letter: { x: 254, y: 118, group: 'S', r: 3.6 }, constellation: { x: 236, y: 110, r: 4.6 } },
+  { id: 'p-s7', letter: { x: 250, y: 135, group: 'S', r: 3.6 }, constellation: { x: 228, y: 139, r: 3.8 } },
+  { id: 'p-s8', letter: { x: 236, y: 145, group: 'S', r: 3.4 }, constellation: { x: 192, y: 155, r: 4.0 } },
+  { id: 'p-s9', letter: { x: 218, y: 138, group: 'S', r: 3.2 }, constellation: { x: 164, y: 144, r: 3.4 } },
 
-  // ── Letter 'I' (5 Constellation Stars - Pure Vertical Starlight Pillar) ──
-  {
-    id: 'p-i1',
-    letter: { x: 306, y: 70, group: 'I', r: 4.2 }, // Top Star of I
-    constellation: { x: 244, y: 61, r: 2.4 }, // S-Sat 0
-  },
-  {
-    id: 'p-i2',
-    letter: { x: 306, y: 88, group: 'I', r: 3.2 }, // Upper-mid Star
-    constellation: { x: 256, y: 38, r: 2.0 }, // Ambient star
-  },
-  {
-    id: 'p-i3',
-    letter: { x: 306, y: 105, group: 'I', r: 3.6 }, // Center Star of I
-    constellation: { x: 225, y: 92, r: 2.4 }, // Ambient star
-  },
-  {
-    id: 'p-i4',
-    letter: { x: 306, y: 122, group: 'I', r: 3.2 }, // Lower-mid Star
-    constellation: { x: 242, y: 125, r: 2.2 }, // Ambient star
-  },
-  {
-    id: 'p-i5',
-    letter: { x: 306, y: 140, group: 'I', r: 4.0 }, // Bottom Star of I
-    constellation: { x: 210, y: 168, r: 2.0 }, // Bottom halo star
-  },
+  // ── Letter 'I' (5 Constellation Stars) ──
+  { id: 'p-i1', letter: { x: 306, y: 70, group: 'I', r: 4.2 }, constellation: { x: 244, y: 61, r: 2.4 } }, // sat0
+  { id: 'p-i2', letter: { x: 306, y: 88, group: 'I', r: 3.2 }, constellation: { x: 242, y: 125, r: 2.2 } },
+  { id: 'p-i3', letter: { x: 306, y: 105, group: 'I', r: 3.6 }, constellation: { x: 210, y: 168, r: 2.0 } },
+  { id: 'p-i4', letter: { x: 306, y: 122, group: 'I', r: 3.2 }, constellation: { x: 130, y: 90, r: 2.2 } },
+  { id: 'p-i5', letter: { x: 306, y: 140, group: 'I', r: 4.0 }, constellation: { x: 120, y: 130, r: 2.0 } },
 ]
 
 // Constellation S main path passing through official nodes n0 -> n1 -> n2 -> n3 -> n4 -> n5 -> n6 -> n7 -> n8
 const S_CONSTELLATION_PATH_D =
   'M 234 43 L 202 35 L 168 51 L 158 79 L 195 95 L 236 110 L 228 139 L 192 155 L 164 144'
+const S_ASTERISM_D = 'M 252 70 L 236 65 L 222 75 L 218 88 L 236 105 L 254 118 L 250 135 L 236 145 L 218 138'
 
 // Satellite filaments for S-constellation
 const S_SATELLITE_LINES = [
@@ -224,11 +132,7 @@ const LETTER_ASTERISMS = [
   { id: 'a-bar', d: 'M 150 112 L 180 112', delay: 0.2 }, // Crossbar asterism
 
   // ── Constellation 'S' (Iconic RASI S Geometry) ──
-  {
-    id: 's-asterism',
-    d: 'M 250 80 L 236 70 L 218 82 L 235 105 L 252 126 L 236 140 L 220 132',
-    delay: 0.1,
-  },
+
 
   // ── Constellation 'I' (Clean, Pure Vertical Starlight Column) ──
   { id: 'i-stem', d: 'M 306 70 L 306 140', delay: 0.12 },
@@ -243,11 +147,8 @@ export function RasiInitialLoading({
 }: RasiInitialLoadingProps) {
   const [activeMode, setActiveMode] = useState<LoadingMode>(mode)
   const [visible, setVisible] = useState<boolean>(true)
-  // Reversed Flow:
-  // Stage 1: Teks RASI (celestial letter constellation)
-  // Stage 2: Grafik Saham (transforms into horizontal S-Tidur stock wave)
-  // Stage 3: Logo S-Tegak (rotates 90° into official upright RASI S logo)
-  // Stage 4: Steady Logo Hold (admire final official brand symbol)
+  // Stage 1: Logo S-Tegak
+  // Stage 2: Teks RASI (Bintang dari logo S melebur membentuk kata RASI)
   const [stage, setStage] = useState<number>(1)
   const [animTrigger, setAnimTrigger] = useState(0)
   const idSuffix = useId().replace(/:/g, '')
@@ -272,31 +173,25 @@ export function RasiInitialLoading({
     const timers: NodeJS.Timeout[] = []
 
     if (activeMode === 'logo-reveal') {
-      // 1. Teks RASI tampil elegan: 0.0s - 1.4s (stage = 1)
-      // 2. Mengalir & bertransformasi menjadi Grafik Saham (S-Tidur): 1.4s - 2.6s (stage = 2)
-      timers.push(setTimeout(() => setStage(2), 1400))
-      // 3. Berputar 90° menjadi Logo Resmi RASI (S-Tegak): 2.6s - 3.8s (stage = 3)
-      timers.push(setTimeout(() => setStage(3), 2600))
-      // 4. Logo S resmi terkunci & ditahan sejenak: 3.8s - 4.9s (stage = 4)
-      timers.push(setTimeout(() => setStage(4), 3800))
-      // 5. Transisi halus ke dashboard setelah logo dinikmati
+      // 1. Logo S (Stage 1 is initial state): 0.0s - 1.2s
+      // 2. Teks RASI (Bintang melebur): 1.2s - 2.2s
+      timers.push(setTimeout(() => setStage(2), 1200))
+      // 3. Transisi halus ke dashboard setelah dinikmati
       timers.push(
         setTimeout(() => {
           if (!forceShow) {
             dismiss()
           }
-        }, 4900)
+        }, 2600)
       )
     } else {
-      // Backward-compatible Text Collapse mode
-      timers.push(setTimeout(() => setStage(2), 1000))
-      timers.push(setTimeout(() => setStage(3), 2200))
+      timers.push(setTimeout(() => setStage(2), 600))
       timers.push(
         setTimeout(() => {
           if (!forceShow) {
             dismiss()
           }
-        }, 3600)
+        }, 1600)
       )
     }
 
@@ -306,19 +201,18 @@ export function RasiInitialLoading({
   }, [visible, activeMode, forceShow, dismiss, animTrigger])
 
   const getPointCoords = (pt: AnimationPoint) => {
-    if (stage === 1) {
-      // Stage 1: Stars placed at R-A-S-I letter vertices
+    if (stage >= 2) {
+      // Stage 2: Stars placed at R-A-S-I letter vertices
       return pt.letter
     }
-    // Stage 2, 3, 4: Stars placed at S-constellation coordinates
-    // In Stage 2, the container group rotates to -90deg, turning this into the S-Tidur stock wave!
+    // Stage 1: Stars placed at S-constellation coordinates
     return pt.constellation
   }
 
-  // RASI constellation letter strokes are active only during Stage 1
-  const isRasiTextActive = stage === 1
-  // S-Constellation lines are active during Stage 2, 3, and 4
-  const isSConstellationActive = stage >= 2
+  // RASI constellation letter strokes are active during Stage 2
+  const isRasiTextActive = stage >= 2
+  // S-Constellation lines are active during Stage 1
+  const isSConstellationActive = stage === 1
 
   return (
     <AnimatePresence>
@@ -360,7 +254,7 @@ export function RasiInitialLoading({
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  S-Tidur → S → RASI
+                  Logo S → Teks RASI
                 </button>
                 <button
                   type="button"
@@ -470,18 +364,18 @@ export function RasiInitialLoading({
                 */}
                 <motion.g
                   animate={{
-                    rotate: stage === 2 ? -90 : 0,
-                    scale: stage === 2 ? 1.08 : 1.0,
+                    rotate: 0,
+                    scale: 1.0,
                   }}
                   transition={{
-                    duration: 1.15,
+                    duration: 0.65,
                     ease: [0.16, 1, 0.3, 1],
                   }}
                   style={{
                     transformOrigin: '200px 100px',
                   }}
                 >
-                  {/* S-Constellation Lines (Active in Stage 1 & 2) */}
+                  {/* S-Constellation Satellite Lines (Fade out in Stage 2) */}
                   <motion.g
                     animate={{
                       opacity: isSConstellationActive ? 1 : 0,
@@ -502,26 +396,27 @@ export function RasiInitialLoading({
                         strokeOpacity="0.4"
                       />
                     ))}
-
-                    {/* Main S-Constellation Path */}
-                    <motion.path
-                      d={S_CONSTELLATION_PATH_D}
-                      stroke={`url(#starlight-beam-${idSuffix})`}
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      filter={`url(#constellation-glow-${idSuffix})`}
-                      initial={{ pathLength: 0, opacity: 0 }}
-                      animate={{
-                        pathLength: isSConstellationActive ? 1 : 0,
-                        opacity: isSConstellationActive ? 0.95 : 0,
-                      }}
-                      transition={{
-                        pathLength: { duration: 0.95, ease: [0.25, 0.1, 0.25, 1] },
-                        opacity: { duration: 0.4 },
-                      }}
-                    />
                   </motion.g>
+
+                  {/* Main S-Constellation Path (Morphs to S-Asterism in Stage 2) */}
+                  <motion.path
+                    stroke={`url(#starlight-beam-${idSuffix})`}
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    filter={`url(#constellation-glow-${idSuffix})`}
+                    initial={{ pathLength: 0, opacity: 0, d: S_CONSTELLATION_PATH_D }}
+                    animate={{
+                      pathLength: 1,
+                      opacity: 0.95,
+                      d: stage >= 2 ? S_ASTERISM_D : S_CONSTELLATION_PATH_D,
+                    }}
+                    transition={{
+                      pathLength: { duration: 0.65, ease: [0.25, 0.1, 0.25, 1] },
+                      opacity: { duration: 0.4 },
+                      d: { duration: 0.75, ease: [0.25, 0.1, 0.25, 1] }
+                    }}
+                  />
 
                   {/* 
                     CELESTIAL CONSTELLATION "R A S I" (Stage 3 & 4)
@@ -550,7 +445,7 @@ export function RasiInitialLoading({
                           opacity: isRasiTextActive ? 0.98 : 0,
                         }}
                         transition={{
-                          duration: 0.85,
+                          duration: 0.65,
                           delay: isRasiTextActive ? asterism.delay : 0,
                           ease: [0.25, 0.1, 0.25, 1],
                         }}
@@ -577,9 +472,9 @@ export function RasiInitialLoading({
                           y: pos.y,
                         }}
                         transition={{
-                          duration: 1.05,
+                          duration: 0.75,
                           ease: [0.25, 0.1, 0.25, 1],
-                          delay: stage >= 3 ? (idx % 6) * 0.02 : 0,
+                          delay: stage >= 2 ? (idx % 6) * 0.02 : 0,
                         }}
                       >
                         {/* ASTRONOMICAL DIFFRACTION SPIKES (Kilau Bintang 4-Arah) on Alpha Stars */}
@@ -626,14 +521,14 @@ export function RasiInitialLoading({
                         )}
 
                         {/* Standard Focal Star Flare during Stage 3+ (Locking of Upright S Logo) */}
-                        {isCrown && stage >= 3 && (
+                        {isCrown && stage >= 2 && (
                           <motion.g
                             animate={{
                               scale: [1, 1.45, 1.2],
                               opacity: 1,
                             }}
                             transition={{
-                              duration: 0.8,
+                              duration: 0.65,
                               ease: 'easeOut',
                             }}
                           >

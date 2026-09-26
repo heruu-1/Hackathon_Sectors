@@ -709,13 +709,13 @@ export default function StockDetail({ ticker, initialData }: StockDetailProps) {
                 </div>
               </div>
 
-              {/* Business Exposure & Commodity Mapping (F11) */}
+              {/* Business Exposure & Commodity Mapping */}
               {data?.businessExposure && (
                 <div className="space-y-4 rounded-xl border border-[var(--rasi-border)] bg-[var(--rasi-muted-bg)] p-5">
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--rasi-border)] pb-3">
                     <div>
                       <h4 className="text-sm font-bold text-[var(--rasi-text)]">
-                        Peta Bisnis & Eksposur Komoditas (F11)
+                        Peta Bisnis & Eksposur Komoditas
                       </h4>
                       <p className="mt-0.5 text-xs text-[var(--rasi-muted)]">
                         {data.businessExposure.summary}
@@ -808,7 +808,7 @@ export default function StockDetail({ ticker, initialData }: StockDetailProps) {
             </div>
           )}
 
-          {/* TAB: VALUATION & PEERS (F06) */}
+          {/* TAB: VALUATION & PEERS */}
           {currentTab === 'valuation' && (
             <div className="space-y-6">
               <div>
@@ -983,7 +983,7 @@ export default function StockDetail({ ticker, initialData }: StockDetailProps) {
             </div>
           )}
 
-          {/* TAB: OWNERSHIP & FLOAT (F07) */}
+          {/* TAB: OWNERSHIP & FLOAT */}
           {currentTab === 'ownership' && (
             <div className="space-y-6">
               <div>
@@ -1371,7 +1371,7 @@ export default function StockDetail({ ticker, initialData }: StockDetailProps) {
             </div>
           )}
 
-          {/* TAB: RESEARCH WORKSPACE (F12) */}
+          {/* TAB: RESEARCH WORKSPACE */}
           {currentTab === 'research' && (
             <ResearchWorkspace
               ticker={symbol}

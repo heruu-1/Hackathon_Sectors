@@ -215,7 +215,7 @@ export function ResearchWorkspace({
   return (
     <div className="space-y-6">
       {/* 1. Thesis & Invalidation Triggers */}
-      <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6 shadow-md">
+      <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6 shadow-[var(--rasi-card-shadow)]">
         <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-4">
           <div className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-[var(--rasi-primary)]" />
@@ -325,7 +325,7 @@ export function ResearchWorkspace({
       </div>
 
       {/* 2. Snapshot Diff Viewer */}
-      <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6 shadow-md">
+      <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6 shadow-[var(--rasi-card-shadow)]">
         <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-4">
           <div className="flex items-center gap-2">
             <GitCompare className="h-5 w-5 text-[var(--rasi-primary)]" />
@@ -527,7 +527,7 @@ export function ResearchWorkspace({
       <SignalEvaluationPanel ticker={ticker} companyName={companyName} />
 
       {/* 3b. Legacy Evaluation Archive (Daily Trading Days Based) */}
-      <details className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-4 shadow-sm group">
+      <details className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-4 shadow-[var(--rasi-card-shadow)] group">
         <summary className="cursor-pointer text-xs font-semibold text-[var(--rasi-muted)] hover:text-[var(--rasi-text)] flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4 text-[var(--rasi-muted)]" />
@@ -635,7 +635,7 @@ export function ResearchWorkspace({
 
       {/* 4. Export & Printable Brief */}
       {currentSnapshot && (
-        <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6 shadow-md print:border-none print:shadow-none">
+        <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6 shadow-[var(--rasi-card-shadow)] print:border-none print:shadow-none">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-4">
             <div className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-[var(--rasi-primary)]" />

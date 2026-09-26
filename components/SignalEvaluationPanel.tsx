@@ -111,7 +111,7 @@ export function SignalEvaluationPanel({ ticker, companyName }: SignalEvaluationP
   }
 
   return (
-    <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6 shadow-md space-y-5">
+    <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6 shadow-[var(--rasi-card-shadow)] space-y-5">
       {/* 1. Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-4">
         <div className="flex items-center gap-2">
